@@ -52,6 +52,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .step-number { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800; }
+.ticket-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 </style>
 </head>
 <body class="text-slate-900 min-h-screen">
@@ -121,7 +122,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     <!-- TAB: PAYMENT -->
     <section id="tab-payment" class="tab-content max-w-md mx-auto">
         <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
-            <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400"><i data-lucide="arrow-left"></i></button>
+            <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="arrow-left"></i></button>
             <h2 class="text-3xl font-black text-center mb-6 mt-4">Checkout</h2>
             <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl"></div>
             
@@ -147,7 +148,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     <!-- TAB: MY TICKETS -->
     <section id="tab-my-tickets" class="tab-content">
         <h2 class="text-4xl font-black mb-10">Tiket Saya</h2>
-        <div id="ticket-list" class="grid md:grid-cols-2 gap-6"></div>
+        <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start"></div>
     </section>
 
     <!-- TAB: ADMIN -->
@@ -213,6 +214,7 @@ function showTab(id) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
     if (html5QrScanner && id !== 'admin-dashboard') stopScanner();
+    window.scrollTo(0,0);
 }
 
 function updateNav() {
@@ -228,7 +230,7 @@ function updateNav() {
             </div>
         `;
     } else {
-        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">Masuk</button>`;
+        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg">Masuk</button>`;
     }
     lucide.createIcons();
 }
@@ -268,34 +270,59 @@ window.submitOrder = async () => {
     } catch (err) { showAlert('Error', 'Gagal memproses.', 'error'); }
 };
 
+function toggleTicketDetails(orderId) {
+    const section = document.getElementById(`section-qr-${orderId}`);
+    const icon = document.getElementById(`icon-arrow-${orderId}`);
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        section.classList.add('hidden');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+}
+
 function loadUserTickets() {
     const container = document.getElementById('ticket-list');
     onSnapshot(query(collection(db, 'tickets'), where('user_id', '==', currentUser.uid)), (snap) => {
-        container.innerHTML = '';
+        container.innerHTML = snap.empty ? '<div class="col-span-full py-10 text-center text-slate-400">Belum ada tiket.</div>' : '';
         snap.forEach(docu => {
             const t = docu.data(); const approved = t.status === 'approved';
             const div = document.createElement('div');
-            div.className = 'bg-white p-6 rounded-[2rem] border relative overflow-hidden';
+            div.className = 'bg-white p-6 rounded-[2rem] border ticket-card relative overflow-hidden cursor-pointer shadow-sm hover:shadow-md';
+            div.onclick = () => toggleTicketDetails(t.order_id);
+            
             div.innerHTML = `
-                <div class="flex justify-between mb-4">
-                    <div><p class="text-xs font-black text-indigo-500 tracking-widest">#${t.order_id}</p><h3 class="text-2xl font-black">${t.type}</h3></div>
-                    <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-black text-indigo-500 tracking-widest">#${t.order_id}</p>
+                        <h3 class="text-2xl font-black">${t.type}</h3>
+                        <p class="font-black text-lg text-slate-800">${t.name}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-3">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
+                        <i data-lucide="chevron-down" id="icon-arrow-${t.order_id}" class="text-slate-300 transition-transform duration-300"></i>
+                    </div>
                 </div>
-                <div class="flex items-center gap-6">
-                    <div id="qr-${t.order_id}" class="bg-slate-50 p-2 rounded-xl border"></div>
-                    <div><p class="font-black text-lg">${t.name}</p><p class="text-xs text-slate-400">${approved ? (t.check_in ? 'Tiket sudah dipindai.' : 'Tunjukkan QR di pintu masuk.') : 'Menunggu verifikasi admin.'}</p></div>
+
+                <div id="section-qr-${t.order_id}" class="hidden mt-6 pt-6 border-t border-dashed border-slate-100">
+                    <div class="flex flex-col items-center gap-4">
+                        <div id="qr-${t.order_id}" class="bg-white p-3 rounded-2xl border shadow-inner"></div>
+                        <p class="text-xs text-slate-400 text-center px-4 leading-relaxed font-medium">
+                            ${approved ? (t.check_in ? 'Tiket ini sudah dipindai oleh petugas.' : 'Tunjukkan QR ini kepada petugas di gerbang masuk.') : 'QR Code akan muncul setelah admin memverifikasi bukti transfer Anda.'}
+                        </p>
+                        ${t.check_in ? '<div class="bg-red-600 text-white px-4 py-1.5 rounded-full font-black text-[10px] shadow-lg animate-pulse">SUDAH MASUK (CHECKED-IN)</div>' : ''}
+                    </div>
                 </div>
-                ${t.check_in ? '<div class="absolute bottom-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full font-black text-[9px] shadow-lg animate-pulse">SUDAH MASUK</div>' : ''}
             `;
             container.appendChild(div);
             if (approved) {
-                // Gunakan timeout kecil agar elemen ID benar-benar sudah ada di DOM
                 setTimeout(() => {
                     const el = document.getElementById(`qr-${t.order_id}`);
-                    if (el) { el.innerHTML = ''; new QRCode(el, { text: t.order_id, width: 100, height: 100 }); }
-                }, 50);
+                    if (el) { el.innerHTML = ''; new QRCode(el, { text: t.order_id, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff" }); }
+                }, 100);
             } else {
-                document.getElementById(`qr-${t.order_id}`).innerHTML = '<div class="w-[100px] h-[100px] bg-slate-100 rounded-xl flex items-center justify-center text-slate-300"><i data-lucide="lock"></i></div>';
+                document.getElementById(`qr-${t.order_id}`).innerHTML = '<div class="w-[150px] h-[150px] bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-300 gap-2"><i data-lucide="lock" class="w-8 h-8"></i><span class="text-[10px] font-bold">TERKUNCI</span></div>';
             }
         });
         lucide.createIcons();
@@ -315,12 +342,12 @@ function listenToAllTickets() {
 function loadAdminTickets() {
     const list = document.getElementById('admin-tickets'); const search = document.getElementById('admin-search').value.toLowerCase(); list.innerHTML = '';
     allTicketsData.filter(t => (t.name && t.name.toLowerCase().includes(search)) || t.order_id.toLowerCase().includes(search)).forEach(t => {
-        const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-2xl border flex justify-between items-center';
+        const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm';
         div.innerHTML = `
-            <div><p class="font-black">${t.name}</p><p class="text-xs text-slate-400">${t.order_id} • ${t.type}</p></div>
+            <div><p class="font-black text-slate-800">${t.name}</p><p class="text-xs text-slate-400 font-medium">${t.order_id} • ${t.type}</p></div>
             <div class="flex gap-2">
-                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg">RESET</button>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition-colors">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg hover:bg-slate-50">RESET</button>`}
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
         list.appendChild(div);
@@ -328,17 +355,16 @@ function loadAdminTickets() {
     lucide.createIcons();
 }
 
-window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal update.', 'error'); } };
+window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal memperbarui status.', 'error'); } };
 
-// FUNGSI HAPUS: Menggunakan window. eksplisit
 window.deleteTicket = async (id) => { 
-    if(confirm('Yakin ingin menghapus tiket ini?')) {
+    if(confirm('Yakin ingin menghapus tiket ini secara permanen?')) {
         try {
             const ticketRef = window.doc(window.db, 'tickets', id);
             await window.deleteDoc(ticketRef); 
         } catch (error) {
             console.error("Gagal menghapus:", error);
-            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (Write: true) sudah Anda Publish di Firebase Console.", "error");
+            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (Write: true) sudah Anda terapkan di Firebase Console.", "error");
         }
     }
 };
@@ -357,15 +383,15 @@ function startScanner() {
     html5QrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, async (text) => {
         const snap = await window.getDocs(window.query(window.collection(window.db, 'tickets'), window.where('order_id', '==', text)));
         fb.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-700', 'text-green-700');
-        if (snap.empty) { fb.innerText = 'TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
+        if (snap.empty) { fb.innerText = 'TIKET TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
         else {
             const d = snap.docs[0]; const data = d.data();
-            if (data.status !== 'approved') { fb.innerText = 'BELUM BAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
+            if (data.status !== 'approved') { fb.innerText = 'BELUM DIBAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
             else if (data.check_in) { fb.innerText = 'SUDAH DIGUNAKAN'; fb.classList.add('bg-red-100', 'text-red-700'); }
             else { fb.innerText = 'VALID: ' + data.name; fb.classList.add('bg-green-100', 'text-green-700'); await window.updateDoc(window.doc(window.db, 'tickets', d.id), { check_in: true }); }
         }
         fb.classList.remove('hidden');
-    }).catch(e => showAlert('Error', 'Gagal buka kamera.', 'error'));
+    }).catch(e => showAlert('Error', 'Gagal mengakses kamera.', 'error'));
 }
 
 function stopScanner() { if(html5QrScanner) html5QrScanner.stop().then(() => html5QrScanner = null).catch(e => {}); }
