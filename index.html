@@ -1,21 +1,10 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Holistik Fest 2026 - Management System</title>
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query, where, orderBy, addDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { Ticket, Crown, Users, ArrowLeft, CheckCircle, Download, Scan, QrCode, XCircle, ShieldCheck, LogOut, Settings, List, Activity, Image as ImageIcon, MessageCircle, MapPin, Calendar, Clock, ChevronRight, Search, Filter, Trash2 } from 'lucide-react';
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
-
+// --- CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyB4YSxte_dvyQzdl5Cg1_eJJ3namhGhN4U",
   authDomain: "holistik-event-tiket.firebaseapp.com",
@@ -26,514 +15,495 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-window.auth = getAuth(app);
-window.db = getFirestore(app);
-window.storage = getStorage(app);
-window.provider = new GoogleAuthProvider();
-window.appId = "holistik-fest-2026";
-
-// Ekspor ke window agar bisa diakses script biasa
-window.signInWithPopup = signInWithPopup;
-window.onAuthStateChanged = onAuthStateChanged;
-window.signOut = signOut;
-window.collection = collection;
-window.addDoc = addDoc;
-window.query = query;
-window.where = where;
-window.onSnapshot = onSnapshot;
-window.doc = doc;
-window.updateDoc = updateDoc;
-window.getDocs = getDocs;
-window.deleteDoc = deleteDoc;
-window.setDoc = setDoc;
-window.getDoc = getDoc;
-window.orderBy = orderBy;
-window.ref = ref;
-window.uploadBytes = uploadBytes;
-window.getDownloadURL = getDownloadURL;
-</script>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll-behavior: smooth; }
-.tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.step-number { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 10px; font-weight: 800; }
-.event-banner { background-size: cover; background-position: center; border-radius: 2.5rem; transition: all 0.5s ease; min-height: 380px; }
-.countdown-box { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
-</style>
-</head>
-<body class="text-slate-900 min-h-screen pb-10">
-
-<nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b z-50">
-    <div class="max-w-6xl mx-auto h-16 px-6 flex items-center justify-between">
-        <div class="font-black text-xl text-indigo-600 flex items-center gap-2 cursor-pointer" onclick="showTab('hero')">
-            <i data-lucide="ticket"></i>
-            <span id="nav-title">Holistik Fest</span>
-        </div>
-        <div id="nav-user" class="flex items-center gap-3"></div>
-    </div>
-</nav>
-
-<main class="pt-24 px-6 max-w-6xl mx-auto">
-
-    <!-- TAB: HOME -->
-    <section id="tab-hero" class="tab-content active">
-        <div id="main-banner" class="event-banner w-full flex flex-col items-center justify-center text-center p-8 text-white shadow-2xl relative overflow-hidden">
-            <div class="absolute inset-0 bg-black/50 transition-all"></div>
-            <div class="relative z-10 w-full max-w-2xl">
-                <span class="bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-6 inline-block">The Biggest Event 2026</span>
-                <h1 id="banner-title" class="text-5xl md:text-7xl font-black mb-8 tracking-tighter drop-shadow-lg uppercase">Holistik Fest</h1>
-                
-                <div id="countdown" class="flex justify-center gap-3 mb-8">
-                    <div class="countdown-box p-3 rounded-2xl min-w-[60px] md:min-w-[80px]"><p id="cd-days" class="text-xl md:text-3xl font-black">00</p><p class="text-[8px] uppercase font-bold opacity-60">Hari</p></div>
-                    <div class="countdown-box p-3 rounded-2xl min-w-[60px] md:min-w-[80px]"><p id="cd-hours" class="text-xl md:text-3xl font-black">00</p><p class="text-[8px] uppercase font-bold opacity-60">Jam</p></div>
-                    <div class="countdown-box p-3 rounded-2xl min-w-[60px] md:min-w-[80px]"><p id="cd-mins" class="text-xl md:text-3xl font-black">00</p><p class="text-[8px] uppercase font-bold opacity-60">Menit</p></div>
-                    <div class="countdown-box p-3 rounded-2xl min-w-[60px] md:min-w-[80px] text-indigo-400"><p id="cd-secs" class="text-xl md:text-3xl font-black">00</p><p class="text-[8px] uppercase font-bold opacity-60">Detik</p></div>
-                </div>
-
-                <div class="flex flex-wrap justify-center gap-6 text-sm font-bold">
-                    <div class="flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full"><i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i> <span id="banner-loc">Lapangan Garnisun Purworejo</span></div>
-                    <div class="flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full"><i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i> <span id="banner-date">21 Juni 2026</span></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-12">
-            <div onclick="startOrder('VIP')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all group">
-                <div class="flex justify-between mb-4"><span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase">Premium</span><i data-lucide="crown" class="text-amber-400"></i></div>
-                <h3 class="text-3xl font-black mb-1">VIP ACCESS</h3>
-                <p class="text-slate-500 text-sm mb-6">Akses area depan dan fasilitas VIP.</p>
-                <p id="price-vip-display" class="text-5xl font-black text-indigo-600 mb-8">Rp 55K</p>
-                <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-100">Pilih VIP</button>
-            </div>
-            <div onclick="startOrder('Reguler')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all group">
-                <div class="flex justify-between mb-4"><span class="bg-slate-100 text-slate-700 text-[10px] font-black px-3 py-1 rounded-full uppercase">Standard</span><i data-lucide="users" class="text-slate-400"></i></div>
-                <h3 class="text-3xl font-black mb-1">REGULER</h3>
-                <p class="text-slate-500 text-sm mb-6">Nikmati kemeriahan di area festival.</p>
-                <p id="price-reg-display" class="text-5xl font-black text-slate-900 mb-8">Rp 35K</p>
-                <button class="w-full py-4 rounded-2xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-100">Pilih Reguler</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- TAB: PAYMENT -->
-    <section id="tab-payment" class="tab-content max-w-md mx-auto">
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
-            <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600"><i data-lucide="arrow-left"></i></button>
-            <h2 class="text-3xl font-black text-center mb-8 mt-4">Checkout</h2>
-            <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl uppercase"></div>
-            <div class="mb-8">
-                <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-1">Nama Di Tiket</label>
-                <input type="text" id="order-name" class="w-full px-5 py-4 bg-slate-50 border rounded-2xl outline-none font-bold" />
-                <label class="block text-xs font-black text-slate-400 uppercase mb-2 ml-1 mt-4">Nomor WhatsApp</label>
-                <input type="number" id="order-wa" placeholder="628..." class="w-full px-5 py-4 bg-slate-50 border rounded-2xl outline-none font-bold" />
-            </div>
-            <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center text-amber-800">
-                <p class="text-3xl font-black mb-1">1234567890</p>
-                <p class="font-bold text-sm">BCA - A/N HOLISTIK FEST</p>
-            </div>
-            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg flex items-center justify-center gap-2">
-                <i data-lucide="message-circle"></i> KONFIRMASI PEMBAYARAN
-            </button>
-        </div>
-    </section>
-
-    <!-- TAB: MY TICKETS -->
-    <section id="tab-my-tickets" class="tab-content">
-        <h2 class="text-4xl font-black mb-10 text-indigo-900">Tiket Saya</h2>
-        <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start text-slate-900"></div>
-    </section>
-
-    <!-- TAB: ADMIN DASHBOARD -->
-    <section id="tab-admin-dashboard" class="tab-content">
-        <div class="mb-10 flex flex-col lg:flex-row justify-between items-end gap-4">
-            <div>
-                <h2 class="text-4xl font-black text-indigo-900">Panel Petugas</h2>
-                <p class="text-slate-500 font-medium">Sistem Management Terintegrasi Multi-Admin.</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="exportToCSV()" class="bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-xs flex items-center gap-2">
-                    <i data-lucide="download" class="w-4 h-4"></i> EXPORT
-                </button>
-            </div>
-        </div>
-
-        <!-- STATS -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white p-6 rounded-3xl border shadow-sm border-b-4 border-b-indigo-500">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total Tiket</p>
-                <p id="stat-total" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border shadow-sm border-b-4 border-b-amber-500 text-amber-600">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Pending</p>
-                <p id="stat-pending" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border shadow-sm border-b-4 border-b-emerald-500 text-emerald-600">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Check-in</p>
-                <p id="stat-checkin" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-indigo-900 p-6 rounded-3xl border shadow-xl text-white">
-                <p class="text-indigo-300 text-[10px] font-bold uppercase mb-1">Revenue</p>
-                <p id="stat-revenue" class="text-2xl font-black">Rp 0</p>
-            </div>
-        </div>
-
-        <!-- ADMIN NAV -->
-        <div class="bg-white p-4 rounded-3xl border mb-8 flex flex-col md:flex-row gap-4 items-center">
-            <div class="flex p-1 bg-slate-100 rounded-2xl overflow-x-auto w-full md:w-auto">
-                <button onclick="switchAdminTab('list')" id="btn-adm-list" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm">Tiket</button>
-                <button onclick="switchAdminTab('admins')" id="btn-adm-admins" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500">Akses Panitia</button>
-                <button onclick="switchAdminTab('settings')" id="btn-adm-settings" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500">Settings</button>
-                <button onclick="switchAdminTab('logs')" id="btn-adm-logs" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500">Logs</button>
-                <button onclick="switchAdminTab('scan')" id="btn-adm-scan" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500">Scanner</button>
-            </div>
-            <select id="filter-status" onchange="loadAdminTickets()" class="bg-slate-50 border p-3 rounded-2xl text-xs font-bold w-full md:w-auto">
-                <option value="all">Semua Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="checkin">Check-in</option>
-            </select>
-            <div class="relative flex-1 w-full">
-                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                <input type="text" id="admin-search" placeholder="Cari Nama/ID..." oninput="loadAdminTickets()" class="w-full pl-12 pr-6 py-3 bg-slate-50 border rounded-2xl outline-none">
-            </div>
-        </div>
-
-        <!-- LIST TIKET & BULK ACTIONS -->
-        <div id="adm-list-content">
-            <div id="bulk-actions" class="hidden mb-4 p-4 bg-indigo-50 rounded-2xl flex justify-between items-center border border-indigo-100">
-                <p class="text-xs font-bold text-indigo-600"><span id="selected-count">0</span> Tiket Dipilih</p>
-                <button onclick="bulkApprove()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg">Approve Massal</button>
-            </div>
-            <div id="admin-tickets" class="space-y-4"></div>
-        </div>
-
-        <!-- AKSES PANITIA (MULTI-LOGIN) -->
-        <div id="adm-admins-content" class="hidden">
-            <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
-                <h3 class="text-2xl font-black mb-6 flex items-center gap-2 text-indigo-600"><i data-lucide="user-plus"></i> Kelola Akses Panitia</h3>
-                <div class="flex gap-2 mb-8">
-                    <input type="email" id="new-admin-email" placeholder="Email Google Panitia..." class="flex-1 p-4 bg-slate-50 border rounded-2xl outline-none font-bold">
-                    <button onclick="addAdmin()" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-xs uppercase shadow-lg">Tambah</button>
-                </div>
-                <div id="admin-list-table" class="space-y-3"></div>
-            </div>
-        </div>
-        
-        <div id="adm-logs-content" class="hidden"><div id="activity-logs" class="space-y-2 max-w-3xl mx-auto"></div></div>
-
-        <div id="adm-settings-content" class="hidden">
-            <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
-                <h3 class="text-2xl font-black mb-8 text-indigo-600">Konfigurasi Event</h3>
-                <div class="space-y-6">
-                    <div><label class="block text-xs font-bold text-slate-400 mb-2">Judul Event</label><input type="text" id="set-title" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
-                    <div><label class="block text-xs font-bold text-slate-400 mb-2">Banner URL</label><input type="text" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-xs"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-400 mb-2">Waktu Acara</label><input type="text" id="set-time" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
-                        <div><label class="block text-xs font-bold text-slate-400 mb-2">Tanggal Acara</label><input type="datetime-local" id="set-date" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
-                    </div>
-                    <div><label class="block text-xs font-bold text-slate-400 mb-2">Lokasi</label><input type="text" id="set-loc" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
-                    <button onclick="saveEventSettings()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg">SIMPAN SETTINGS</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="adm-scan-content" class="hidden max-w-md mx-auto text-center">
-            <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
-            <div id="scan-feedback" class="hidden p-6 rounded-2xl font-black text-xl mb-4"></div>
-            <p class="text-slate-400 text-xs font-bold uppercase">Scanner Siap</p>
-        </div>
-    </section>
-
-</main>
-
-<div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
-    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
-        <div id="modal-icon" class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
-        <h3 id="modal-title" class="text-2xl font-black mb-2"></h3>
-        <p id="modal-msg" class="text-slate-500 mb-8 text-sm"></p>
-        <button onclick="closeModal()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">Oke</button>
-    </div>
-</div>
-
-<script>
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+const appId = 'holistik-fest-2026';
 const SUPER_ADMIN = "sobatambyar1990@gmail.com";
-let currentUser = null;
-let currentAdmins = [SUPER_ADMIN];
-let allTicketsData = [];
-let selectedTicketIds = [];
-let html5QrScanner = null;
-let eventConfig = { 
-    title: "Holistik Fest 2026", 
-    bannerUrl: "https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop", 
-    date: "2026-06-21T19:00:00", 
-    location: "Lapangan Garnisun Purworejo", 
-    vipPrice: 55000, regPrice: 35000 
-};
 
-// ─── AUTH & INIT ───
-window.addEventListener('load', () => {
-    lucide.createIcons();
-    Notification.requestPermission();
-    window.onAuthStateChanged(window.auth, (user) => {
-        currentUser = user;
-        updateNav();
-        if (user) {
-            listenToSettings();
-            listenToAdmins();
-            loadUserTickets();
-        }
+const App = () => {
+  // --- STATE ---
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminList, setAdmins] = useState([]);
+  const [view, setView] = useState('buy'); // buy, checkout, my-tickets, admin
+  const [adminSubView, setAdminSubView] = useState('list');
+  const [tickets, setTickets] = useState([]);
+  const [allTickets, setAllTickets] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [eventConfig, setEventConfig] = useState({
+    title: "Holistik Fest 2026",
+    bannerUrl: "https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
+    date: "2026-06-21T19:00:00",
+    location: "Lapangan Garnisun Purworejo",
+    vipPrice: 55000,
+    regPrice: 35000
+  });
+
+  const [formData, setFormData] = useState({ name: '', wa: '' });
+  const [selectedType, setSelectedType] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+
+  // --- 1. INITIALIZE & AUTH ---
+  useEffect(() => {
+    // Load html2canvas dynamically
+    const script = document.createElement('script');
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
     });
-    setInterval(updateCountdown, 1000);
-});
+    return () => unsubscribe();
+  }, []);
 
-async function listenToAdmins() {
-    const q = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'admins');
-    window.onSnapshot(q, (snap) => {
-        currentAdmins = [SUPER_ADMIN];
-        const list = document.getElementById('admin-list-table');
-        list.innerHTML = `<div class="p-4 bg-indigo-50 rounded-xl flex justify-between items-center"><p class="text-xs font-bold text-indigo-600">${SUPER_ADMIN} (Owner)</p></div>`;
-        snap.forEach(d => {
-            const adm = d.data();
-            currentAdmins.push(adm.email.toLowerCase());
-            const div = document.createElement('div');
-            div.className = "p-4 bg-slate-50 rounded-xl flex justify-between items-center";
-            div.innerHTML = `<p class="text-xs font-bold text-slate-600">${adm.email}</p><button onclick="removeAdmin('${d.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
-            list.appendChild(div);
-        });
-        updateNav(); 
-        if (isAdmin(currentUser)) listenToAllTickets();
-        lucide.createIcons();
-    });
-}
-
-function isAdmin(user) {
-    if (!user || !user.email) return false;
-    return currentAdmins.includes(user.email.toLowerCase());
-}
-
-// ─── COUNTDOWN ───
-function updateCountdown() {
-    const target = new Date(eventConfig.date).getTime();
-    const now = new Date().getTime();
-    const dist = target - now;
-    if (dist < 0) return;
-    document.getElementById('cd-days').innerText = Math.floor(dist / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-    document.getElementById('cd-hours').innerText = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-    document.getElementById('cd-mins').innerText = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-    document.getElementById('cd-secs').innerText = Math.floor((dist % (1000 * 60)) / 1000).toString().padStart(2, '0');
-}
-
-// ─── TICKET LOGIC ───
-function loadUserTickets() {
-    const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'), window.where('user_id', '==', currentUser.uid));
-    window.onSnapshot(q, (snap) => {
-        const container = document.getElementById('ticket-list');
-        container.innerHTML = '';
-        snap.forEach(docu => {
-            const t = docu.data(); const approved = t.status === 'approved';
-            const div = document.createElement('div');
-            div.id = `tix-${t.order_id}`;
-            div.className = "bg-white p-6 rounded-[2.5rem] border shadow-sm flex flex-col items-center gap-6";
-            div.innerHTML = `
-                <div class="w-full flex justify-between"><h3 class="font-black text-xl uppercase">${t.name}</h3><span class="text-[10px] font-black uppercase ${approved ? 'text-emerald-600':'text-amber-600'}">${t.status}</span></div>
-                <div class="p-4 bg-slate-50 rounded-3xl border border-slate-100 relative">
-                    ${approved ? `<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${t.order_id}" class="w-48 h-48 block">` : `<div class="w-48 h-48 flex items-center justify-center text-slate-300 uppercase font-black text-xs">Menunggu Verifikasi</div>`}
-                    ${t.check_in ? `<div class="absolute inset-0 bg-white/80 flex items-center justify-center rounded-3xl"><span class="bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] uppercase shadow-lg">Sudah Masuk</span></div>` : ''}
-                </div>
-                <div class="w-full flex justify-between items-center"><p class="text-[10px] font-bold text-slate-400 uppercase">#${t.order_id} • ${t.type}</p><button onclick="saveTicketImg('${t.order_id}')" class="p-2 bg-slate-100 text-slate-600 rounded-full"><i data-lucide="image" class="w-4 h-4"></i></button></div>
-            `;
-            container.appendChild(div);
-        });
-        lucide.createIcons();
-    });
-}
-
-window.saveTicketImg = (id) => {
-    html2canvas(document.getElementById(`tix-${id}`)).then(canvas => {
-        const link = document.createElement('a'); link.download = `Tiket-${id}.png`; link.href = canvas.toDataURL(); link.click();
-    });
-};
-
-// ─── ADMIN DASHBOARD ───
-function listenToAllTickets() {
-    window.onSnapshot(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'), (snap) => {
-        allTicketsData = []; let stats = { total: 0, pending: 0, checkin: 0, revenue: 0 };
-        snap.forEach(d => {
-            const t = d.data(); allTicketsData.push({ id: d.id, ...t });
-            stats.total++;
-            if (t.status === 'pending') stats.pending++;
-            if (t.check_in) stats.checkin++;
-            if (t.status === 'approved') stats.revenue += (t.price || 0);
-        });
-        document.getElementById('stat-total').innerText = stats.total;
-        document.getElementById('stat-pending').innerText = stats.pending;
-        document.getElementById('stat-checkin').innerText = stats.checkin;
-        document.getElementById('stat-revenue').innerText = `Rp ${stats.revenue.toLocaleString()}`;
-        loadAdminTickets();
-        loadLogs();
-    });
-}
-
-function loadAdminTickets() {
-    const list = document.getElementById('admin-tickets');
-    const search = document.getElementById('admin-search').value.toLowerCase();
-    const filter = document.getElementById('filter-status').value;
-    list.innerHTML = '';
-    allTicketsData.filter(t => {
-        const match = t.name.toLowerCase().includes(search) || t.order_id.toLowerCase().includes(search);
-        const fMatch = filter === 'all' || (filter === 'checkin' ? t.check_in : t.status === filter);
-        return match && fMatch;
-    }).forEach(t => {
-        const div = document.createElement('div');
-        div.className = "bg-white p-4 rounded-3xl border flex flex-col md:flex-row justify-between items-center gap-4";
-        div.innerHTML = `
-            <div class="flex items-center gap-4 w-full md:w-auto">
-                <input type="checkbox" onchange="toggleSel('${t.id}')" class="w-5 h-5 rounded-lg accent-indigo-600">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${t.order_id}" class="w-12 h-12 rounded-lg">
-                <div class="flex-1">
-                    <p class="font-black text-slate-800 uppercase">${t.name}</p>
-                    <p class="text-[10px] text-slate-400 font-mono">#${t.order_id} • ${t.type} • ${t.wa || '-'}</p>
-                </div>
-            </div>
-            <div class="flex gap-2 w-full md:w-auto justify-end">
-                ${t.status === 'pending' ? `<button onclick="approveAndWA('${t.id}', '${t.wa}', '${t.name}', '${t.order_id}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black shadow-lg">APPROVE + WA</button>` : `<span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Approved</span>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
-    lucide.createIcons();
-}
-
-window.approveAndWA = async (id, phone, name, orderId) => {
-    await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets', id), { status: 'approved' });
-    await logActivity(`Approved: ${name} (#${orderId})`);
-    const msg = encodeURIComponent(`Halo ${name},\nPembayaran tiket Holistik Fest kamu (#${orderId}) telah DISETUJUI. Silakan cek menu "Tiket Saya" untuk scan QR saat masuk.\nSampai jumpa!`);
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-};
-
-async function logActivity(action) {
-    await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'logs'), {
-        admin: currentUser.email, action, time: Date.now()
-    });
-}
-
-function loadLogs() {
-    window.onSnapshot(window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'logs'), window.orderBy('time', 'desc')), (snap) => {
-        const container = document.getElementById('activity-logs');
-        container.innerHTML = '<h4 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Aktivitas Panitia</h4>';
-        snap.forEach(d => {
-            const l = d.data(); const div = document.createElement('div');
-            div.className = "p-3 bg-white border rounded-xl text-[10px] flex justify-between";
-            div.innerHTML = `<span><b>${l.admin.split('@')[0]}</b> ${l.action}</span><span class="text-slate-400">${new Date(l.time).toLocaleTimeString()}</span>`;
-            container.appendChild(div);
-        });
-    });
-}
-
-// ─── ADMIN MANAGEMENT ───
-window.addAdmin = async () => {
-    const email = document.getElementById('new-admin-email').value.trim().toLowerCase();
-    if (!email || email === SUPER_ADMIN) return;
-    await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'admins'), { email, addedBy: currentUser.email });
-    document.getElementById('new-admin-email').value = '';
-    showAlert("Berhasil", `Akses admin diberikan ke ${email}`, "success");
-};
-
-window.removeAdmin = async (id) => {
-    if(confirm('Hapus akses admin ini?')) await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'admins', id));
-};
-
-// ─── UTILS ───
-window.exportToCSV = () => {
-    let csv = "Nama,Order ID,WA,Email,Tipe,Status,Checkin\n";
-    allTicketsData.forEach(t => csv += `${t.name},${t.order_id},${t.wa},${t.email},${t.type},${t.status},${t.check_in}\n`);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `Data-Holistik-2026.csv`; a.click();
-};
-
-window.switchAdminTab = (tab) => {
-    ['list', 'admins', 'settings', 'logs', 'scan'].forEach(t => document.getElementById(`adm-${t}-content`).classList.add('hidden'));
-    document.getElementById(`adm-${tab}-content`).classList.remove('hidden');
-    lucide.createIcons();
-    if (tab === 'scan') startScanner(); else stopScanner();
-};
-
-window.updateNav = () => {
-    const nav = document.getElementById('nav-user');
-    if (currentUser && !currentUser.isAnonymous) {
-        nav.innerHTML = `
-            <button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase">Tiket Saya</button>
-            <img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm">
-            ${isAdmin(currentUser) ? `<button onclick="switchAdminTab('list'); showTab('admin-dashboard')" class="p-2 bg-indigo-50 text-indigo-600 rounded-full"><i data-lucide="shield-check" class="w-5 h-5"></i></button>` : ''}
-            <button onclick="window.signOut(window.auth)" class="p-2 text-red-500"><i data-lucide="log-out" class="w-5 h-5"></i></button>
-        `;
-    } else {
-        nav.innerHTML = `<button onclick="window.signInWithPopup(window.auth, window.provider)" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold text-xs uppercase shadow-lg">Login Google</button>`;
+  // --- 2. REAL-TIME ADMIN CHECKER ---
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      setIsAdmin(false);
+      return;
     }
-    lucide.createIcons();
-};
 
-window.showTab = (id) => {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(`tab-${id}`).classList.add('active');
-    window.scrollTo(0,0);
-};
-
-function showAlert(title, msg, type) {
-    document.getElementById('modal-alert').classList.replace('hidden', 'flex');
-    document.getElementById('modal-title').innerText = title;
-    document.getElementById('modal-msg').innerText = msg;
-    const icons = { success: ['check-circle', 'bg-emerald-100', 'text-emerald-600'], error: ['alert-circle', 'bg-red-100', 'text-red-600'] };
-    const [icn, bg, txt] = icons[type] || ['info', 'bg-indigo-100', 'text-indigo-600'];
-    document.getElementById('modal-icon').className = `w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full ${bg} ${txt}`;
-    document.getElementById('modal-icon').innerHTML = `<i data-lucide="${icn}"></i>`;
-    lucide.createIcons();
-}
-function closeModal() { document.getElementById('modal-alert').classList.replace('flex', 'hidden'); }
-
-// Scanner logic
-function startScanner() { 
-    html5QrScanner = new Html5Qrcode('reader');
-    html5QrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, async (text) => {
-        const snap = await window.getDocs(window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'), window.where('order_id', '==', text)));
-        const fb = document.getElementById('scan-feedback');
-        fb.classList.remove('hidden', 'bg-red-100', 'bg-emerald-100', 'text-red-700', 'text-emerald-700');
-        if (snap.empty) { fb.innerText = "TIDAK VALID"; fb.classList.add('bg-red-100', 'text-red-700'); }
-        else {
-            const d = snap.docs[0]; const data = d.data();
-            if (data.status !== 'approved') { fb.innerText = "BELUM BAYAR"; fb.classList.add('bg-red-100', 'text-red-700'); }
-            else if (data.check_in) { fb.innerText = "SUDAH MASUK"; fb.classList.add('bg-red-100', 'text-red-700'); }
-            else { 
-                fb.innerText = "VALID: " + data.name; fb.classList.add('bg-emerald-100', 'text-emerald-700');
-                await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets', d.id), { check_in: true });
-                await logActivity(`Check-in: ${data.name}`);
-            }
-        }
-        fb.classList.remove('hidden');
-    });
-}
-function stopScanner() { if(html5QrScanner) html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>{}); }
-
-// Bulk tools
-window.toggleSel = (id) => {
-    if (selectedTicketIds.includes(id)) selectedTicketIds = selectedTicketIds.filter(i => i !== id);
-    else selectedTicketIds.push(id);
-    document.getElementById('selected-count').innerText = selectedTicketIds.length;
-    document.getElementById('bulk-actions').classList.toggle('hidden', selectedTicketIds.length === 0);
-};
-window.bulkApprove = async () => {
-    if (!confirm(`Approve ${selectedTicketIds.length} tiket?`)) return;
-    for (let id of selectedTicketIds) {
-        await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets', id), { status: 'approved' });
-        await logActivity(`Bulk Approved ID: ${id}`);
+    // Check super admin status immediately
+    if (user.email === SUPER_ADMIN) {
+      setIsAdmin(true);
     }
-    selectedTicketIds = []; document.getElementById('bulk-actions').classList.add('hidden');
+
+    // Real-time listener for current user's admin status in the database
+    const adminDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', user.email.toLowerCase());
+    const unsubAdminCheck = onSnapshot(adminDocRef, (docSnap) => {
+      if (user.email === SUPER_ADMIN) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(docSnap.exists());
+      }
+    });
+
+    return () => unsubAdminCheck();
+  }, [user]);
+
+  // --- 3. DATA LISTENERS ---
+  useEffect(() => {
+    // Event Settings (Public)
+    const unsubSettings = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'event_config'), (s) => {
+      if (s.exists()) setEventConfig(s.data());
+    });
+
+    if (!user) return;
+
+    // User's Own Tickets
+    const qUser = query(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), where('user_id', '==', user.uid));
+    const unsubUserTickets = onSnapshot(qUser, (s) => {
+      setTickets(s.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // Admin Specific Data
+    let unsubAll, unsubAdmins, unsubLogs;
+    if (isAdmin) {
+      unsubAll = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), (s) => {
+        setAllTickets(s.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      unsubAdmins = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'admins'), (s) => {
+        setAdmins(s.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      unsubLogs = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'logs'), orderBy('time', 'desc')), (s) => {
+        setLogs(s.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+    }
+
+    return () => {
+      unsubSettings();
+      unsubUserTickets();
+      if (unsubAll) unsubAll();
+      if (unsubAdmins) unsubAdmins();
+      if (unsubLogs) unsubLogs();
+    };
+  }, [user, isAdmin]);
+
+  // --- ACTIONS ---
+  const handleLogin = async () => {
+    try { await signInWithPopup(auth, provider); } 
+    catch (e) { alert("Gagal login Google."); }
+  };
+
+  const handlePurchase = async (e) => {
+    e.preventDefault();
+    if (!user || user.isAnonymous) return handleLogin();
+    setLoading(true);
+
+    const orderId = 'HOL-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    const price = selectedType === 'VIP' ? eventConfig.vipPrice : eventConfig.regPrice;
+    
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
+        order_id: orderId, user_id: user.uid, name: formData.name, wa: formData.wa,
+        email: user.email, type: selectedType, price, status: 'pending', check_in: false, created_at: Date.now()
+      });
+      const msg = encodeURIComponent(`Halo Admin, konfirmasi pembayaran ${eventConfig.title}.\nOrder ID: ${orderId}\nNama: ${formData.name}`);
+      window.open(`https://wa.me/6285158880014?text=${msg}`, '_blank');
+      setView('my-tickets');
+    } catch (err) { alert("Gagal memproses tiket."); } 
+    finally { setLoading(false); }
+  };
+
+  const logAction = async (action) => {
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'logs'), {
+      admin: user.email, action, time: Date.now()
+    });
+  };
+
+  const approveTicket = async (t) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', t.id), { status: 'approved' });
+      await logAction(`Approved: ${t.name} (#${t.order_id})`);
+      const msg = encodeURIComponent(`Halo ${t.name},\n\nPembayaran tiket Holistik Fest (#${t.order_id}) telah DISETUJUI. Silakan cek menu "Tiket Saya" di website.\n\nSampai jumpa!`);
+      window.open(`https://wa.me/${t.wa}?text=${msg}`, '_blank');
+    } catch (e) { alert("Terjadi kesalahan."); }
+  };
+
+  const checkInTicket = async (orderId) => {
+    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), where('order_id', '==', orderId.toUpperCase()));
+    const snap = await getDocs(q);
+    if (snap.empty) return setScanResult({ success: false, message: "TIKET TIDAK VALID" });
+    
+    const d = snap.docs[0];
+    const data = d.data();
+    if (data.status !== 'approved') return setScanResult({ success: false, message: "BELUM DI-APPROVE" });
+    if (data.check_in) return setScanResult({ success: false, message: "SUDAH DIGUNAKAN" });
+
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', d.id), { check_in: true });
+    await logAction(`Check-in: ${data.name}`);
+    setScanResult({ success: true, message: `VALID: ${data.name}`, data });
+  };
+
+  const saveTicketImg = (id) => {
+    if (!window.html2canvas) return alert("Pustaka gambar belum siap.");
+    const el = document.getElementById(`ticket-${id}`);
+    window.html2canvas(el).then(canvas => {
+      const a = document.createElement('a');
+      a.download = `Tiket-${id}.png`;
+      a.href = canvas.toDataURL();
+      a.click();
+    });
+  };
+
+  // --- COUNTDOWN ---
+  const [countdown, setCountdown] = useState({ d: '00', h: '00', m: '00', s: '00' });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const dist = new Date(eventConfig.date).getTime() - new Date().getTime();
+      if (dist < 0) return clearInterval(timer);
+      setCountdown({
+        d: Math.floor(dist / (1000 * 60 * 60 * 24)).toString().padStart(2, '0'),
+        h: Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'),
+        m: Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'),
+        s: Math.floor((dist % (1000 * 60)) / 1000).toString().padStart(2, '0'),
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [eventConfig.date]);
+
+  // --- RENDERING ---
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans selection:bg-indigo-100">
+      {/* Navbar */}
+      <nav className="fixed top-0 w-full h-16 bg-white/80 backdrop-blur-md border-b z-50 px-4 flex items-center justify-between shadow-sm">
+        <div onClick={() => setView('buy')} className="flex items-center gap-2 font-black text-indigo-600 text-xl cursor-pointer">
+          <Ticket size={24} /> <span>{eventConfig.title}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {user && !user.isAnonymous ? (
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button onClick={() => setView('my-tickets')} className="text-[10px] font-black uppercase text-slate-400 hover:text-indigo-600 transition-colors tracking-tighter">Tiket Saya</button>
+              <img src={user.photoURL} className="w-8 h-8 rounded-full border border-slate-200" alt="User" />
+              {isAdmin && (
+                <button onClick={() => setView('admin')} className="p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 shadow-sm transition-all border border-indigo-100">
+                  <ShieldCheck size={20} />
+                </button>
+              )}
+              <button onClick={() => signOut(auth)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all border border-transparent hover:border-red-100">
+                <LogOut size={20} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleLogin} className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Masuk</button>
+          )}
+        </div>
+      </nav>
+
+      <main className="pt-24 pb-20 max-w-5xl mx-auto px-4">
+        {view === 'buy' && (
+          <div className="animate-in fade-in duration-700">
+            {/* Banner Section */}
+            <div className="relative rounded-[3rem] overflow-hidden mb-12 h-[400px] md:h-[500px] shadow-2xl flex flex-col items-center justify-center text-center p-8 text-white bg-cover bg-center transition-all ring-1 ring-white/20" style={{backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url(${eventConfig.bannerUrl})`}}>
+              <span className="bg-indigo-600/90 backdrop-blur-md px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 shadow-xl border border-white/20">The Ultimate Experience</span>
+              <h1 className="text-5xl md:text-8xl font-black mb-8 tracking-tighter uppercase drop-shadow-2xl">{eventConfig.title}</h1>
+              
+              <div className="flex justify-center gap-3 mb-10">
+                {Object.entries(countdown).map(([k, v]) => (
+                  <div key={k} className="bg-black/20 backdrop-blur-xl p-4 rounded-3xl min-w-[70px] md:min-w-[95px] border border-white/10 shadow-lg">
+                    <p className="text-2xl md:text-4xl font-black">{v}</p>
+                    <p className="text-[9px] uppercase font-bold opacity-60 tracking-widest">{k === 'd' ? 'Hari' : k === 'h' ? 'Jam' : k === 'm' ? 'Menit' : 'Detik'}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4 text-xs font-bold">
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10"><MapPin size={16} className="text-indigo-400"/> {eventConfig.location}</div>
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10"><Calendar size={16} className="text-indigo-400"/> {new Date(eventConfig.date).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+              <div onClick={() => { setSelectedType('VIP'); setView('checkout'); }} className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer group">
+                <div className="flex justify-between mb-8"><span className="bg-indigo-50 text-indigo-700 text-[10px] font-black px-4 py-1.5 rounded-full uppercase">Exclusive Access</span><Crown className="text-amber-500 w-8 h-8" /></div>
+                <h3 className="text-4xl font-black mb-2 text-slate-900 uppercase">VIP PASS</h3>
+                <p className="text-slate-500 text-sm mb-10 leading-relaxed">Akses baris terdepan, fasilitas lounge khusus, dan merchandise eksklusif.</p>
+                <div className="flex justify-between items-center bg-slate-50 p-6 rounded-[2.5rem]">
+                   <p className="text-4xl font-black text-indigo-600 tracking-tighter">Rp {(eventConfig.vipPrice/1000)}K</p>
+                   <div className="bg-indigo-600 text-white p-4 rounded-2xl group-hover:px-8 transition-all shadow-lg shadow-indigo-100"><ChevronRight /></div>
+                </div>
+              </div>
+              <div onClick={() => { setSelectedType('Reguler'); setView('checkout'); }} className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer group">
+                <div className="flex justify-between mb-8"><span className="bg-slate-100 text-slate-700 text-[10px] font-black px-4 py-1.5 rounded-full uppercase">Standard Area</span><Users className="text-slate-400 w-8 h-8" /></div>
+                <h3 className="text-4xl font-black mb-2 text-slate-900 uppercase">FESTIVAL</h3>
+                <p className="text-slate-500 text-sm mb-10 leading-relaxed">Nikmati festival di area tribun utama dengan suara dan pencahayaan terbaik.</p>
+                <div className="flex justify-between items-center bg-slate-50 p-6 rounded-[2.5rem]">
+                   <p className="text-4xl font-black text-slate-900 tracking-tighter">Rp {(eventConfig.regPrice/1000)}K</p>
+                   <div className="bg-slate-900 text-white p-4 rounded-2xl group-hover:px-8 transition-all shadow-lg shadow-slate-100"><ChevronRight /></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'checkout' && (
+          <div className="max-w-md mx-auto animate-in slide-in-from-bottom-8 duration-500">
+            <button onClick={() => setView('buy')} className="flex items-center gap-2 text-slate-400 mb-10 font-black text-xs uppercase tracking-widest hover:text-indigo-600 transition-all"><ArrowLeft size={18}/> Kembali ke Beranda</button>
+            <div className="bg-white p-12 rounded-[4rem] shadow-2xl border border-slate-50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-[4rem] -mr-12 -mt-12"></div>
+              <h2 className="text-3xl font-black mb-12 text-center uppercase tracking-tighter text-slate-900">Checkout</h2>
+              <form onSubmit={handlePurchase} className="space-y-8">
+                <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 text-center">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Tiket Yang Anda Pilih</p>
+                  <p className="text-3xl font-black text-indigo-900 uppercase">{selectedType} PASS</p>
+                </div>
+                <div><label className="block text-[10px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-widest">Nama Lengkap Sesuai KTP</label><input required placeholder="Contoh: Budi Santoso" className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2rem] outline-none font-bold transition-all shadow-inner" onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+                <div><label className="block text-[10px] font-black text-slate-400 uppercase mb-3 ml-2 tracking-widest">Nomor WhatsApp Aktif</label><input required type="number" placeholder="Contoh: 6281234..." className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2rem] outline-none font-bold transition-all shadow-inner" onChange={e => setFormData({...formData, wa: e.target.value})} /></div>
+                <div className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-200 text-center text-amber-900 shadow-sm">
+                   <p className="text-[10px] font-black uppercase mb-3 opacity-50 tracking-[0.2em]">Metode Transfer BCA</p>
+                   <p className="text-3xl font-black tracking-tighter">1234567890</p>
+                   <p className="text-xs font-black uppercase mt-2">A/N HOLISTIK FEST</p>
+                </div>
+                <button disabled={loading} className="w-full bg-indigo-600 text-white py-6 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3">
+                  {loading ? 'Sedang Memproses...' : <><MessageCircle size={18}/> Pesan & Kirim WA</>}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {view === 'my-tickets' && (
+          <div className="animate-in fade-in duration-500">
+            <h1 className="text-4xl font-black mb-12 text-slate-900 uppercase tracking-tighter">Tiket Saya</h1>
+            {tickets.length === 0 ? (
+              <div className="text-center py-32 bg-white rounded-[4rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-6 text-slate-900">
+                <div className="p-10 bg-slate-50 rounded-full text-slate-200"><Ticket size={80} /></div>
+                <div className="space-y-2"><p class="font-black uppercase tracking-widest text-slate-400">Belum Ada Tiket</p><p class="text-sm text-slate-300">Pesan tiket pertamamu di halaman utama!</p></div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-12 text-slate-900">
+                {tickets.map(t => (
+                  <div key={t.id} id={`ticket-${t.order_id}`} className="bg-white rounded-[4rem] shadow-2xl border border-slate-50 overflow-hidden relative group">
+                    <div className="p-12 border-b border-dashed border-slate-100 relative bg-white">
+                      <div className="flex justify-between items-start mb-10">
+                        <div><p class="text-[10px] font-black text-indigo-500 uppercase mb-2 tracking-widest">#{t.order_id}</p><h3 class="text-4xl font-black uppercase text-slate-900 leading-none">{t.type}</h3></div>
+                        <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase shadow-sm ${t.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>{t.status}</span>
+                      </div>
+                      <div className="bg-slate-50 p-10 rounded-[3rem] flex flex-col items-center relative border border-slate-100 shadow-inner">
+                        {t.status === 'approved' ? (
+                          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${t.order_id}`} alt="QR" className="w-56 h-52 block rounded-2xl shadow-md" />
+                        ) : (
+                          <div class="w-56 h-56 flex flex-col items-center justify-center text-slate-200 gap-4"><ShieldCheck size={64}/><p class="text-[10px] font-black uppercase text-center tracking-[0.2em]">KONFIRMASI<br/>PENDING</p></div>
+                        )}
+                        {t.check_in && <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex items-center justify-center rounded-[3rem] z-10"><span className="bg-red-600 text-white px-8 py-3 rounded-2xl font-black text-sm uppercase shadow-2xl -rotate-12 border-4 border-white">SUDAH MASUK</span></div>}
+                      </div>
+                    </div>
+                    <div className="bg-slate-900 p-10 text-white flex justify-between items-center">
+                      <div><p class="text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-widest">Pemegang Tiket</p><p class="font-black text-xl uppercase tracking-tight">{t.name}</p></div>
+                      <button onClick={() => saveTicketImg(t.order_id)} className="p-5 bg-white/10 rounded-[2rem] hover:bg-indigo-600 transition-all shadow-xl group-hover:scale-110 active:scale-95"><ImageIcon size={24}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {view === 'admin' && (
+          <div className="animate-in fade-in duration-500">
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12 text-slate-900">
+              <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm border-b-8 border-b-indigo-500"><p class="text-slate-400 text-[10px] font-black uppercase mb-2">Total Peserta</p><p class="text-4xl font-black text-slate-800">{allTickets.length}</p></div>
+              <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm border-b-8 border-b-amber-500 text-amber-600"><p class="text-slate-400 text-[10px] font-black uppercase mb-2">Pending</p><p class="text-4xl font-black">{allTickets.filter(t => t.status === 'pending').length}</p></div>
+              <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm border-b-8 border-b-emerald-500 text-emerald-600"><p class="text-slate-400 text-[10px] font-black uppercase mb-2 text-emerald-600">Check-in</p><p class="text-4xl font-black">{allTickets.filter(t => t.check_in).length}</p></div>
+              <div className="bg-slate-950 p-8 rounded-[2.5rem] shadow-2xl text-white border-b-8 border-b-indigo-400"><p class="text-indigo-300 text-[10px] font-black uppercase mb-2">Total Revenue</p><p class="text-3xl font-black tracking-tighter">Rp {allTickets.filter(t => t.status === 'approved').reduce((acc, curr) => acc + (curr.price || 0), 0).toLocaleString('id-ID')}</p></div>
+            </div>
+
+            <div className="flex bg-slate-200/50 p-2 rounded-[2rem] mb-12 w-fit overflow-x-auto shadow-inner border border-slate-100">
+              {['list', 'admins', 'settings', 'logs', 'scan'].map(sub => (
+                <button key={sub} onClick={() => setAdminSubView(sub)} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${adminSubView === sub ? 'bg-white shadow-xl text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>{sub}</button>
+              ))}
+            </div>
+
+            {adminSubView === 'list' && (
+              <div className="space-y-6 text-slate-900">
+                <div className="bg-white p-6 rounded-[2.5rem] border shadow-sm flex flex-col md:flex-row gap-6">
+                   <div className="relative flex-1"><Search class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20}/><input className="w-full pl-14 pr-6 py-5 rounded-3xl bg-slate-50 border-none outline-none font-bold text-slate-800 shadow-inner" placeholder="Cari Nama / ID Order..." onChange={e => setSearchTerm(e.target.value)} /></div>
+                   <div class="flex gap-3">
+                      <select className="px-6 py-5 rounded-3xl bg-slate-50 border-none font-black text-xs uppercase cursor-pointer text-slate-600 shadow-inner outline-none" onChange={e => setFilterStatus(e.target.value)}>
+                        <option value="all">Semua Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="checkin">Checked-in</option>
+                      </select>
+                      <button onClick={exportCSV} className="bg-slate-900 text-white px-8 py-5 rounded-3xl font-black text-xs uppercase flex items-center gap-2 shadow-xl active:scale-95"><Download size={18}/> Export CSV</button>
+                   </div>
+                </div>
+
+                <div class="grid gap-4">
+                  {allTickets.filter(t => (t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.order_id.toLowerCase().includes(searchTerm.toLowerCase())) && (filterStatus === 'all' || (filterStatus === 'checkin' ? t.check_in : t.status === filterStatus))).map(t => (
+                    <div key={t.id} className="bg-white p-6 rounded-[2.5rem] border flex items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all hover:border-indigo-100 group">
+                      <div className="flex items-center gap-6">
+                         <div class="p-2 bg-slate-50 rounded-2xl border"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${t.order_id}`} className="w-16 h-16 rounded-xl border border-white" alt="QR" /></div>
+                         <div><p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#{t.order_id}</p><p class="font-black text-2xl text-slate-800 uppercase leading-none mb-1">{t.name}</p><p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{t.type} PASS • {t.wa}</p></div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <span class={`px-4 py-2 rounded-full text-[10px] font-black uppercase ${t.status === 'approved' ? 'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-600'}`}>{t.status}</span>
+                         {t.status === 'pending' && <button onClick={() => approveTicket(t)} className="bg-emerald-600 text-white px-8 py-4 rounded-3xl text-[10px] font-black uppercase shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all text-white">Approve + WA</button>}
+                         <button onClick={async () => { if(confirm('Hapus tiket ini permanen?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', t.id)) }} className="p-4 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-3xl transition-all"><Trash2 size={24}/></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminSubView === 'admins' && (
+              <div className="bg-white p-12 rounded-[4rem] border max-w-2xl mx-auto shadow-sm text-slate-900">
+                <div class="flex items-center gap-4 mb-10"><div class="p-4 bg-indigo-50 text-indigo-600 rounded-[1.5rem]"><ShieldCheck size={32}/></div><div><h3 class="text-3xl font-black text-slate-900 uppercase tracking-tighter">Panel Panitia</h3><p class="text-sm text-slate-400 font-medium tracking-tight">Email yang didaftarkan akan otomatis punya akses admin.</p></div></div>
+                <div className="flex gap-4 mb-12">
+                  <input id="new-adm" type="email" placeholder="Email Google Panitia..." className="flex-1 p-6 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2.5rem] outline-none font-bold text-slate-800 shadow-inner transition-all" />
+                  <button onClick={async () => {
+                    const email = document.getElementById('new-adm').value.trim().toLowerCase();
+                    if(!email) return;
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admins', email), { email, addedBy: user.email, time: Date.now() });
+                    document.getElementById('new-adm').value = '';
+                    alert("Panitia baru berhasil didaftarkan!");
+                  }} className="bg-indigo-600 text-white px-10 py-6 rounded-[2.5rem] text-xs font-black uppercase shadow-2xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all text-white">Tambah</button>
+                </div>
+                <div className="space-y-4">
+                  <div className="p-6 bg-slate-900 rounded-[2.5rem] font-black text-sm text-white flex justify-between items-center shadow-xl">
+                    <span>{SUPER_ADMIN}</span><span class="text-[9px] bg-indigo-500 text-white px-4 py-1.5 rounded-full uppercase tracking-widest border border-indigo-400">OWNER</span>
+                  </div>
+                  {adminList.filter(a => a.email !== SUPER_ADMIN).map(adm => (
+                    <div key={adm.id} className="p-6 bg-white border rounded-[2.5rem] flex justify-between items-center text-sm font-black text-slate-700 hover:border-red-200 group transition-all">
+                      <span>{adm.email}</span>
+                      <button onClick={async () => { if(confirm('Cabut akses panitia ini?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admins', adm.id)) }} className="text-slate-300 group-hover:text-red-500 transition-all p-2 hover:bg-red-50 rounded-full"><XCircle size={24}/></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminSubView === 'settings' && (
+              <div className="bg-white p-12 rounded-[4rem] border max-w-3xl mx-auto shadow-sm text-slate-900">
+                <div class="flex items-center gap-4 mb-12"><div class="p-4 bg-indigo-50 text-indigo-600 rounded-[1.5rem]"><Settings size={32}/></div><div><h3 class="text-3xl font-black text-slate-900 uppercase tracking-tighter">Konfigurasi Event</h3><p class="text-sm text-slate-400 font-medium tracking-tight">Semua perubahan akan langsung diterapkan ke pembeli.</p></div></div>
+                <div className="space-y-10">
+                   <div class="grid gap-2"><label className="block text-[10px] font-black uppercase text-slate-400 ml-3 tracking-[0.2em]">Judul Konser/Event</label><input className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2.5rem] font-black text-2xl text-slate-800 shadow-inner transition-all" defaultValue={eventConfig.title} id="edit-title" /></div>
+                   <div class="grid gap-2"><label className="block text-[10px] font-black uppercase text-slate-400 ml-3 tracking-[0.2em]">URL Gambar Banner</label><input className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2.5rem] text-[11px] text-slate-400 shadow-inner font-mono transition-all" defaultValue={eventConfig.bannerUrl} id="edit-banner" /></div>
+                   <div class="grid md:grid-cols-2 gap-6">
+                      <div class="grid gap-2"><label className="block text-[10px] font-black uppercase text-slate-400 ml-3 tracking-[0.2em]">Lokasi Venue</label><input className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2.5rem] font-bold text-slate-700 shadow-inner transition-all" defaultValue={eventConfig.location} id="edit-loc" /></div>
+                      <div class="grid gap-2"><label className="block text-[10px] font-black uppercase text-slate-400 ml-3 tracking-[0.2em]">Jadwal (Waktu)</label><input type="datetime-local" className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-[2.5rem] font-bold text-slate-700 shadow-inner transition-all" defaultValue={eventConfig.date} id="edit-date" /></div>
+                   </div>
+                   <button onClick={async () => {
+                     const updated = {
+                       title: document.getElementById('edit-title').value,
+                       bannerUrl: document.getElementById('edit-banner').value,
+                       location: document.getElementById('edit-loc').value,
+                       date: document.getElementById('edit-date').value,
+                       vipPrice: eventConfig.vipPrice,
+                       regPrice: eventConfig.regPrice
+                     };
+                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'event_config'), updated);
+                     alert("Semua data berhasil diperbarui!");
+                   }} className="w-full py-8 bg-indigo-600 text-white rounded-[2.5rem] font-black uppercase text-sm tracking-[0.3em] shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-[0.98] text-white">Update Seluruh Sistem</button>
+                </div>
+              </div>
+            )}
+
+            {adminSubView === 'logs' && (
+              <div className="max-w-4xl mx-auto text-slate-900">
+                <div class="flex items-center gap-3 mb-10 text-slate-400"><Activity size={24}/><h4 className="text-xl font-black uppercase tracking-tighter">Audit Panitia & Keamanan</h4></div>
+                <div class="space-y-4">
+                  {logs.map(l => (
+                    <div key={l.id} className="p-6 bg-white border border-slate-100 rounded-[2rem] text-xs flex justify-between items-center shadow-sm hover:shadow-md transition-all group">
+                      <div class="flex items-center gap-4"><div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-black">{l.admin.charAt(0).toUpperCase()}</div><span class="text-slate-700 font-bold"><b class="text-indigo-600">{l.admin}</b> {l.action}</span></div>
+                      <span className="font-mono text-slate-300 group-hover:text-slate-500 transition-colors">{new Date(l.time).toLocaleTimeString()} • {new Date(l.time).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                  {logs.length === 0 && <div class="py-32 text-center bg-white rounded-[4rem] border-2 border-dashed border-slate-50 flex flex-col items-center gap-4"><Activity size={48} className="text-slate-100"/><p class="font-black uppercase tracking-widest text-slate-200 text-xs">Riwayat Aktivitas Kosong</p></div>}
+                </div>
+              </div>
+            )}
+
+            {adminSubView === 'scan' && (
+              <div className="max-w-md mx-auto text-center animate-in zoom-in-95 duration-500 text-slate-900">
+                <div id="reader" className="aspect-square bg-slate-950 rounded-[4rem] overflow-hidden mb-10 shadow-2xl border-[12px] border-slate-900 ring-4 ring-indigo-500/20 shadow-indigo-200"></div>
+                {scanResult && (
+                  <div className={`p-10 rounded-[3rem] mb-10 font-black text-2xl flex flex-col items-center gap-4 shadow-xl animate-in slide-in-from-bottom-4 ${scanResult.success ? 'bg-emerald-50 text-emerald-800 border-2 border-emerald-100' : 'bg-red-50 text-red-800 border-2 border-red-100'}`}>
+                    {scanResult.success ? <div class="p-4 bg-emerald-500 text-white rounded-full"><CheckCircle size={32}/></div> : <div class="p-4 bg-red-500 text-white rounded-full"><XCircle size={32}/></div>}
+                    {scanResult.message}
+                    {scanResult.success && <p class="text-xs font-bold uppercase tracking-widest opacity-50">{scanResult.data.type} PASS • #{scanResult.data.order_id}</p>}
+                  </div>
+                )}
+                <button onClick={() => {
+                  const sc = new Html5Qrcode('reader');
+                  setScanResult(null);
+                  sc.start({ facingMode: 'environment' }, { fps: 10, qrbox: 280 }, (txt) => {
+                    checkInTicket(txt);
+                    sc.stop();
+                  }).catch(() => alert("Izin kamera ditolak browser."));
+                }} className="w-full bg-slate-900 text-white py-8 rounded-[2.5rem] font-black uppercase text-sm tracking-[0.3em] shadow-2xl shadow-slate-300 hover:bg-black hover:-translate-y-1 transition-all active:scale-95 text-white">Aktifkan Kamera Tiket</button>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <div id="modal-alert" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[300] backdrop-blur-md p-6">
+          <div class="bg-white rounded-[4rem] p-12 w-full max-w-sm text-center shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100">
+              <div id="modal-icon" class="w-24 h-24 mx-auto mb-8 flex items-center justify-center rounded-full transition-transform animate-bounce"></div>
+              <h3 id="modal-title" class="text-3xl font-black mb-4 text-slate-900 uppercase tracking-tighter"></h3>
+              <p id="modal-msg" class="text-slate-400 text-sm font-semibold mb-12 leading-relaxed px-4"></p>
+              <button onClick={() => document.getElementById('modal-alert').classList.replace('flex','hidden')} class="w-full py-6 bg-indigo-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all text-white">Dimengerti</button>
+          </div>
+      </div>
+    </div>
+  );
 };
-</script>
-</body>
-</html>
+
+export default App;
