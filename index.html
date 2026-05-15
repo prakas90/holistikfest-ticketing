@@ -28,7 +28,6 @@ window.auth = getAuth(app);
 window.db = getFirestore(app);
 window.provider = new GoogleAuthProvider();
 
-// Daftarkan fungsi ke window agar bisa diakses secara global
 window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut = signOut;
@@ -51,7 +50,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .step-number { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800; }
-.ticket-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 </style>
 </head>
 <body class="text-slate-900 min-h-screen">
@@ -97,10 +95,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                     <i data-lucide="crown" class="text-amber-400"></i>
                 </div>
                 <h3 class="text-3xl font-black mb-2">VIP ACCESS</h3>
-                <p class="text-slate-500 text-sm mb-6">Akses area khusus baris paling depan.</p>
-                <div class="flex items-baseline gap-1 mb-8">
-                    <span class="text-5xl font-black text-indigo-600">Rp 55K</span>
-                </div>
+                <p class="text-slate-500 text-sm mb-6">Akses area khusus baris paling depan dengan view panggung terbaik.</p>
+                <div class="flex items-baseline gap-1 mb-8"><span class="text-5xl font-black text-indigo-600">Rp 55K</span></div>
                 <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold">Pilih VIP</button>
             </div>
             <div onclick="startOrder('Reguler', 35000)" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all">
@@ -109,10 +105,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                     <i data-lucide="users" class="text-slate-400"></i>
                 </div>
                 <h3 class="text-3xl font-black mb-2">REGULER</h3>
-                <p class="text-slate-500 text-sm mb-6">Akses area festival umum.</p>
-                <div class="flex items-baseline gap-1 mb-8">
-                    <span class="text-5xl font-black text-slate-900">Rp 35K</span>
-                </div>
+                <p class="text-slate-500 text-sm mb-6">Akses area festival umum untuk menikmati seluruh rangkaian acara.</p>
+                <div class="flex items-baseline gap-1 mb-8"><span class="text-5xl font-black text-slate-900">Rp 35K</span></div>
                 <button class="w-full py-4 rounded-2xl bg-black text-white font-bold">Pilih Reguler</button>
             </div>
         </div>
@@ -124,35 +118,28 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
             <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="arrow-left"></i></button>
             <h2 class="text-3xl font-black text-center mb-6 mt-4">Checkout</h2>
             <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl"></div>
-            
             <div class="mb-8">
                 <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Nama Di Tiket</label>
                 <input type="text" id="order-name" placeholder="Nama lengkap..." class="w-full px-5 py-4 bg-slate-50 border rounded-2xl outline-none font-bold" />
             </div>
-
-            <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8">
-                <p class="text-center text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
-                <p class="text-center font-bold text-slate-500 mb-6 text-sm">BCA - A/N HOLISTIK FEST</p>
-                <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-center text-[10px] font-black leading-relaxed uppercase">
-                    WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP!
-                </div>
+            <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
+                <p class="text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
+                <p class="font-bold text-slate-500 mb-6 text-sm">BCA - A/N HOLISTIK FEST</p>
+                <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-[10px] font-black uppercase">WAJIB KIRIM BUKTI KE WA!</div>
             </div>
-
-            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg">
-                KIRIM BUKTI (WA)
-            </button>
+            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg">KIRIM BUKTI (WA)</button>
         </div>
     </section>
 
     <!-- TAB: MY TICKETS -->
     <section id="tab-my-tickets" class="tab-content">
         <h2 class="text-4xl font-black mb-10 text-indigo-900">Tiket Saya</h2>
-        <div id="ticket-list" class="grid md:grid-cols-2 gap-4 items-start"></div>
+        <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start"></div>
     </section>
 
-    <!-- TAB: ADMIN -->
+    <!-- TAB: ADMIN DASHBOARD -->
     <section id="tab-admin-dashboard" class="tab-content">
-        <div class="mb-10"><h2 class="text-4xl font-black text-indigo-900">Petugas Panel</h2></div>
+        <div class="mb-10"><h2 class="text-4xl font-black text-indigo-900 text-center md:text-left">Petugas Panel</h2></div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-6 rounded-3xl border shadow-sm"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p><p id="stat-total" class="text-3xl font-black">0</p></div>
@@ -178,13 +165,12 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
 </main>
 
-<!-- Modal Alert -->
 <div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
     <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
-        <div id="modal-icon" class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
-        <h3 id="modal-title" class="text-2xl font-black mb-2"></h3>
-        <p id="modal-msg" class="text-slate-500 mb-8"></p>
-        <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold">Tutup</button>
+        <div id="modal-icon" class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
+        <h3 id="modal-title" class="text-2xl font-black mb-2 text-slate-800"></h3>
+        <p id="modal-msg" class="text-slate-500 mb-8 text-sm leading-relaxed"></p>
+        <button onclick="closeModal()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">Tutup</button>
     </div>
 </div>
 
@@ -222,7 +208,7 @@ function updateNav() {
     if (currentUser) {
         nav.innerHTML = `
             <div class="flex items-center gap-2">
-                <img src="${currentUser.photoURL}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm">
+                <img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white">
                 ${ADMIN_EMAILS.includes(currentUser.email) ? `
                     <button onclick="showTab('admin-dashboard')" class="p-2 text-indigo-600"><i data-lucide="shield-check"></i></button>
                 ` : ''}
@@ -230,7 +216,7 @@ function updateNav() {
             </div>
         `;
     } else {
-        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg">Masuk</button>`;
+        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold text-sm">Masuk</button>`;
     }
     lucide.createIcons();
 }
@@ -241,15 +227,15 @@ function showAlert(title, msg, type = 'info') {
     const t = document.getElementById('modal-title');
     const m = document.getElementById('modal-msg');
     t.innerText = title; m.innerText = msg;
-    if (type === 'success') { icon.className = "bg-green-100 text-green-600 w-20 h-20 mx-auto rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="check"></i>'; }
-    else if (type === 'error') { icon.className = "bg-red-100 text-red-600 w-20 h-20 mx-auto rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="alert-circle"></i>'; }
-    else { icon.className = "bg-indigo-100 text-indigo-600 w-20 h-20 mx-auto rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="info"></i>'; }
+    if (type === 'success') { icon.className = "bg-green-100 text-green-600 w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="check"></i>'; }
+    else if (type === 'error') { icon.className = "bg-red-100 text-red-600 w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="alert-circle"></i>'; }
+    else { icon.className = "bg-indigo-100 text-indigo-600 w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="info"></i>'; }
     modal.classList.remove('hidden'); modal.classList.add('flex'); lucide.createIcons();
 }
 
 function closeModal() { document.getElementById('modal-alert').classList.add('hidden'); }
 
-window.handleGoogleLogin = async () => { try { await signInWithPopup(auth, provider); } catch (err) { showAlert('Error', 'Gagal login.', 'error'); } };
+window.handleGoogleLogin = async () => { try { await signInWithPopup(auth, provider); } catch (err) { showAlert('Error', 'Login gagal.', 'error'); } };
 
 window.startOrder = (type, price) => {
     if (!currentUser) { handleGoogleLogin(); return; }
@@ -265,60 +251,39 @@ window.submitOrder = async () => {
     try {
         const orderId = 'HOL-' + Math.random().toString(36).substr(2, 5).toUpperCase();
         await addDoc(collection(db, 'tickets'), { order_id: orderId, user_id: currentUser.uid, name: customName, email: currentUser.email, type: selectedTicket.type, price: selectedTicket.price, status: 'pending', check_in: false, created_at: Date.now() });
-        window.open(`https://wa.me/${WA_NUMBER}?text=Halo Admin, Konfirmasi Pembayaran.%0AOrder ID: ${orderId}%0ANama: ${customName}`, '_blank');
+        window.open(`https://wa.me/${WA_NUMBER}?text=Konfirmasi Pembayaran Holistik Fest.%0AOrder ID: ${orderId}%0ANama: ${customName}`, '_blank');
         showTab('my-tickets');
-    } catch (err) { showAlert('Error', 'Gagal memproses.', 'error'); }
-};
-
-// Fungsi Accordion: Klik tiket untuk buka tutup detail QR
-window.toggleTicket = (orderId) => {
-    const detail = document.getElementById(`detail-${orderId}`);
-    const arrow = document.getElementById(`arrow-${orderId}`);
-    if (detail.classList.contains('hidden')) {
-        detail.classList.remove('hidden');
-        if (arrow) arrow.style.transform = 'rotate(180deg)';
-    } else {
-        detail.classList.add('hidden');
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
-    }
+    } catch (err) { showAlert('Error', 'Gagal memproses pesanan.', 'error'); }
 };
 
 function loadUserTickets() {
     const container = document.getElementById('ticket-list');
     onSnapshot(query(collection(db, 'tickets'), where('user_id', '==', currentUser.uid)), (snap) => {
-        container.innerHTML = snap.empty ? '<div class="col-span-full py-10 text-center text-slate-400">Belum ada tiket.</div>' : '';
+        container.innerHTML = snap.empty ? '<div class="col-span-full py-10 text-center text-slate-400 font-bold">Belum ada tiket terjadwal.</div>' : '';
         snap.forEach(docu => {
-            const t = docu.data(); 
-            const approved = t.status === 'approved';
+            const t = docu.data(); const approved = t.status === 'approved';
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${t.order_id}`;
             const div = document.createElement('div');
-            div.className = 'bg-white rounded-[2rem] border overflow-hidden mb-3 shadow-sm hover:shadow-md transition-all';
-            
-            // Menggunakan Image API agar QR Code PASTI TAMPIL tanpa masalah library
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${t.order_id}`;
-
+            div.className = 'bg-white rounded-[2.5rem] border overflow-hidden mb-3 shadow-sm transition-all';
             div.innerHTML = `
-                <div class="p-6 cursor-pointer flex justify-between items-center bg-white" onclick="toggleTicket('${t.order_id}')">
-                    <div class="flex-1">
-                        <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id}</p>
-                        <h3 class="text-xl font-black text-slate-900">${t.name}</h3>
-                        <p class="text-xs font-bold text-slate-400 uppercase">${t.type} PASS</p>
-                    </div>
-                    <div class="flex flex-col items-end gap-2">
+                <div class="p-6 bg-white border-b border-dashed border-slate-100">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id}</p>
+                            <h3 class="text-2xl font-black text-slate-900 leading-tight">${t.name}</h3>
+                            <p class="text-xs font-bold text-slate-400 uppercase mt-1">${t.type} PASS</p>
+                        </div>
                         <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
-                        <i data-lucide="chevron-down" id="arrow-${t.order_id}" class="text-slate-300 transition-transform"></i>
                     </div>
                 </div>
-
-                <div id="detail-${t.order_id}" class="hidden bg-slate-50 border-t border-dashed border-slate-200 p-8 flex flex-col items-center gap-6">
-                    <div class="bg-white p-4 rounded-3xl shadow-inner border border-slate-100 relative">
-                        ${approved ? `<img src="${qrUrl}" class="w-48 h-48 block" alt="QR Code">` : 
-                        `<div class="w-48 h-48 flex flex-col items-center justify-center text-slate-300 gap-2"><i data-lucide="lock" class="w-10 h-10"></i><p class="text-[10px] font-bold">TERKUNCI</p></div>`}
-                        
-                        ${t.check_in ? `<div class="absolute inset-0 bg-white/80 flex items-center justify-center"><span class="bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] shadow-lg">SUDAH MASUK</span></div>` : ''}
+                <div class="bg-slate-50 p-8 flex flex-col items-center gap-6">
+                    <div class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
+                        ${approved ? `<img src="${qrUrl}" class="w-52 h-52 block" alt="QR Code">` : `<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-300 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-xs font-black uppercase tracking-widest">Terkunci</p></div>`}
+                        ${t.check_in ? `<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>` : ''}
                     </div>
-                    <div class="text-center max-w-[200px]">
-                        <p class="text-[10px] text-slate-400 font-medium leading-relaxed">
-                            ${approved ? (t.check_in ? 'Tiket sudah digunakan.' : 'Tunjukkan QR ini di gerbang masuk.') : 'Menunggu verifikasi admin.'}
+                    <div class="text-center">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                            ${approved ? (t.check_in ? 'Tiket sudah digunakan' : 'Tunjukkan QR di Gerbang') : 'Menunggu verifikasi admin'}
                         </p>
                     </div>
                 </div>
@@ -333,21 +298,41 @@ function listenToAllTickets() {
     onSnapshot(query(collection(db, 'tickets'), orderBy('created_at', 'desc')), (snap) => {
         allTicketsData = []; let stats = { total: 0, pending: 0, approved: 0, checkin: 0 };
         snap.forEach(d => { const t = d.data(); allTicketsData.push({ id: d.id, ...t }); stats.total++; if (t.status === 'pending') stats.pending++; if (t.status === 'approved') stats.approved++; if (t.check_in) stats.checkin++; });
-        document.getElementById('stat-total').innerText = stats.total; document.getElementById('stat-pending').innerText = stats.pending;
-        document.getElementById('stat-approved').innerText = stats.approved; document.getElementById('stat-checkin').innerText = stats.checkin;
+        document.getElementById('stat-total').innerText = stats.total;
+        document.getElementById('stat-pending').innerText = stats.pending;
+        document.getElementById('stat-approved').innerText = stats.approved;
+        document.getElementById('stat-checkin').innerText = stats.checkin;
         loadAdminTickets();
     });
 }
 
 function loadAdminTickets() {
-    const list = document.getElementById('admin-tickets'); const search = document.getElementById('admin-search').value.toLowerCase(); list.innerHTML = '';
+    const list = document.getElementById('admin-tickets'); 
+    const search = document.getElementById('admin-search').value.toLowerCase(); 
+    list.innerHTML = '';
+    
     allTicketsData.filter(t => (t.name && t.name.toLowerCase().includes(search)) || t.order_id.toLowerCase().includes(search)).forEach(t => {
-        const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm';
+        const div = document.createElement('div'); 
+        div.className = 'bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm';
+        
+        // QR Code langsung tampil di Panel Petugas
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.order_id}`;
+
         div.innerHTML = `
-            <div><p class="font-black text-slate-800">${t.name}</p><p class="text-xs text-slate-400">${t.order_id} • ${t.type}</p></div>
-            <div class="flex gap-2">
-                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg">RESET</button>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+                <div class="bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+                    <img src="${qrUrl}" class="w-20 h-20 block" alt="QR">
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id}</p>
+                    <p class="font-black text-slate-800 text-lg">${t.name}</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${t.type}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <span class="px-3 py-1 rounded-full text-[10px] font-black ${t.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${t.status.toUpperCase()}</span>
+                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg hover:bg-slate-50">RESET</button>`}
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
             </div>
         `;
         list.appendChild(div);
@@ -355,17 +340,16 @@ function loadAdminTickets() {
     lucide.createIcons();
 }
 
-window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal update.', 'error'); } };
+window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal memperbarui status.', 'error'); } };
 
-// Perbaikan Hapus: Menggunakan window eksplisit
 window.deleteTicket = async (id) => { 
-    if(confirm('Hapus tiket ini selamanya?')) {
+    if(confirm('Hapus tiket ini selamanya dari server?')) {
         try {
             const ticketRef = window.doc(window.db, 'tickets', id);
             await window.deleteDoc(ticketRef); 
         } catch (error) {
-            console.error("Gagal hapus:", error);
-            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (allow write) sudah aktif.", "error");
+            console.error("Gagal menghapus:", error);
+            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (allow write) sudah Anda Publish di Firebase Console.", "error");
         }
     }
 };
@@ -373,8 +357,8 @@ window.deleteTicket = async (id) => {
 window.switchAdminTab = (tab) => {
     document.getElementById('adm-list-content').classList.toggle('hidden', tab !== 'list');
     document.getElementById('adm-scan-content').classList.toggle('hidden', tab !== 'scan');
-    document.getElementById('btn-adm-list').className = tab === 'list' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
-    document.getElementById('btn-adm-scan').className = tab === 'scan' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
+    document.getElementById('btn-adm-list').className = tab === 'list' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
+    document.getElementById('btn-adm-scan').className = tab === 'scan' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
     if (tab === 'scan') startScanner(); else stopScanner();
 };
 
@@ -384,10 +368,10 @@ function startScanner() {
     html5QrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, async (text) => {
         const snap = await window.getDocs(window.query(window.collection(window.db, 'tickets'), window.where('order_id', '==', text)));
         fb.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-700', 'text-green-700');
-        if (snap.empty) { fb.innerText = 'TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
+        if (snap.empty) { fb.innerText = 'TIKET TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
         else {
             const d = snap.docs[0]; const data = d.data();
-            if (data.status !== 'approved') { fb.innerText = 'BELUM BAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
+            if (data.status !== 'approved') { fb.innerText = 'BELUM DIBAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
             else if (data.check_in) { fb.innerText = 'SUDAH DIGUNAKAN'; fb.classList.add('bg-red-100', 'text-red-700'); }
             else { fb.innerText = 'VALID: ' + data.name; fb.classList.add('bg-green-100', 'text-green-700'); await window.updateDoc(window.doc(window.db, 'tickets', d.id), { check_in: true }); }
         }
