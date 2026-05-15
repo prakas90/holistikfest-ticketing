@@ -8,11 +8,12 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -25,875 +26,789 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
 };
 
 const app = initializeApp(firebaseConfig);
-window.auth = getAuth(app);
-window.db = getFirestore(app);
-window.storage = getStorage(app);
+window.auth     = getAuth(app);
+window.db       = getFirestore(app);
+window.storage  = getStorage(app);
 window.provider = new GoogleAuthProvider();
-window.appId = typeof __app_id !== 'undefined' ? __app_id : 'holistik-fest-2026';
-
+window.appId    = typeof __app_id !== 'undefined' ? __app_id : 'holistik-fest-2026';
 window.signInWithPopup = signInWithPopup;
-window.signInAnonymously = signInAnonymously;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut = signOut;
-window.collection = collection;
-window.addDoc = addDoc;
-window.query = query;
-window.where = where;
-window.onSnapshot = onSnapshot;
-window.doc = doc;
-window.updateDoc = updateDoc;
-window.getDocs = getDocs;
-window.deleteDoc = deleteDoc;
-window.setDoc = setDoc;
-window.getDoc = getDoc;
-window.orderBy = orderBy;
-window.ref = ref;
-window.uploadBytes = uploadBytes;
-window.getDownloadURL = getDownloadURL;
-window.runTransaction = runTransaction;
+window.collection = collection; window.addDoc = addDoc; window.query = query;
+window.where = where; window.onSnapshot = onSnapshot; window.doc = doc;
+window.updateDoc = updateDoc; window.getDocs = getDocs; window.deleteDoc = deleteDoc;
+window.setDoc = setDoc; window.orderBy = orderBy; window.ref = ref;
+window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
+window.writeBatch = writeBatch;
 </script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+* { box-sizing: border-box; }
 body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll-behavior: smooth; }
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.step-number { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800; }
-.event-banner { background-size: cover; background-position: center; border-radius: 2.5rem; transition: all 0.5s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.step-number { width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:12px; font-weight:800; }
+.event-banner { background-size:cover; background-position:center; border-radius:2.5rem; transition:all 0.5s ease; }
+.countdown-box { background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.3); border-radius:1rem; padding:0.6rem 1rem; min-width:56px; text-align:center; }
+.countdown-num { font-size:1.8rem; font-weight:800; line-height:1; }
+.countdown-lbl { font-size:9px; font-weight:700; letter-spacing:0.1em; opacity:0.8; text-transform:uppercase; margin-top:2px; }
+.filter-pill { padding:5px 14px; border-radius:9999px; font-size:11px; font-weight:700; cursor:pointer; border:2px solid #e2e8f0; background:white; color:#64748b; transition:all 0.2s; }
+.filter-pill.active { background:#4f46e5; color:white; border-color:#4f46e5; }
+.rev-bar { height:8px; border-radius:999px; transition:width 0.8s ease; }
+.ticket-checkbox { width:18px; height:18px; accent-color:#4f46e5; cursor:pointer; }
+.toast { position:fixed; bottom:24px; right:24px; z-index:9999; background:white; border-radius:1rem; padding:1rem 1.25rem; box-shadow:0 8px 32px rgba(0,0,0,0.15); display:flex; align-items:center; gap:12px; max-width:320px; transform:translateY(120px); opacity:0; transition:all 0.4s cubic-bezier(.34,1.56,.64,1); border-left:4px solid #4f46e5; pointer-events:none; }
+.toast.show { transform:none; opacity:1; pointer-events:auto; }
 </style>
 </head>
 <body class="text-slate-900 min-h-screen">
 
+<!-- TOAST -->
+<div id="toast" class="toast">
+  <div id="toast-icon" class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 text-indigo-600">
+    <i data-lucide="bell" class="w-5 h-5"></i>
+  </div>
+  <div><p id="toast-title" class="font-black text-sm text-slate-800"></p><p id="toast-msg" class="text-xs text-slate-500 mt-0.5"></p></div>
+</div>
+
+<!-- NAVBAR -->
 <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b z-50">
-    <div class="max-w-6xl mx-auto h-16 px-6 flex items-center justify-between">
-        <div class="font-black text-xl text-indigo-600 flex items-center gap-2 cursor-pointer" onclick="showTab('hero')">
-            <i data-lucide="ticket"></i>
-            <span id="nav-title">Holistik Fest</span>
-        </div>
-        <div id="nav-user" class="flex items-center gap-3"></div>
+  <div class="max-w-6xl mx-auto h-16 px-6 flex items-center justify-between">
+    <div class="font-black text-xl text-indigo-600 flex items-center gap-2 cursor-pointer" onclick="showTab('hero')">
+      <i data-lucide="ticket"></i><span id="nav-title">Holistik Fest</span>
     </div>
+    <div id="nav-user" class="flex items-center gap-3"></div>
+  </div>
 </nav>
 
 <main class="pt-24 pb-20 px-6 max-w-6xl mx-auto">
 
-    <!-- TAB: HOME -->
-    <section id="tab-hero" class="tab-content active">
-        <div id="main-banner" class="event-banner w-full h-[300px] md:h-[450px] mb-12 flex flex-col items-center justify-center text-center p-8 text-white shadow-2xl overflow-hidden relative group transition-all">
-            <div class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all"></div>
-            <div class="relative z-10">
-                <span class="bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block shadow-lg">The Biggest Fest 2026</span>
-                <h1 id="banner-title" class="text-5xl md:text-7xl font-black mb-4 tracking-tighter drop-shadow-2xl text-white uppercase">Holistik Fest</h1>
-                <div class="flex flex-wrap justify-center gap-4 md:gap-8 text-sm md:text-lg font-bold">
-                    <div class="flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i> <span id="banner-date">15 Mei 2026</span></div>
-                    <div class="flex items-center gap-2"><i data-lucide="map-pin" class="w-5 h-5 text-indigo-400"></i> <span id="banner-loc">Stadion Utama</span></div>
-                    <div class="flex items-center gap-2"><i data-lucide="clock" class="w-5 h-5 text-indigo-400"></i> <span id="banner-time">16:00 - Selesai</span></div>
-                </div>
-            </div>
+  <!-- HOME -->
+  <section id="tab-hero" class="tab-content active">
+    <div id="main-banner" class="event-banner w-full h-[340px] md:h-[480px] mb-12 flex flex-col items-center justify-center text-center p-8 text-white shadow-2xl overflow-hidden relative group">
+      <div class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all"></div>
+      <div class="relative z-10 w-full">
+        <span class="bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block shadow-lg">The Biggest Fest 2026</span>
+        <h1 id="banner-title" class="text-5xl md:text-7xl font-black mb-3 tracking-tighter drop-shadow-2xl uppercase">Holistik Fest</h1>
+        <div class="flex flex-wrap justify-center gap-4 md:gap-8 text-sm font-bold mb-6">
+          <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4 text-indigo-300"></i><span id="banner-date">15 Mei 2026</span></span>
+          <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-4 h-4 text-indigo-300"></i><span id="banner-loc">Stadion Utama</span></span>
+          <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 text-indigo-300"></i><span id="banner-time">16:00 - Selesai</span></span>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
-            <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-                <div class="step-number bg-indigo-600 text-white">1</div>
-                <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Pilih Tiket & Nama</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-                <div class="step-number bg-indigo-600 text-white">2</div>
-                <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Transfer & Kirim Bukti</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-                <div class="step-number bg-indigo-600 text-white">3</div>
-                <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Cek Tiket & Scan QR</p>
-            </div>
+        <!-- COUNTDOWN -->
+        <div class="flex justify-center gap-2" id="countdown-wrap">
+          <div class="countdown-box"><div id="cd-d" class="countdown-num">00</div><div class="countdown-lbl">Hari</div></div>
+          <div class="countdown-box"><div id="cd-h" class="countdown-num">00</div><div class="countdown-lbl">Jam</div></div>
+          <div class="countdown-box"><div id="cd-m" class="countdown-num">00</div><div class="countdown-lbl">Menit</div></div>
+          <div class="countdown-box"><div id="cd-s" class="countdown-num">00</div><div class="countdown-lbl">Detik</div></div>
         </div>
+      </div>
+    </div>
 
-        <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div onclick="startOrder('VIP')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all group">
-                <div class="flex justify-between items-start mb-6">
-                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Premium Row</span>
-                    <i data-lucide="crown" class="text-amber-400"></i>
-                </div>
-                <h3 class="text-3xl font-black mb-2 text-slate-900">VIP ACCESS</h3>
-                <p class="text-slate-500 text-sm mb-6 leading-relaxed">Akses area khusus baris paling depan dengan view panggung terbaik.</p>
-                <div class="flex items-baseline gap-1 mb-8">
-                    <span id="price-vip-display" class="text-5xl font-black text-indigo-600">Rp 55K</span>
-                </div>
-                <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold group-hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">Pilih VIP</button>
-            </div>
-            <div onclick="startOrder('Reguler')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all group">
-                <div class="flex justify-between items-start mb-6">
-                    <span class="bg-slate-100 text-slate-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Festival Area</span>
-                    <i data-lucide="users" class="text-slate-400"></i>
-                </div>
-                <h3 class="text-3xl font-black mb-2 text-slate-900 uppercase">Reguler</h3>
-                <p class="text-slate-500 text-sm mb-6 leading-relaxed">Akses area festival umum untuk menikmati seluruh rangkaian acara.</p>
-                <div class="flex items-baseline gap-1 mb-8">
-                    <span id="price-reg-display" class="text-5xl font-black text-slate-900">Rp 35K</span>
-                </div>
-                <button class="w-full py-4 rounded-2xl bg-slate-900 text-white font-bold group-hover:bg-black shadow-lg shadow-slate-100 transition-all">Pilih Reguler</button>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
+      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
+        <div class="step-number bg-indigo-600 text-white">1</div>
+        <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Pilih Tiket & Nama</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
+        <div class="step-number bg-indigo-600 text-white">2</div>
+        <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Transfer & Kirim Bukti</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
+        <div class="step-number bg-indigo-600 text-white">3</div>
+        <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Cek Tiket & Scan QR</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div onclick="startOrder('VIP')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all group">
+        <div class="flex justify-between items-start mb-6">
+          <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Premium Row</span>
+          <i data-lucide="crown" class="text-amber-400"></i>
         </div>
-    </section>
-
-    <!-- TAB: PAYMENT -->
-    <section id="tab-payment" class="tab-content max-w-md mx-auto text-slate-900">
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
-            <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="arrow-left"></i></button>
-            <h2 class="text-3xl font-black text-center mb-6 mt-4 text-slate-900">Checkout</h2>
-            <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl uppercase"></div>
-            <div class="mb-8">
-                <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Nama Di Tiket</label>
-                <!-- FIX: tambah maxlength dan validasi input -->
-                <input type="text" id="order-name" maxlength="100" placeholder="Nama lengkap pemegang tiket..." class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold transition-all text-slate-900" />
-                <p id="name-error" class="text-red-500 text-xs font-bold mt-2 hidden">Nama tidak valid. Gunakan huruf dan spasi saja.</p>
-            </div>
-            <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
-                <p id="payment-bank" class="text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
-                <p id="payment-holder" class="font-bold text-slate-500 mb-6 text-sm uppercase tracking-wide">BCA - A/N HOLISTIK FEST</p>
-                <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-[10px] font-black uppercase leading-relaxed">WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP!</div>
-            </div>
-            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-                <i data-lucide="message-circle"></i> KIRIM BUKTI (WA)
-            </button>
+        <h3 class="text-3xl font-black mb-2 text-slate-900">VIP ACCESS</h3>
+        <p class="text-slate-500 text-sm mb-6 leading-relaxed">Akses area khusus baris paling depan dengan view panggung terbaik.</p>
+        <div class="mb-8"><span id="price-vip-display" class="text-5xl font-black text-indigo-600">Rp 55K</span></div>
+        <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold group-hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">Pilih VIP</button>
+      </div>
+      <div onclick="startOrder('Reguler')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all group">
+        <div class="flex justify-between items-start mb-6">
+          <span class="bg-slate-100 text-slate-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Festival Area</span>
+          <i data-lucide="users" class="text-slate-400"></i>
         </div>
-    </section>
+        <h3 class="text-3xl font-black mb-2 text-slate-900 uppercase">Reguler</h3>
+        <p class="text-slate-500 text-sm mb-6 leading-relaxed">Akses area festival umum untuk menikmati seluruh rangkaian acara.</p>
+        <div class="mb-8"><span id="price-reg-display" class="text-5xl font-black text-slate-900">Rp 35K</span></div>
+        <button class="w-full py-4 rounded-2xl bg-slate-900 text-white font-bold group-hover:bg-black shadow-lg shadow-slate-100 transition-all">Pilih Reguler</button>
+      </div>
+    </div>
+  </section>
 
-    <!-- TAB: MY TICKETS -->
-    <section id="tab-my-tickets" class="tab-content">
-        <h2 class="text-4xl font-black mb-10 text-indigo-900">Tiket Saya</h2>
-        <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start"></div>
-    </section>
+  <!-- PAYMENT -->
+  <section id="tab-payment" class="tab-content max-w-md mx-auto text-slate-900">
+    <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
+      <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="arrow-left"></i></button>
+      <h2 class="text-3xl font-black text-center mb-6 mt-4">Checkout</h2>
+      <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl uppercase"></div>
+      <div class="mb-8">
+        <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Nama Di Tiket</label>
+        <input type="text" id="order-name" maxlength="100" placeholder="Nama lengkap pemegang tiket..." class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold transition-all text-slate-900" />
+        <p id="name-error" class="text-red-500 text-xs font-bold mt-2 hidden">Nama tidak valid. Gunakan huruf dan spasi saja.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
+        <p class="text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
+        <p class="font-bold text-slate-500 mb-6 text-sm uppercase tracking-wide">BCA - A/N HOLISTIK FEST</p>
+        <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-[10px] font-black uppercase leading-relaxed">WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP!</div>
+      </div>
+      <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+        <i data-lucide="message-circle"></i> KIRIM BUKTI (WA)
+      </button>
+    </div>
+  </section>
 
-    <!-- TAB: ADMIN DASHBOARD -->
-    <section id="tab-admin-dashboard" class="tab-content">
-        <div class="mb-10 text-center md:text-left">
-            <h2 class="text-4xl font-black text-indigo-900">Petugas Panel</h2>
-            <p class="text-slate-500 font-medium">Monitoring pesanan dan pengaturan event.</p>
+  <!-- MY TICKETS -->
+  <section id="tab-my-tickets" class="tab-content">
+    <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+      <h2 class="text-4xl font-black text-indigo-900">Tiket Saya</h2>
+      <button id="btn-notif" onclick="requestNotifPermission()" class="hidden items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black border border-indigo-100 hover:bg-indigo-100 transition-all">
+        <i data-lucide="bell" class="w-4 h-4"></i> Aktifkan Notifikasi
+      </button>
+    </div>
+    <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="tab-admin-dashboard" class="tab-content">
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-4xl font-black text-indigo-900">Petugas Panel</h2>
+        <p class="text-slate-500 font-medium">Monitoring pesanan dan pengaturan event.</p>
+      </div>
+      <button onclick="exportCSV()" class="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-emerald-700 transition-all self-start md:self-auto">
+        <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+      </button>
+    </div>
+
+    <!-- STATS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+      <div class="bg-white p-5 rounded-3xl border shadow-sm">
+        <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p>
+        <p id="stat-total" class="text-3xl font-black text-slate-800">0</p>
+      </div>
+      <div class="bg-amber-50 p-5 rounded-3xl border border-amber-100">
+        <p class="text-amber-500 text-[10px] font-bold uppercase mb-1">Pending</p>
+        <p id="stat-pending" class="text-3xl font-black text-amber-700">0</p>
+      </div>
+      <div class="bg-green-50 p-5 rounded-3xl border border-green-100">
+        <p class="text-green-500 text-[10px] font-bold uppercase mb-1">Approved</p>
+        <p id="stat-approved" class="text-3xl font-black text-green-700">0</p>
+      </div>
+      <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100">
+        <p class="text-indigo-400 text-[10px] font-bold uppercase mb-1">Check-in</p>
+        <p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p>
+      </div>
+    </div>
+
+    <!-- REVENUE -->
+    <div class="bg-white p-6 rounded-3xl border shadow-sm mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-black text-slate-700 flex items-center gap-2 text-sm"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Revenue (Tiket Approved)</h3>
+        <span id="stat-revenue-total" class="text-2xl font-black text-emerald-600">Rp 0</span>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
+            <span>VIP <span id="stat-vip-count" class="text-indigo-400 font-black"></span></span>
+            <span id="stat-revenue-vip" class="text-indigo-600">Rp 0</span>
+          </div>
+          <div class="bg-slate-100 rounded-full h-2"><div id="bar-vip" class="rev-bar bg-indigo-500" style="width:0%"></div></div>
         </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p>
-                <p id="stat-total" class="text-3xl font-black text-slate-800">0</p>
-            </div>
-            <div class="bg-amber-50 p-6 rounded-3xl border border-amber-100">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Pending</p>
-                <p id="stat-pending" class="text-3xl font-black text-amber-700">0</p>
-            </div>
-            <div class="bg-green-50 p-6 rounded-3xl border border-green-100">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Approved</p>
-                <p id="stat-approved" class="text-3xl font-black text-green-700">0</p>
-            </div>
-            <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Check-in</p>
-                <p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p>
-            </div>
+        <div>
+          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
+            <span>Reguler <span id="stat-reg-count" class="text-slate-400 font-black"></span></span>
+            <span id="stat-revenue-reg" class="text-slate-600">Rp 0</span>
+          </div>
+          <div class="bg-slate-100 rounded-full h-2"><div id="bar-reg" class="rev-bar bg-slate-500" style="width:0%"></div></div>
         </div>
+      </div>
+    </div>
 
-        <div class="bg-white p-4 rounded-3xl border mb-8 flex flex-col md:flex-row gap-4">
-            <div class="flex p-1 bg-slate-100 rounded-2xl overflow-x-auto">
-                <button onclick="switchAdminTab('list')" id="btn-adm-list" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all">Tiket</button>
-                <button onclick="switchAdminTab('settings')" id="btn-adm-settings" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all">Settings</button>
-                <button onclick="switchAdminTab('scan')" id="btn-adm-scan" class="flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all">Scan QR</button>
-            </div>
-            <input type="text" id="admin-search" placeholder="Cari Nama/Order ID..." oninput="loadAdminTickets()" class="w-full px-6 py-3 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-900">
+    <!-- TOOLBAR -->
+    <div class="bg-white p-4 rounded-3xl border mb-5 space-y-3">
+      <div class="flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex p-1 bg-slate-100 rounded-2xl gap-0.5">
+          <button onclick="switchAdminTab('list')"     id="btn-adm-list"     class="px-5 py-2 rounded-xl font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all">Tiket</button>
+          <button onclick="switchAdminTab('settings')" id="btn-adm-settings" class="px-5 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all">Settings</button>
+          <button onclick="switchAdminTab('scan')"     id="btn-adm-scan"     class="px-5 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all">Scan QR</button>
         </div>
-
-        <div id="adm-list-content"><div id="admin-tickets" class="space-y-4"></div></div>
-
-        <div id="adm-settings-content" class="hidden">
-            <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto text-slate-900">
-                <h3 class="text-2xl font-black mb-8 flex items-center gap-2 text-indigo-600"><i data-lucide="settings"></i> Konfigurasi Event</h3>
-                <div class="space-y-6">
-                    <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Acara</label>
-                        <input type="text" id="set-title" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-                    <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner Acara (File atau URL)</label>
-                        <div class="flex flex-col gap-3">
-                            <!-- FIX: hanya izinkan URL dari domain tertentu, validasi saat save -->
-                            <input type="url" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-medium text-xs text-slate-500" placeholder="https://...">
-                            <div class="flex items-center gap-4">
-                                <input type="file" id="banner-file" class="hidden" accept="image/jpeg,image/png,image/webp" onchange="uploadBannerFile(this)">
-                                <button onclick="document.getElementById('banner-file').click()" class="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black hover:bg-indigo-100 transition-all border border-indigo-100 flex items-center gap-2">
-                                    <i data-lucide="upload" class="w-4 h-4"></i> UPLOAD FOTO BARU
-                                </button>
-                                <span id="upload-status" class="text-[10px] font-black text-indigo-500 uppercase"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu</label>
-                            <input type="text" id="set-time" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-                        <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal</label>
-                            <input type="text" id="set-date" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-                    </div>
-                    <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lokasi</label>
-                        <input type="text" id="set-loc" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Harga VIP</label>
-                            <input type="number" id="set-vip" min="0" max="10000000" class="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl outline-none font-black text-indigo-600"></div>
-                        <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Harga Reguler</label>
-                            <input type="number" id="set-reg" min="0" max="10000000" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black text-slate-900"></div>
-                    </div>
-                    <div class="pt-4">
-                        <button onclick="saveEventSettings()" id="btn-save-settings" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">SIMPAN PERUBAHAN</button>
-                    </div>
-                </div>
-            </div>
+        <div id="bulk-bar" class="hidden items-center gap-2">
+          <span id="bulk-count" class="text-xs font-black text-slate-500 uppercase"></span>
+          <button onclick="bulkApprove()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition-all flex items-center gap-1">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Approve Semua
+          </button>
+          <button onclick="clearSelection()" class="text-slate-400 text-xs px-3 py-2 border rounded-xl hover:bg-slate-50 font-black">Batal</button>
         </div>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <input type="text" id="admin-search" placeholder="Cari Nama/Order ID..." oninput="loadAdminTickets()" class="flex-1 min-w-[160px] px-4 py-2.5 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-900 text-sm">
+        <button onclick="setFilter('all')"      id="fp-all"      class="filter-pill active">Semua</button>
+        <button onclick="setFilter('pending')"  id="fp-pending"  class="filter-pill">Pending</button>
+        <button onclick="setFilter('approved')" id="fp-approved" class="filter-pill">Approved</button>
+        <button onclick="setFilter('checkin')"  id="fp-checkin"  class="filter-pill">Check-in</button>
+        <button onclick="setFilter('VIP')"      id="fp-VIP"      class="filter-pill">VIP</button>
+        <button onclick="setFilter('Reguler')"  id="fp-Reguler"  class="filter-pill">Reguler</button>
+      </div>
+    </div>
 
-        <div id="adm-scan-content" class="hidden max-w-md mx-auto">
-            <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border text-center">
-                <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
-                <div id="scan-feedback" class="hidden p-6 rounded-2xl font-black text-xl text-center text-slate-900"></div>
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">Scanner Aktif</p>
+    <!-- TIKET LIST -->
+    <div id="adm-list-content">
+      <div id="select-all-bar" class="flex items-center gap-3 mb-3 px-1 hidden">
+        <input type="checkbox" id="chk-all" class="ticket-checkbox" onchange="toggleSelectAll(this.checked)">
+        <label for="chk-all" class="text-xs font-black text-slate-400 uppercase cursor-pointer">Pilih Semua Pending</label>
+      </div>
+      <div id="admin-tickets" class="space-y-3"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="adm-settings-content" class="hidden">
+      <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
+        <h3 class="text-2xl font-black mb-8 flex items-center gap-2 text-indigo-600"><i data-lucide="settings"></i> Konfigurasi Event</h3>
+        <div class="space-y-5">
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Acara</label>
+            <input type="text" id="set-title" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal & Waktu Event (untuk Countdown)</label>
+            <input type="datetime-local" id="set-eventdate" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900">
+            <p class="text-xs text-slate-400 mt-1.5 ml-1">Untuk hitung mundur di halaman utama.</p></div>
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner (URL atau Upload)</label>
+            <div class="flex flex-col gap-2">
+              <input type="url" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-medium text-xs text-slate-500" placeholder="https://...">
+              <div class="flex items-center gap-3">
+                <input type="file" id="banner-file" class="hidden" accept="image/jpeg,image/png,image/webp" onchange="uploadBannerFile(this)">
+                <button onclick="document.getElementById('banner-file').click()" class="px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black hover:bg-indigo-100 border border-indigo-100 flex items-center gap-2">
+                  <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Foto
+                </button>
+                <span id="upload-status" class="text-[10px] font-black text-indigo-500 uppercase"></span>
+              </div>
             </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu Tampil</label>
+              <input type="text" id="set-time" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal Tampil</label>
+              <input type="text" id="set-date" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+          </div>
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lokasi</label>
+            <input type="text" id="set-loc" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Harga VIP</label>
+              <input type="number" id="set-vip" min="0" max="10000000" class="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl outline-none font-black text-indigo-600"></div>
+            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Harga Reguler</label>
+              <input type="number" id="set-reg" min="0" max="10000000" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black text-slate-900"></div>
+          </div>
+          <div class="pt-2">
+            <button onclick="saveEventSettings()" id="btn-save-settings" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">SIMPAN PERUBAHAN</button>
+          </div>
         </div>
-    </section>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div id="adm-scan-content" class="hidden max-w-md mx-auto">
+      <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border text-center">
+        <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
+        <div id="scan-feedback" class="hidden p-6 rounded-2xl font-black text-xl text-center"></div>
+        <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mt-4">Arahkan kamera ke QR Code</p>
+      </div>
+    </div>
+  </section>
 
 </main>
 
+<!-- MODAL -->
 <div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
-    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
-        <div id="modal-icon" class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full text-indigo-600"></div>
-        <h3 id="modal-title" class="text-2xl font-black mb-2 text-slate-800"></h3>
-        <p id="modal-msg" class="text-slate-500 mb-8 text-sm leading-relaxed"></p>
-        <button onclick="closeModal()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">Tutup</button>
-    </div>
+  <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
+    <div id="modal-icon" class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
+    <h3 id="modal-title" class="text-2xl font-black mb-2 text-slate-800"></h3>
+    <p id="modal-msg" class="text-slate-500 mb-8 text-sm leading-relaxed"></p>
+    <button onclick="closeModal()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">Tutup</button>
+  </div>
 </div>
 
 <script>
-// ─── KONSTANTA ────────────────────────────────────────────────────────────────
-const WA_NUMBER = "6285158880014";
+const WA_NUMBER    = "6285158880014";
 const ADMIN_EMAILS = ["sobatambyar1990@gmail.com"];
-const MAX_TICKETS = 3000;
-const MAX_TICKETS_PER_USER = 5; // FIX: batas tiket per akun
+const MAX_PER_USER = 5;
 
-// ─── STATE ────────────────────────────────────────────────────────────────────
-let currentUser = null;
-let selectedType = null;
-let html5QrScanner = null;
-let allTicketsData = [];
-let unsubUserTickets = null;  // FIX: simpan unsubscribe listener
-let unsubAllTickets = null;   // FIX: simpan unsubscribe listener
-let scanCooldown = false;     // FIX: cooldown scanner QR
-let eventConfig = {
-    title: "Holistik Fest",
-    bannerUrl: "https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
-    date: "15 Mei 2026",
-    location: "Stadion Utama",
-    time: "16:00 - Selesai",
-    vipPrice: 55000,
-    regPrice: 35000
+let currentUser   = null, selectedType = null, html5QrScanner = null;
+let allTicketsData = [], unsubUser = null, unsubAdmin = null;
+let scanCooldown  = false, activeFilter = 'all', selectedIds = new Set();
+let prevStatuses  = {}, countdownTimer = null;
+let eventConfig   = {
+    title:"Holistik Fest",
+    bannerUrl:"https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
+    date:"15 Mei 2026", location:"Stadion Utama", time:"16:00 - Selesai",
+    vipPrice:55000, regPrice:35000, eventDatetime:"2026-05-15T16:00"
 };
 
-// ─── HELPER: SANITASI INPUT ───────────────────────────────────────────────────
-// FIX: hapus karakter berbahaya dari input teks
-function sanitizeText(str) {
-    if (typeof str !== 'string') return '';
-    return str.replace(/[<>&"'/\\]/g, '').trim();
-}
+// ── HELPER ──
+function sanitizeText(s){ return typeof s==='string'?s.replace(/[<>&"'/\\]/g,'').trim():''; }
+function isValidName(n){ return /^[\p{L}\s'\-\.]{2,100}$/u.test(n.trim()); }
+function generateOrderId(){ const a=new Uint8Array(5);crypto.getRandomValues(a);return 'HOL-'+Array.from(a,b=>b.toString(36)).join('').toUpperCase().substr(0,6); }
+function fmtRupiah(n){ return 'Rp '+Number(n||0).toLocaleString('id-ID'); }
+function fmtDate(ts){ return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-'; }
 
-// FIX: validasi nama hanya huruf, spasi, tanda hubung
-function isValidName(name) {
-    return /^[\p{L}\s'\-\.]{2,100}$/u.test(name.trim());
-}
-
-// FIX: generate order ID yang lebih aman menggunakan crypto
-function generateOrderId() {
-    const array = new Uint8Array(4);
-    crypto.getRandomValues(array);
-    return 'HOL-' + Array.from(array, b => b.toString(36)).join('').toUpperCase().substr(0, 6);
-}
-
-// ─── INISIALISASI ─────────────────────────────────────────────────────────────
-window.addEventListener('load', async () => {
-    lucide.createIcons();
-
-    // Coba custom token dulu, fallback tanpa anonymous (anonymous diblokir di rules)
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await window.signInWithCustomToken(window.auth, __initial_auth_token);
-        }
-        // FIX: hapus signInAnonymously — anonymous diblokir oleh Firestore rules
-    } catch (e) {
-        console.warn('Auth init:', e.message);
+// ── COUNTDOWN ──
+function startCountdown(dt){
+    if(countdownTimer) clearInterval(countdownTimer);
+    if(!dt) return;
+    const target = new Date(dt).getTime();
+    function tick(){
+        const diff = target - Date.now();
+        const wrap = document.getElementById('countdown-wrap');
+        if(diff<=0){ if(wrap) wrap.innerHTML='<div class="countdown-box"><div class="countdown-num" style="font-size:1rem;padding:4px">🎉 EVENT DIMULAI!</div></div>'; clearInterval(countdownTimer); return; }
+        const pad=n=>String(n).padStart(2,'0');
+        const el=id=>document.getElementById(id);
+        if(el('cd-d')) el('cd-d').textContent=pad(Math.floor(diff/86400000));
+        if(el('cd-h')) el('cd-h').textContent=pad(Math.floor(diff%86400000/3600000));
+        if(el('cd-m')) el('cd-m').textContent=pad(Math.floor(diff%3600000/60000));
+        if(el('cd-s')) el('cd-s').textContent=pad(Math.floor(diff%60000/1000));
     }
+    tick(); countdownTimer=setInterval(tick,1000);
+}
 
-    window.onAuthStateChanged(window.auth, (user) => {
-        currentUser = user;
-        updateNav();
+// ── NOTIFIKASI BROWSER ──
+function checkNotifSupport(){
+    const btn=document.getElementById('btn-notif'); if(!btn) return;
+    if(!('Notification' in window)) return;
+    if(Notification.permission==='granted') btn.classList.add('hidden');
+    else if(Notification.permission!=='denied') btn.classList.remove('hidden');
+}
+window.requestNotifPermission=async()=>{
+    const p=await Notification.requestPermission();
+    if(p==='granted'){ document.getElementById('btn-notif').classList.add('hidden'); showToast('Notifikasi aktif!','Anda akan diberitahu saat tiket disetujui','success'); }
+};
+function sendBrowserNotif(title,body){
+    if(!('Notification' in window)||Notification.permission!=='granted') return;
+    try{ new Notification(title,{body,icon:'https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=holistik'}); }catch(e){}
+}
 
-        if (user && !user.isAnonymous) {
-            listenToSettings();
-            if (isAdmin(user)) {
-                // FIX: admin TIDAK load user tickets — cukup all tickets
-                if (unsubUserTickets) { unsubUserTickets(); unsubUserTickets = null; }
-                listenToAllTickets();
-            } else {
-                // FIX: user biasa TIDAK load all tickets
-                if (unsubAllTickets) { unsubAllTickets(); unsubAllTickets = null; }
-                loadUserTickets();
-            }
+// ── TOAST ──
+let toastTimer=null;
+function showToast(title,msg,type='info'){
+    const toast=document.getElementById('toast');
+    document.getElementById('toast-title').textContent=title;
+    document.getElementById('toast-msg').textContent=msg||'';
+    const cls={success:'bg-green-100 text-green-600',error:'bg-red-100 text-red-600',info:'bg-indigo-100 text-indigo-600'};
+    const ico={success:'check-circle',error:'alert-circle',info:'bell'};
+    const icon=document.getElementById('toast-icon');
+    icon.className=`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${cls[type]||cls.info}`;
+    icon.innerHTML=`<i data-lucide="${ico[type]||'bell'}" class="w-5 h-5"></i>`;
+    lucide.createIcons();
+    toast.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toast.classList.remove('show'),4500);
+}
+
+// ── INIT ──
+window.addEventListener('load',async()=>{
+    lucide.createIcons();
+    try{ if(typeof __initial_auth_token!=='undefined'&&__initial_auth_token) await window.signInWithCustomToken(window.auth,__initial_auth_token); }
+    catch(e){ console.warn('Auth:',e.message); }
+    window.onAuthStateChanged(window.auth,user=>{
+        currentUser=user; updateNav();
+        if(user&&!user.isAnonymous){
+            listenToSettings(); checkNotifSupport();
+            if(isAdmin(user)){ if(unsubUser){unsubUser();unsubUser=null;} listenToAllTickets(); }
+            else { if(unsubAdmin){unsubAdmin();unsubAdmin=null;} loadUserTickets(); }
         } else {
-            // FIX: unsubscribe semua listener saat logout
-            if (unsubUserTickets) { unsubUserTickets(); unsubUserTickets = null; }
-            if (unsubAllTickets)  { unsubAllTickets();  unsubAllTickets  = null; }
-            listenToSettings(); // settings boleh dibaca semua
+            if(unsubUser){unsubUser();unsubUser=null;} if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
+            listenToSettings();
         }
     });
 });
 
-// ─── ADMIN CHECK ──────────────────────────────────────────────────────────────
-// CATATAN: ini hanya untuk kontrol UI. Otorisasi sebenarnya ada di Firestore Rules.
-function isAdmin(user) {
-    if (!user || !user.email) return false;
-    return ADMIN_EMAILS.map(e => e.toLowerCase()).includes(user.email.toLowerCase());
+function isAdmin(u){ return !!(u&&u.email&&ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase())); }
+
+// ── SETTINGS ──
+function listenToSettings(){
+    window.onSnapshot(window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),
+        snap=>{ if(snap.exists()) eventConfig=snap.data(); applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); },
+        ()=>{ applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); }
+    );
 }
-
-// ─── SETTINGS ─────────────────────────────────────────────────────────────────
-function listenToSettings() {
-    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'event_config');
-    window.onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-            eventConfig = docSnap.data();
-        }
-        applyUIConfig();
-    }, (err) => {
-        console.warn('Settings listener error:', err.code);
-        applyUIConfig();
-    });
+function applyUIConfig(){
+    const st=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=String(v||''); };
+    st('nav-title',eventConfig.title); st('banner-title',eventConfig.title);
+    st('banner-date',eventConfig.date); st('banner-loc',eventConfig.location); st('banner-time',eventConfig.time);
+    st('price-vip-display',`Rp ${(eventConfig.vipPrice/1000)}K`);
+    st('price-reg-display',`Rp ${(eventConfig.regPrice/1000)}K`);
+    const b=document.getElementById('main-banner');
+    if(b&&eventConfig.bannerUrl&&eventConfig.bannerUrl.startsWith('http'))
+        b.style.backgroundImage=`linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.7)),url('${encodeURI(eventConfig.bannerUrl)}')`;
 }
-
-function applyUIConfig() {
-    const safeText = (id, text) => {
-        const el = document.getElementById(id);
-        // FIX: gunakan textContent bukan innerHTML untuk mencegah XSS
-        if (el) el.textContent = String(text || '');
-    };
-    safeText('nav-title', eventConfig.title);
-    safeText('banner-title', eventConfig.title);
-    safeText('banner-date', eventConfig.date);
-    safeText('banner-loc', eventConfig.location);
-    safeText('banner-time', eventConfig.time);
-
-    // FIX: validasi URL banner sebelum dipakai sebagai background
-    const banner = document.getElementById('main-banner');
-    if (banner) {
-        const url = eventConfig.bannerUrl || '';
-        const isSafe = url.startsWith('https://') || url.startsWith('http://');
-        if (isSafe) {
-            banner.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('${encodeURI(url)}')`;
-        }
-    }
-
-    safeText('price-vip-display', `Rp ${(eventConfig.vipPrice / 1000)}K`);
-    safeText('price-reg-display', `Rp ${(eventConfig.regPrice / 1000)}K`);
+function initSettingsInputs(){
+    const s=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v||''; };
+    s('set-title',eventConfig.title); s('set-banner',eventConfig.bannerUrl); s('set-date',eventConfig.date);
+    s('set-loc',eventConfig.location); s('set-time',eventConfig.time);
+    s('set-vip',eventConfig.vipPrice); s('set-reg',eventConfig.regPrice);
+    s('set-eventdate',eventConfig.eventDatetime||'');
 }
-
-function initSettingsInputs() {
-    document.getElementById('set-title').value  = eventConfig.title    || '';
-    document.getElementById('set-banner').value = eventConfig.bannerUrl || '';
-    document.getElementById('set-date').value   = eventConfig.date     || '';
-    document.getElementById('set-loc').value    = eventConfig.location || '';
-    document.getElementById('set-time').value   = eventConfig.time     || '';
-    document.getElementById('set-vip').value    = eventConfig.vipPrice || 0;
-    document.getElementById('set-reg').value    = eventConfig.regPrice || 0;
-}
-
-window.uploadBannerFile = async (input) => {
-    const file = input.files[0];
-    if (!file) return;
-
-    // FIX: validasi tipe file
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.type)) {
-        showAlert('Error', 'Hanya file JPG, PNG, atau WEBP yang diizinkan.', 'error');
-        return;
-    }
-    // FIX: batas ukuran file 5MB
-    if (file.size > 5 * 1024 * 1024) {
-        showAlert('Error', 'Ukuran file maksimal 5MB.', 'error');
-        return;
-    }
-
-    const status = document.getElementById('upload-status');
-    status.textContent = 'MENGUNGGAH...';
-    try {
-        const storageRef = window.ref(window.storage, `artifacts/${window.appId}/banner_${Date.now()}.jpg`);
-        const snapshot = await window.uploadBytes(storageRef, file);
-        const downloadURL = await window.getDownloadURL(snapshot.ref);
-        document.getElementById('set-banner').value = downloadURL;
-        status.textContent = 'BERHASIL!';
-        setTimeout(() => status.textContent = '', 3000);
-    } catch (e) {
-        status.textContent = 'GAGAL';
-        showAlert('Error', 'Pastikan Firebase Storage aktif di console.', 'error');
-    }
+window.uploadBannerFile=async input=>{
+    const file=input.files[0]; if(!file) return;
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)){ showAlert('Error','Hanya JPG/PNG/WEBP','error'); return; }
+    if(file.size>5*1024*1024){ showAlert('Error','Maks 5MB','error'); return; }
+    const st=document.getElementById('upload-status'); st.textContent='MENGUNGGAH...';
+    try{
+        const sr=window.ref(window.storage,`artifacts/${window.appId}/banner_${Date.now()}.jpg`);
+        const sn=await window.uploadBytes(sr,file);
+        document.getElementById('set-banner').value=await window.getDownloadURL(sn.ref);
+        st.textContent='BERHASIL!'; setTimeout(()=>st.textContent='',3000);
+    }catch(e){ st.textContent='GAGAL'; showAlert('Error','Storage belum aktif','error'); }
+};
+window.saveEventSettings=async()=>{
+    const btn=document.getElementById('btn-save-settings');
+    const bannerUrl=document.getElementById('set-banner').value.trim();
+    if(bannerUrl&&!bannerUrl.startsWith('https://')){ showAlert('Error','URL harus https://','error'); return; }
+    const vip=parseInt(document.getElementById('set-vip').value);
+    const reg=parseInt(document.getElementById('set-reg').value);
+    if(isNaN(vip)||isNaN(reg)||vip<0||reg<0){ showAlert('Error','Harga tidak valid','error'); return; }
+    btn.disabled=true; btn.textContent='MENYIMPAN...';
+    try{
+        await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),{
+            title:sanitizeText(document.getElementById('set-title').value).substring(0,100),
+            bannerUrl, date:sanitizeText(document.getElementById('set-date').value).substring(0,50),
+            location:sanitizeText(document.getElementById('set-loc').value).substring(0,100),
+            time:sanitizeText(document.getElementById('set-time').value).substring(0,50),
+            vipPrice:vip, regPrice:reg, eventDatetime:document.getElementById('set-eventdate').value
+        });
+        showAlert('Berhasil','Pengaturan disimpan!','success');
+    }catch(e){ showAlert('Error','Gagal simpan','error'); }
+    finally{ btn.disabled=false; btn.textContent='SIMPAN PERUBAHAN'; }
 };
 
-window.saveEventSettings = async () => {
-    const btn = document.getElementById('btn-save-settings');
-
-    // FIX: validasi URL banner
-    const bannerUrl = document.getElementById('set-banner').value.trim();
-    if (bannerUrl && !bannerUrl.startsWith('https://')) {
-        showAlert('Error', 'URL banner harus diawali dengan https://', 'error');
-        return;
-    }
-
-    const vipPrice = parseInt(document.getElementById('set-vip').value);
-    const regPrice = parseInt(document.getElementById('set-reg').value);
-    if (isNaN(vipPrice) || isNaN(regPrice) || vipPrice < 0 || regPrice < 0) {
-        showAlert('Error', 'Harga tidak valid.', 'error');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'MENYIMPAN...';
-
-    const newConfig = {
-        title:     sanitizeText(document.getElementById('set-title').value).substring(0, 100),
-        bannerUrl: bannerUrl,
-        date:      sanitizeText(document.getElementById('set-date').value).substring(0, 50),
-        location:  sanitizeText(document.getElementById('set-loc').value).substring(0, 100),
-        time:      sanitizeText(document.getElementById('set-time').value).substring(0, 50),
-        vipPrice:  vipPrice,
-        regPrice:  regPrice
-    };
-
-    try {
-        await window.setDoc(
-            window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'event_config'),
-            newConfig
-        );
-        showAlert('Berhasil', 'Pengaturan disimpan!', 'success');
-    } catch (e) {
-        showAlert('Error', 'Gagal simpan. Periksa koneksi dan izin akun.', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'SIMPAN PERUBAHAN';
-    }
-};
-
-// ─── NAVIGASI TAB ─────────────────────────────────────────────────────────────
-function showTab(id) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+// ── NAV ──
+function showTab(id){
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
-    if (html5QrScanner && id !== 'admin-dashboard') stopScanner();
-    window.scrollTo(0, 0);
+    if(html5QrScanner&&id!=='admin-dashboard') stopScanner();
+    window.scrollTo(0,0);
 }
-
-function updateNav() {
-    const nav = document.getElementById('nav-user');
-    if (!nav) return;
-
-    if (currentUser && !currentUser.isAnonymous) {
-        const photoHTML = currentUser.photoURL
-            ? `<img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm" alt="Foto profil">`
-            : `<div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-black text-indigo-600 text-sm">${(currentUser.email || 'U')[0].toUpperCase()}</div>`;
-
-        const adminBtn = isAdmin(currentUser)
-            ? `<button onclick="switchAdminTab('list'); showTab('admin-dashboard')" class="flex items-center gap-1 p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all">
-                <i data-lucide="shield-check" class="w-5 h-5"></i>
-                <span class="text-[10px] font-black uppercase pr-1 hidden sm:inline">Admin</span>
-               </button>`
-            : '';
-
-        nav.innerHTML = `
-            <div class="flex items-center gap-3">
-                <button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-tight">Tiket Saya</button>
-                ${photoHTML}
-                ${adminBtn}
-                <button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button>
-            </div>
-        `;
+function updateNav(){
+    const nav=document.getElementById('nav-user'); if(!nav) return;
+    if(currentUser&&!currentUser.isAnonymous){
+        const photo=currentUser.photoURL
+            ?`<img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm" alt="">`
+            :`<div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-black text-indigo-600 text-sm">${(currentUser.email||'U')[0].toUpperCase()}</div>`;
+        const adm=isAdmin(currentUser)?`<button onclick="switchAdminTab('list');showTab('admin-dashboard')" class="flex items-center gap-1 p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all"><i data-lucide="shield-check" class="w-5 h-5"></i><span class="text-[10px] font-black uppercase pr-1 hidden sm:inline">Admin</span></button>`:'';
+        nav.innerHTML=`<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}${adm}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
     } else {
-        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black text-xs shadow-lg shadow-indigo-100 uppercase tracking-widest">Login Google</button>`;
+        nav.innerHTML=`<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black text-xs shadow-lg uppercase tracking-widest">Login Google</button>`;
     }
     lucide.createIcons();
 }
+window.handleGoogleLogin=async()=>{ try{await window.signInWithPopup(window.auth,window.provider);}catch(e){showAlert('Error','Login gagal','error');} };
 
-window.handleGoogleLogin = async () => {
-    try {
-        await window.signInWithPopup(window.auth, window.provider);
-    } catch (e) {
-        showAlert('Error', 'Login gagal. Coba lagi.', 'error');
-    }
-};
-
-// ─── ORDER ────────────────────────────────────────────────────────────────────
-window.startOrder = (type) => {
-    if (!currentUser || currentUser.isAnonymous) {
-        handleGoogleLogin();
-        return;
-    }
-    selectedType = type;
-    const price = type === 'VIP' ? eventConfig.vipPrice : eventConfig.regPrice;
-
-    // FIX: gunakan textContent bukan innerHTML
-    const summary = document.getElementById('order-summary');
-    summary.textContent = '';
-    const line1 = document.createElement('div');
-    line1.textContent = type;
-    const line2 = document.createElement('div');
-    line2.textContent = `Rp ${price.toLocaleString('id-ID')}`;
-    summary.appendChild(line1);
-    summary.appendChild(line2);
-
-    document.getElementById('order-name').value = currentUser.displayName || '';
+// ── ORDER ──
+window.startOrder=type=>{
+    if(!currentUser||currentUser.isAnonymous){ handleGoogleLogin(); return; }
+    selectedType=type;
+    const price=type==='VIP'?eventConfig.vipPrice:eventConfig.regPrice;
+    const s=document.getElementById('order-summary'); s.textContent='';
+    const l1=document.createElement('div');l1.textContent=type;s.appendChild(l1);
+    const l2=document.createElement('div');l2.textContent=fmtRupiah(price);s.appendChild(l2);
+    document.getElementById('order-name').value=currentUser.displayName||'';
     document.getElementById('name-error').classList.add('hidden');
     showTab('payment');
 };
-
-window.submitOrder = async () => {
-    const rawName = document.getElementById('order-name').value;
-    const name = sanitizeText(rawName);
-    const nameError = document.getElementById('name-error');
-
-    // FIX: validasi nama
-    if (!isValidName(name)) {
-        nameError.classList.remove('hidden');
-        return;
-    }
-    nameError.classList.add('hidden');
-
-    if (!currentUser || currentUser.isAnonymous) {
-        showAlert('Error', 'Silakan login terlebih dahulu.', 'error');
-        return;
-    }
-
-    const btn = document.getElementById('btn-submit-order');
-    btn.disabled = true;
-    btn.textContent = 'MEMPROSES...';
-
-    try {
-        // FIX: cek jumlah tiket user — batasi per akun
-        const existingSnap = await window.getDocs(
-            window.query(
-                window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'),
-                window.where('user_id', '==', currentUser.uid)
-            )
-        );
-        if (existingSnap.size >= MAX_TICKETS_PER_USER) {
-            showAlert('Batas Tercapai', `Maksimal ${MAX_TICKETS_PER_USER} tiket per akun.`, 'error');
-            return;
-        }
-
-        const price = selectedType === 'VIP' ? eventConfig.vipPrice : eventConfig.regPrice;
-        // FIX: gunakan crypto untuk order ID yang lebih aman
-        const orderId = generateOrderId();
-
-        await window.addDoc(
-            window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'),
-            {
-                order_id:   orderId,
-                user_id:    currentUser.uid,   // FIX: selalu pakai UID dari auth, bukan dari input
-                name:       name,
-                email:      currentUser.email, // FIX: selalu pakai email dari auth
-                type:       selectedType,
-                price:      price,
-                status:     'pending',
-                check_in:   false,
-                created_at: Date.now()
-            }
-        );
-
-        const waText = encodeURIComponent(
-            `Halo Admin, Konfirmasi Pembayaran ${eventConfig.title}.\nOrder ID: ${orderId}\nNama: ${name}`
-        );
-        window.open(`https://wa.me/${WA_NUMBER}?text=${waText}`, '_blank');
+window.submitOrder=async()=>{
+    const name=sanitizeText(document.getElementById('order-name').value);
+    const err=document.getElementById('name-error');
+    if(!isValidName(name)){ err.classList.remove('hidden'); return; }
+    err.classList.add('hidden');
+    if(!currentUser||currentUser.isAnonymous){ showAlert('Error','Silakan login','error'); return; }
+    const btn=document.getElementById('btn-submit-order'); btn.disabled=true; btn.textContent='MEMPROSES...';
+    try{
+        const ex=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)));
+        if(ex.size>=MAX_PER_USER){ showAlert('Batas',`Maks ${MAX_PER_USER} tiket per akun`,'error'); return; }
+        const price=selectedType==='VIP'?eventConfig.vipPrice:eventConfig.regPrice;
+        const orderId=generateOrderId();
+        await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),{
+            order_id:orderId,user_id:currentUser.uid,name,email:currentUser.email,
+            type:selectedType,price,status:'pending',check_in:false,created_at:Date.now()
+        });
+        window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Halo Admin, Konfirmasi Pembayaran ${eventConfig.title}.\nOrder ID: ${orderId}\nNama: ${name}`)}`,'_blank');
         showTab('my-tickets');
-    } catch (e) {
-        if (e.code === 'permission-denied') {
-            showAlert('Error', 'Gagal membuat tiket. Pastikan Anda sudah login dengan akun Google.', 'error');
-        } else {
-            showAlert('Error', 'Gagal membuat pesanan. Coba lagi.', 'error');
-        }
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';
-        lucide.createIcons();
-    }
+    }catch(e){ showAlert('Error',e.code==='permission-denied'?'Login Google terlebih dahulu':'Gagal pesan, coba lagi','error'); }
+    finally{ btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)'; lucide.createIcons(); }
 };
 
-// ─── TIKET USER ───────────────────────────────────────────────────────────────
-function loadUserTickets() {
-    if (!currentUser || currentUser.isAnonymous) return;
-
-    // FIX: unsubscribe listener lama sebelum buat yang baru
-    if (unsubUserTickets) unsubUserTickets();
-
-    const container = document.getElementById('ticket-list');
-
-    unsubUserTickets = window.onSnapshot(
-        window.query(
-            window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'),
-            window.where('user_id', '==', currentUser.uid)
-        ),
-        (snap) => {
-            container.innerHTML = '';
-            if (snap.empty) {
-                container.innerHTML = '<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';
-                return;
-            }
-            snap.forEach(docu => {
-                const t = docu.data();
-                const approved = t.status === 'approved';
-                // FIX: encode order_id untuk URL QR
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(t.order_id)}`;
-                const div = document.createElement('div');
-                div.className = 'bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all text-slate-900';
-
-                // FIX: bangun DOM dengan textContent, bukan innerHTML untuk data dari Firestore
-                div.innerHTML = `
+// ── TIKET USER ──
+function loadUserTickets(){
+    if(!currentUser||currentUser.isAnonymous) return;
+    if(unsubUser) unsubUser();
+    const container=document.getElementById('ticket-list');
+    unsubUser=window.onSnapshot(
+        window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)),
+        snap=>{
+            // Deteksi perubahan status → notifikasi
+            snap.forEach(d=>{ const t=d.data(),prev=prevStatuses[d.id];
+                if(prev&&prev!==t.status&&t.status==='approved'){
+                    sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif. Tunjukkan QR di gerbang.`);
+                    showToast('Tiket Disetujui! 🎉',`${t.name} — ${t.type}`,'success');
+                }
+                prevStatuses[d.id]=t.status;
+            });
+            container.innerHTML='';
+            if(snap.empty){ container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>'; return; }
+            snap.forEach(docu=>{
+                const t=docu.data(), approved=t.status==='approved';
+                const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(t.order_id)}`;
+                const div=document.createElement('div');
+                div.className='bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
+                div.innerHTML=`
                     <div class="p-6 bg-white border-b border-dashed border-slate-100">
                         <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest order-id-text"></p>
-                                <h3 class="text-2xl font-black text-slate-900 leading-tight uppercase ticket-name-text"></h3>
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 ticket-type-text"></p>
-                            </div>
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
+                            <div class="flex-1"><p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest oid"></p><h3 class="text-2xl font-black text-slate-900 leading-tight uppercase nm"></h3><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 tp"></p></div>
+                            <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved?'bg-green-100 text-green-600':'bg-amber-100 text-amber-600'}">${approved?'AKTIF':'PENDING'}</span>
                         </div>
                     </div>
-                    <div class="bg-slate-50 p-8 flex flex-col items-center gap-6">
-                        <div class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
-                            ${approved
-                                ? `<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR Tiket">`
-                                : `<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`
-                            }
-                            ${t.check_in ? `<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>` : ''}
+                    <div class="bg-slate-50 p-8 flex flex-col items-center gap-5">
+                        <div id="tp-${docu.id}" class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
+                            ${approved?`<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`:`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
+                            ${t.check_in?`<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>`:''}
                         </div>
-                        <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center ticket-status-text"></p>
-                    </div>
-                `;
-
-                // FIX: isi data dengan textContent — aman dari XSS
-                div.querySelector('.order-id-text').textContent = `#${t.order_id}`;
-                div.querySelector('.ticket-name-text').textContent = t.name;
-                div.querySelector('.ticket-type-text').textContent = `${t.type} PASS`;
-                div.querySelector('.ticket-status-text').textContent = approved
-                    ? (t.check_in ? 'Tiket sudah digunakan' : 'Tunjukkan QR di Gerbang')
-                    : 'Menunggu Approval Admin';
-
+                        <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center st"></p>
+                        ${approved&&!t.check_in?`<button onclick="saveTicketImage('${docu.id}','${t.order_id}','${encodeURIComponent(t.name)}','${t.type}')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg"><i data-lucide="image" class="w-4 h-4"></i> Simpan Tiket</button>`:''}
+                    </div>`;
+                div.querySelector('.oid').textContent=`#${t.order_id}`;
+                div.querySelector('.nm').textContent=t.name;
+                div.querySelector('.tp').textContent=`${t.type} PASS`;
+                div.querySelector('.st').textContent=approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin';
                 container.appendChild(div);
             });
             lucide.createIcons();
         },
-        (err) => {
-            console.warn('Ticket listener error:', err.code);
-        }
+        err=>console.warn('user ticket err:',err.code)
     );
 }
 
-// ─── ADMIN: SEMUA TIKET ───────────────────────────────────────────────────────
-function listenToAllTickets() {
-    if (unsubAllTickets) unsubAllTickets();
+// ── SIMPAN TIKET SEBAGAI GAMBAR ──
+window.saveTicketImage=async(docId,orderId,encodedName,type)=>{
+    const name=decodeURIComponent(encodedName);
+    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(orderId)}`;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;';
+    const card=document.createElement('div');
+    card.style.cssText='width:360px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border-radius:24px;padding:32px;font-family:sans-serif;';
+    card.innerHTML=`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+            <div><div style="font-size:10px;font-weight:800;letter-spacing:0.2em;opacity:0.7;margin-bottom:4px">HOLISTIK FEST 2026</div><div style="font-size:20px;font-weight:800">${(eventConfig.title||'').toUpperCase()}</div></div>
+            <div style="background:rgba(255,255,255,0.2);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:800">${type==='VIP'?'👑 VIP':'🎟 REGULER'}</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:16px;text-align:center;margin-bottom:16px">
+            <img src="${qrUrl}" style="width:180px;height:180px;display:block;margin:0 auto 10px;border-radius:8px" crossorigin="anonymous">
+            <div style="font-size:11px;font-weight:800;color:#4f46e5;letter-spacing:0.15em">#${orderId}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+            <div><div style="font-size:9px;opacity:0.7;font-weight:700;margin-bottom:2px">NAMA PESERTA</div><div style="font-size:15px;font-weight:800">${name.toUpperCase()}</div></div>
+            <div style="text-align:right"><div style="font-size:9px;opacity:0.7;font-weight:700;margin-bottom:2px">TANGGAL</div><div style="font-size:12px;font-weight:800">${eventConfig.date||''}</div><div style="font-size:11px;opacity:0.8">${eventConfig.location||''}</div></div>
+        </div>`;
+    wrap.appendChild(card); document.body.appendChild(wrap);
+    showToast('Menyiapkan gambar...','Tunggu sebentar','info');
+    try{
+        await new Promise(r=>setTimeout(r,800)); // tunggu gambar QR load
+        const canvas=await html2canvas(card,{scale:2,useCORS:true,logging:false,backgroundColor:null});
+        const a=document.createElement('a'); a.download=`tiket-${orderId}.png`; a.href=canvas.toDataURL('image/png'); a.click();
+        showToast('Tiket tersimpan! 🎉','Cek folder Downloads','success');
+    }catch(e){ showAlert('Error','Gagal simpan gambar. Coba screenshot manual.','error'); }
+    finally{ document.body.removeChild(wrap); }
+};
 
-    unsubAllTickets = window.onSnapshot(
-        window.query(
-            window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'),
-            window.orderBy('created_at', 'desc')
-        ),
-        (snap) => {
-            allTicketsData = [];
-            let stats = { total: 0, pending: 0, approved: 0, checkin: 0 };
-            snap.forEach(d => {
-                const t = d.data();
-                allTicketsData.push({ id: d.id, ...t });
-                stats.total++;
-                if (t.status === 'pending')  stats.pending++;
-                if (t.status === 'approved') stats.approved++;
-                if (t.check_in)              stats.checkin++;
+// ── ADMIN TICKETS ──
+function listenToAllTickets(){
+    if(unsubAdmin) unsubAdmin();
+    unsubAdmin=window.onSnapshot(
+        window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.orderBy('created_at','desc')),
+        snap=>{
+            allTicketsData=[];
+            let s={total:0,pending:0,approved:0,checkin:0,revVip:0,revReg:0,cntVip:0,cntReg:0};
+            snap.forEach(d=>{ const t=d.data(); allTicketsData.push({id:d.id,...t}); s.total++;
+                if(t.status==='pending') s.pending++;
+                if(t.status==='approved'){ s.approved++; if(t.type==='VIP'){s.revVip+=(t.price||0);s.cntVip++;}else{s.revReg+=(t.price||0);s.cntReg++;} }
+                if(t.check_in) s.checkin++;
             });
-            document.getElementById('stat-total').textContent    = stats.total;
-            document.getElementById('stat-pending').textContent  = stats.pending;
-            document.getElementById('stat-approved').textContent = stats.approved;
-            document.getElementById('stat-checkin').textContent  = stats.checkin;
+            const el=id=>document.getElementById(id);
+            el('stat-total').textContent=s.total; el('stat-pending').textContent=s.pending;
+            el('stat-approved').textContent=s.approved; el('stat-checkin').textContent=s.checkin;
+            const tot=s.revVip+s.revReg||1;
+            el('stat-revenue-total').textContent=fmtRupiah(s.revVip+s.revReg);
+            el('stat-revenue-vip').textContent=fmtRupiah(s.revVip); el('stat-revenue-reg').textContent=fmtRupiah(s.revReg);
+            el('stat-vip-count').textContent=`(${s.cntVip})`; el('stat-reg-count').textContent=`(${s.cntReg})`;
+            el('bar-vip').style.width=(s.revVip/tot*100)+'%'; el('bar-reg').style.width=(s.revReg/tot*100)+'%';
             loadAdminTickets();
-        },
-        (err) => {
-            console.warn('Admin tickets error:', err.code);
-        }
+        },err=>console.warn('admin err:',err.code)
     );
 }
 
-function loadAdminTickets() {
-    const list = document.getElementById('admin-tickets');
-    const search = document.getElementById('admin-search').value.toLowerCase();
-    list.innerHTML = '';
+window.setFilter=f=>{
+    activeFilter=f;
+    ['all','pending','approved','checkin','VIP','Reguler'].forEach(k=>{ const e=document.getElementById('fp-'+k); if(e) e.className='filter-pill'+(k===f?' active':''); });
+    selectedIds.clear(); updateBulkBar(); loadAdminTickets();
+};
 
-    const filtered = allTicketsData.filter(t =>
-        (t.name && t.name.toLowerCase().includes(search)) ||
-        (t.order_id && t.order_id.toLowerCase().includes(search))
-    );
+function applyFilter(arr){
+    return arr.filter(t=>{
+        if(activeFilter==='all') return true;
+        if(activeFilter==='pending') return t.status==='pending';
+        if(activeFilter==='approved') return t.status==='approved'&&!t.check_in;
+        if(activeFilter==='checkin') return t.check_in;
+        return t.type===activeFilter;
+    });
+}
 
-    filtered.forEach(t => {
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(t.order_id)}`;
-        const div = document.createElement('div');
-        div.className = 'bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm hover:shadow-md transition-all text-slate-900';
-
-        div.innerHTML = `
-            <div class="flex items-center gap-4 w-full sm:w-auto">
-                <div class="bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
-                    <img src="${qrUrl}" class="w-20 h-20 block rounded-md shadow-sm" alt="QR">
-                </div>
-                <div class="flex-1">
-                    <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest adm-order-id"></p>
-                    <p class="font-black text-slate-800 text-lg leading-none mb-1 uppercase adm-name"></p>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest adm-type"></p>
+function loadAdminTickets(){
+    const list=document.getElementById('admin-tickets');
+    const search=(document.getElementById('admin-search').value||'').toLowerCase();
+    list.innerHTML='';
+    const filtered=applyFilter(allTicketsData).filter(t=>!search||(t.name||'').toLowerCase().includes(search)||(t.order_id||'').toLowerCase().includes(search));
+    const hasPending=filtered.some(t=>t.status==='pending');
+    document.getElementById('select-all-bar').classList.toggle('hidden',!hasPending);
+    if(!filtered.length){ list.innerHTML='<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada tiket</div>'; return; }
+    filtered.forEach(t=>{
+        const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.order_id)}`;
+        const isPending=t.status==='pending', isChk=selectedIds.has(t.id);
+        const div=document.createElement('div');
+        div.className=`bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-3 shadow-sm hover:shadow-md transition-all${isChk?' border-indigo-300 bg-indigo-50/40':''}`;
+        div.id=`tr-${t.id}`;
+        div.innerHTML=`
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                ${isPending?`<input type="checkbox" class="ticket-checkbox" ${isChk?'checked':''} onchange="toggleSelect('${t.id}',this.checked)">`:'<div class="w-[18px] flex-shrink-0"></div>'}
+                <div class="bg-slate-50 p-1 rounded-2xl border border-slate-100 shadow-inner flex-shrink-0"><img src="${qrUrl}" class="w-14 h-14 block rounded-lg" alt="QR"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest oid"></p>
+                    <p class="font-black text-slate-800 text-base leading-none mb-0.5 uppercase nm truncate"></p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest tp"></p>
+                    <p class="text-[10px] text-slate-300 dt"></p>
                 </div>
             </div>
-            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                <span class="px-3 py-1 rounded-full text-[9px] font-black ${t.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${(t.status || '').toUpperCase()}</span>
-                ${t.status === 'pending'
-                    ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-green-100 hover:bg-green-700 transition-all">APPROVE</button>`
-                    : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1.5 border rounded-lg hover:bg-slate-50 transition-all uppercase font-black">Reset</button>`
-                }
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2 transition-all"><i data-lucide="trash-2"></i></button>
-            </div>
-        `;
-
-        // FIX: isi data dengan textContent
-        div.querySelector('.adm-order-id').textContent = `#${t.order_id}`;
-        div.querySelector('.adm-name').textContent = t.name || '-';
-        div.querySelector('.adm-type').textContent = t.type || '-';
-
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                <span class="px-2.5 py-1 rounded-full text-[9px] font-black ${t.status==='approved'?'bg-green-100 text-green-600':'bg-amber-100 text-amber-600'}">${(t.status||'').toUpperCase()}</span>
+                ${t.check_in?'<span class="px-2.5 py-1 rounded-full text-[9px] font-black bg-indigo-100 text-indigo-600">CHECK-IN</span>':''}
+                ${isPending
+                    ?`<button onclick="updateStatus('${t.id}','approved',event)" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition-all flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Approve</button>`
+                    :`<button onclick="updateStatus('${t.id}','pending',event)" class="text-slate-400 text-xs px-3 py-1.5 border rounded-xl hover:bg-slate-50 font-black">Reset</button>`}
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-1.5 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>`;
+        div.querySelector('.oid').textContent=`#${t.order_id}`;
+        div.querySelector('.nm').textContent=t.name||'-';
+        div.querySelector('.tp').textContent=`${t.type||''} · ${fmtRupiah(t.price)}`;
+        div.querySelector('.dt').textContent=fmtDate(t.created_at);
         list.appendChild(div);
     });
-
-    if (filtered.length === 0) {
-        list.innerHTML = '<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada tiket ditemukan</div>';
-    }
-
     lucide.createIcons();
 }
 
-window.updateStatus = async (id, status) => {
-    try {
-        await window.updateDoc(
-            window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets', id),
-            { status }
-        );
-    } catch (e) {
-        showAlert('Error', 'Gagal update status.', 'error');
-    }
+// ── BULK ──
+window.toggleSelect=(id,checked)=>{
+    checked?selectedIds.add(id):selectedIds.delete(id);
+    const row=document.getElementById(`tr-${id}`);
+    if(row){ row.classList.toggle('border-indigo-300',checked); row.classList.toggle('bg-indigo-50/40',checked); }
+    updateBulkBar();
 };
-
-window.deleteTicket = async (id) => {
-    // FIX: konfirmasi lebih deskriptif
-    const tiket = allTicketsData.find(t => t.id === id);
-    const nama = tiket ? tiket.name : 'tiket ini';
-    if (!confirm(`Hapus tiket atas nama "${nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
-    try {
-        await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets', id));
-    } catch (e) {
-        showAlert('Error', 'Gagal hapus tiket.', 'error');
-    }
+window.toggleSelectAll=checked=>{ allTicketsData.filter(t=>t.status==='pending').forEach(t=>checked?selectedIds.add(t.id):selectedIds.delete(t.id)); loadAdminTickets(); updateBulkBar(); };
+function updateBulkBar(){
+    const bar=document.getElementById('bulk-bar'), cnt=document.getElementById('bulk-count');
+    if(selectedIds.size>0){ bar.classList.remove('hidden');bar.classList.add('flex');cnt.textContent=`${selectedIds.size} dipilih`; }
+    else{ bar.classList.add('hidden');bar.classList.remove('flex'); }
+}
+window.bulkApprove=async()=>{
+    if(!selectedIds.size) return;
+    if(!confirm(`Approve ${selectedIds.size} tiket sekaligus?`)) return;
+    const batch=window.writeBatch(window.db);
+    selectedIds.forEach(id=>batch.update(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id),{status:'approved'}));
+    try{ await batch.commit(); showToast(`${selectedIds.size} tiket diapprove!`,'','success'); selectedIds.clear(); updateBulkBar(); }
+    catch(e){ showAlert('Error','Bulk approve gagal','error'); }
 };
+window.clearSelection=()=>{ selectedIds.clear(); updateBulkBar(); loadAdminTickets(); };
 
-// ─── ADMIN TAB SWITCH ─────────────────────────────────────────────────────────
-window.switchAdminTab = (tab) => {
-    document.getElementById('adm-list-content').classList.toggle('hidden', tab !== 'list');
-    document.getElementById('adm-scan-content').classList.toggle('hidden', tab !== 'scan');
-    document.getElementById('adm-settings-content').classList.toggle('hidden', tab !== 'settings');
-
-    const active   = 'flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all text-indigo-600';
-    const inactive = 'flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all';
-    document.getElementById('btn-adm-list').className     = tab === 'list'     ? active : inactive;
-    document.getElementById('btn-adm-settings').className = tab === 'settings' ? active : inactive;
-    document.getElementById('btn-adm-scan').className     = tab === 'scan'     ? active : inactive;
-
-    if (tab === 'scan') startScanner(); else stopScanner();
-    if (tab === 'settings') initSettingsInputs();
-};
-
-// ─── SCANNER QR ───────────────────────────────────────────────────────────────
-function startScanner() {
-    if (html5QrScanner) return;
-    html5QrScanner = new Html5Qrcode('reader');
-    const fb = document.getElementById('scan-feedback');
-    scanCooldown = false;
-
-    html5QrScanner.start(
-        { facingMode: 'environment' },
-        { fps: 5, qrbox: 250 },  // FIX: turunkan fps untuk kurangi request berulang
-        async (text) => {
-            // FIX: cooldown 3 detik antar scan untuk cegah race condition
-            if (scanCooldown) return;
-            scanCooldown = true;
-            setTimeout(() => { scanCooldown = false; }, 3000);
-
-            fb.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-700', 'text-green-700');
-
-            try {
-                const snap = await window.getDocs(
-                    window.query(
-                        window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets'),
-                        window.where('order_id', '==', text)
-                    )
-                );
-
-                if (snap.empty) {
-                    fb.textContent = 'TIDAK VALID';
-                    fb.classList.add('bg-red-100', 'text-red-700');
-                } else {
-                    const d = snap.docs[0];
-                    const data = d.data();
-
-                    if (data.status !== 'approved') {
-                        fb.textContent = 'BELUM DIAPPROVE';
-                        fb.classList.add('bg-red-100', 'text-red-700');
-                    } else if (data.check_in) {
-                        fb.textContent = 'SUDAH DIGUNAKAN';
-                        fb.classList.add('bg-red-100', 'text-red-700');
-                    } else {
-                        // FIX: gunakan textContent untuk nama agar aman dari XSS
-                        fb.textContent = '';
-                        const label = document.createTextNode(`VALID: ${data.name}`);
-                        fb.appendChild(label);
-                        fb.classList.add('bg-green-100', 'text-green-700');
-
-                        // FIX: update check_in — Firestore Rules memastikan hanya admin yang bisa
-                        await window.updateDoc(
-                            window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'tickets', d.id),
-                            { check_in: true }
-                        );
-                    }
-                }
-            } catch (e) {
-                fb.textContent = 'ERROR KONEKSI';
-                fb.classList.add('bg-red-100', 'text-red-700');
-            }
-
-            fb.classList.remove('hidden');
+// ── UPDATE STATUS + WA semi-otomatis ──
+window.updateStatus=async(id,status,evt)=>{
+    if(evt) evt.stopPropagation();
+    try{
+        await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id),{status});
+        if(status==='approved'){
+            const t=allTicketsData.find(x=>x.id===id);
+            if(t) showToast('Tiket diapprove!',`${t.name} — ${t.type}. Pembeli akan dapat notifikasi otomatis.`,'success');
         }
-    ).catch(() => showAlert('Error', 'Gagal buka kamera. Izinkan akses kamera di browser.', 'error'));
-}
+    }catch(e){ showAlert('Error','Gagal update status','error'); }
+};
+window.deleteTicket=async id=>{
+    const t=allTicketsData.find(x=>x.id===id);
+    if(!confirm(`Hapus tiket "${t?t.name:'ini'}"?`)) return;
+    try{ await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id)); }
+    catch(e){ showAlert('Error','Gagal hapus','error'); }
+};
 
-function stopScanner() {
-    if (html5QrScanner) {
-        html5QrScanner.stop().then(() => { html5QrScanner = null; }).catch(() => { html5QrScanner = null; });
-    }
-}
+// ── EXPORT CSV ──
+window.exportCSV=()=>{
+    if(!allTicketsData.length){ showAlert('Info','Belum ada data','info'); return; }
+    const hdr=['Order ID','Nama','Email','Tipe','Harga','Status','Check-in','Waktu Order'];
+    const rows=allTicketsData.map(t=>[t.order_id,t.name,t.email||'',t.type,t.price||0,t.status,t.check_in?'Ya':'Tidak',fmtDate(t.created_at)]);
+    const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download=`holistik-fest-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV diunduh!',`${allTicketsData.length} baris data`,'success');
+};
 
-// ─── MODAL ALERT ──────────────────────────────────────────────────────────────
-function showAlert(title, msg, type) {
-    document.getElementById('modal-alert').classList.replace('hidden', 'flex');
-    // FIX: gunakan textContent bukan innerHTML
-    document.getElementById('modal-title').textContent = title;
-    document.getElementById('modal-msg').textContent = msg;
-    const icon = document.getElementById('modal-icon');
-    const icons = { success: 'check-circle', error: 'alert-circle', info: 'info' };
-    const colors = { success: 'text-green-500', error: 'text-red-500', info: 'text-indigo-500' };
-    icon.innerHTML = `<i data-lucide="${icons[type] || 'info'}" class="w-10 h-10 ${colors[type] || colors.info}"></i>`;
+// ── ADMIN TAB ──
+window.switchAdminTab=tab=>{
+    ['list','scan','settings'].forEach(t=>document.getElementById(`adm-${t}-content`).classList.toggle('hidden',t!==tab));
+    const ac='px-5 py-2 rounded-xl font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all';
+    const in_='px-5 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all';
+    ['list','settings','scan'].forEach(t=>{ document.getElementById(`btn-adm-${t}`).className=t===tab?ac:in_; });
+    if(tab==='scan') startScanner(); else stopScanner();
+    if(tab==='settings') initSettingsInputs();
+};
+
+// ── SCANNER ──
+function startScanner(){
+    if(html5QrScanner) return;
+    html5QrScanner=new Html5Qrcode('reader');
+    const fb=document.getElementById('scan-feedback'); scanCooldown=false;
+    html5QrScanner.start({facingMode:'environment'},{fps:5,qrbox:220},async text=>{
+        if(scanCooldown) return; scanCooldown=true; setTimeout(()=>scanCooldown=false,3000);
+        fb.className='p-6 rounded-2xl font-black text-xl text-center';
+        try{
+            const snap=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('order_id','==',text)));
+            if(snap.empty){ fb.textContent='❌ TIDAK VALID'; fb.classList.add('bg-red-100','text-red-700'); }
+            else{
+                const d=snap.docs[0]; const data=d.data();
+                if(data.status!=='approved'){ fb.textContent='⚠️ BELUM DIAPPROVE'; fb.classList.add('bg-red-100','text-red-700'); }
+                else if(data.check_in){ fb.textContent='🔴 SUDAH DIGUNAKAN'; fb.classList.add('bg-red-100','text-red-700'); }
+                else{ fb.textContent=`✅ VALID: ${data.name}`; fb.classList.add('bg-green-100','text-green-700');
+                    await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',d.id),{check_in:true}); }
+            }
+        }catch(e){ fb.textContent='⚠️ ERROR KONEKSI'; fb.classList.add('bg-red-100','text-red-700'); }
+        fb.classList.remove('hidden');
+    }).catch(()=>showAlert('Error','Izinkan akses kamera di browser','error'));
+}
+function stopScanner(){ if(html5QrScanner) html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>html5QrScanner=null); }
+
+// ── MODAL ──
+function showAlert(title,msg,type){
+    document.getElementById('modal-alert').classList.replace('hidden','flex');
+    document.getElementById('modal-title').textContent=title; document.getElementById('modal-msg').textContent=msg;
+    const cls={success:'bg-green-100 text-green-500',error:'bg-red-100 text-red-500',info:'bg-indigo-100 text-indigo-500'};
+    const ico={success:'check-circle',error:'alert-circle',info:'info'};
+    const icon=document.getElementById('modal-icon');
+    icon.className=`w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full ${cls[type]||cls.info}`;
+    icon.innerHTML=`<i data-lucide="${ico[type]||'info'}" class="w-8 h-8"></i>`;
     lucide.createIcons();
 }
-
-function closeModal() {
-    document.getElementById('modal-alert').classList.replace('flex', 'hidden');
-}
+function closeModal(){ document.getElementById('modal-alert').classList.replace('flex','hidden'); }
 </script>
-
 </body>
 </html>
