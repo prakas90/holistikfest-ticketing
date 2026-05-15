@@ -1,324 +1,231 @@
+# FULL FIXED index.html — Holistik Fest
+
+Copy seluruh kode di bawah lalu replace seluruh isi file `index.html`.
+
 ```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Holistik Fest 2026</title>
 
-    <title>Holistik Fest 2026</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+<script type="module">
 
-    <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-        import {
-            getAuth,
-            signInWithPopup,
-            GoogleAuthProvider,
-            onAuthStateChanged,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  updateDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        import {
-            getFirestore,
-            collection,
-            addDoc,
-            query,
-            where,
-            onSnapshot,
-            doc,
-            updateDoc,
-            getDocs,
-            orderBy
-        } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyB4YSxte_dvyQzdl5Cg1_eJJ3namhGhN4U",
+  authDomain: "holistik-event-tiket.firebaseapp.com",
+  projectId: "holistik-event-tiket",
+  storageBucket: "holistik-event-tiket.firebasestorage.app",
+  messagingSenderId: "736565916238",
+  appId: "1:736565916238:web:d6a3378a57a849557ac91f"
+};
 
-        const firebaseConfig = {
-          apiKey: "AIzaSyB4YSxte_dvyQzdl5Cg1_eJJ3namhGhN4U",
-          authDomain: "holistik-event-tiket.firebaseapp.com",
-          projectId: "holistik-event-tiket",
-          storageBucket: "holistik-event-tiket.firebasestorage.app",
-          messagingSenderId: "736565916238",
-          appId: "1:736565916238:web:d6a3378a57a849557ac91f",
-          measurementId: "G-Y8HQCY6RKG"
-        };
+const app = initializeApp(firebaseConfig);
 
-        const app = initializeApp(firebaseConfig);
+window.auth = getAuth(app);
+window.db = getFirestore(app);
+window.provider = new GoogleAuthProvider();
 
-        window.auth = getAuth(app);
-        window.db = getFirestore(app);
-        window.provider = new GoogleAuthProvider();
+window.signInWithPopup = signInWithPopup;
+window.onAuthStateChanged = onAuthStateChanged;
+window.signOut = signOut;
+window.collection = collection;
+window.addDoc = addDoc;
+window.query = query;
+window.where = where;
+window.onSnapshot = onSnapshot;
+window.doc = doc;
+window.updateDoc = updateDoc;
+window.getDocs = getDocs;
 
-        window.signInWithPopup = signInWithPopup;
-        window.onAuthStateChanged = onAuthStateChanged;
-        window.signOut = signOut;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.query = query;
-        window.where = where;
-        window.onSnapshot = onSnapshot;
-        window.doc = doc;
-        window.updateDoc = updateDoc;
-        window.getDocs = getDocs;
-        window.orderBy = orderBy;
+</script>
 
-    </script>
+<style>
 
-    <style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
 
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+body{
+font-family:'Plus Jakarta Sans',sans-serif;
+background:#f8fafc;
+}
 
-        body{
-            font-family:'Plus Jakarta Sans',sans-serif;
-            background:#f8fafc;
-        }
+.tab-content{
+display:none;
+}
 
-        .glass{
-            background:rgba(255,255,255,.85);
-            backdrop-filter:blur(16px);
-        }
+.tab-content.active{
+display:block;
+}
 
-        .tab-content{
-            display:none;
-        }
-
-        .tab-content.active{
-            display:block;
-        }
-
-    </style>
+</style>
 
 </head>
-
 <body class="text-slate-900 min-h-screen">
 
-<nav class="fixed top-0 w-full z-50 glass border-b border-slate-200">
+<nav class="fixed top-0 w-full bg-white border-b z-50">
+<div class="max-w-5xl mx-auto h-16 px-6 flex items-center justify-between">
 
-    <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+<div class="font-black text-xl text-indigo-600 flex items-center gap-2 cursor-pointer"
+onclick="showTab('hero')">
+<i data-lucide="ticket"></i>
+<span>Holistik Fest</span>
+</div>
 
-        <div
-            onclick="showTab('hero')"
-            class="flex items-center gap-2 font-black text-xl text-indigo-600 cursor-pointer"
-        >
-            <i data-lucide="ticket"></i>
-            <span>Holistik Fest</span>
-        </div>
+<div id="nav-user"></div>
 
-        <div id="nav-user"></div>
-
-    </div>
-
+</div>
 </nav>
 
 <main class="pt-24 pb-20 px-6 max-w-4xl mx-auto">
 
-    <!-- HERO -->
+<section id="tab-hero" class="tab-content active">
 
-    <section id="tab-hero" class="tab-content active">
+<div class="text-center mb-12">
+<h1 class="text-5xl font-black mb-4">Holistik Fest 2026</h1>
+<p class="text-slate-500">Realtime Ticketing System</p>
+</div>
 
-        <div class="text-center mb-12">
+<div class="grid md:grid-cols-2 gap-6">
 
-            <h1 class="text-5xl md:text-6xl font-black mb-4">
-                Holistik Fest 2026
-            </h1>
+<div onclick="startOrder('VIP',55000)"
+class="bg-white p-8 rounded-[2rem] shadow-xl border cursor-pointer hover:border-indigo-500">
 
-            <p class="text-slate-500 text-lg">
-                Sistem tiket online realtime
-            </p>
+<h3 class="text-3xl font-black mb-4">VIP ACCESS</h3>
+<p class="text-5xl font-black text-indigo-600 mb-8">Rp 55K</p>
 
-        </div>
+<button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold">
+Pilih VIP
+</button>
 
-        <div class="grid md:grid-cols-2 gap-6">
+</div>
 
-            <!-- VIP -->
+<div onclick="startOrder('Reguler',35000)"
+class="bg-white p-8 rounded-[2rem] shadow-xl border cursor-pointer hover:border-black">
 
-            <div
-                onclick="startOrder('VIP',55000)"
-                class="bg-white p-8 rounded-[2.5rem] shadow-xl border hover:border-indigo-500 cursor-pointer transition-all"
-            >
+<h3 class="text-3xl font-black mb-4">REGULER</h3>
+<p class="text-5xl font-black mb-8">Rp 35K</p>
 
-                <div class="flex justify-between mb-4">
+<button class="w-full py-4 rounded-2xl bg-black text-white font-bold">
+Pilih Reguler
+</button>
 
-                    <span class="bg-amber-100 text-amber-700 text-xs px-3 py-1 rounded-full font-bold">
-                        PREMIUM
-                    </span>
+</div>
 
-                    <i data-lucide="crown" class="text-amber-400"></i>
+</div>
 
-                </div>
+</section>
 
-                <h3 class="text-3xl font-black mb-4">
-                    VIP ACCESS
-                </h3>
+<section id="tab-payment" class="tab-content max-w-md mx-auto">
 
-                <p class="text-5xl font-black text-indigo-600 mb-8">
-                    Rp 55K
-                </p>
+<div class="bg-white p-8 rounded-[2rem] shadow-xl border">
 
-                <button class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">
-                    Pilih VIP
-                </button>
+<h2 class="text-3xl font-black text-center mb-6">
+Pembayaran
+</h2>
 
-            </div>
+<div id="order-summary"
+class="bg-indigo-50 text-indigo-700 p-5 rounded-2xl text-center font-black mb-6"></div>
 
-            <!-- REGULER -->
+<div class="bg-amber-50 border border-amber-100 rounded-2xl p-6 mb-6">
 
-            <div
-                onclick="startOrder('Reguler',35000)"
-                class="bg-white p-8 rounded-[2.5rem] shadow-xl border hover:border-black cursor-pointer transition-all"
-            >
+<p class="text-center font-bold mb-4">TRANSFER BCA</p>
 
-                <div class="flex justify-between mb-4">
+<p class="text-center text-3xl font-black mb-2">1234567890</p>
 
-                    <span class="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded-full font-bold">
-                        FESTIVAL
-                    </span>
+<p class="text-center mb-5">A/N HOLISTIK FEST</p>
 
-                    <i data-lucide="users" class="text-slate-400"></i>
+<div class="bg-white border border-dashed border-red-200 text-red-600 rounded-xl p-4 text-center text-sm font-bold">
+WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP
+</div>
 
-                </div>
+</div>
 
-                <h3 class="text-3xl font-black mb-4">
-                    REGULER
-                </h3>
+<button id="btn-submit-order"
+onclick="submitOrder()"
+class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg">
+KIRIM BUKTI (WA)
+</button>
 
-                <p class="text-5xl font-black mb-8">
-                    Rp 35K
-                </p>
+</div>
 
-                <button class="w-full py-4 bg-black text-white rounded-2xl font-bold">
-                    Pilih Reguler
-                </button>
+</section>
 
-            </div>
+<section id="tab-my-tickets" class="tab-content">
+<h2 class="text-3xl font-black mb-8">Tiket Saya</h2>
+<div id="ticket-list" class="space-y-6"></div>
+</section>
 
-        </div>
+<section id="tab-admin-dashboard" class="tab-content">
 
-    </section>
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-3xl font-black">Dashboard Admin</h2>
 
-    <!-- PAYMENT -->
+<div class="flex gap-2">
+<button onclick="switchAdminTab('list')"
+class="bg-white px-4 py-2 rounded-xl shadow font-bold">
+Approval
+</button>
 
-    <section id="tab-payment" class="tab-content max-w-md mx-auto">
+<button onclick="switchAdminTab('scan')"
+class="px-4 py-2 rounded-xl text-slate-500 font-bold">
+Scanner
+</button>
+</div>
 
-        <div class="bg-white p-8 rounded-[3rem] shadow-2xl border">
+</div>
 
-            <h2 class="text-3xl font-black text-center mb-6">
-                Pembayaran
-            </h2>
+<div id="adm-list-content">
+<div id="admin-tickets"></div>
+</div>
 
-            <div
-                id="order-summary"
-                class="bg-indigo-50 p-5 rounded-2xl text-center font-black text-indigo-700 mb-6"
-            ></div>
+<div id="adm-scan-content" class="hidden max-w-md mx-auto">
 
-            <div class="bg-amber-50 border border-amber-100 rounded-2xl p-6 mb-6">
+<div id="reader"
+class="aspect-square bg-black rounded-[2rem] overflow-hidden mb-6"></div>
 
-                <p class="text-center font-bold mb-4">
-                    TRANSFER BCA
-                </p>
+<div id="scan-feedback"
+class="hidden p-6 rounded-2xl text-center font-black"></div>
 
-                <p class="text-center text-3xl font-black mb-2">
-                    1234567890
-                </p>
+</div>
 
-                <p class="text-center mb-5">
-                    A/N HOLISTIK FEST
-                </p>
-
-                <div class="bg-white border border-dashed border-red-200 text-red-600 rounded-xl p-4 text-center text-sm font-bold">
-                    WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP
-                </div>
-
-            </div>
-
-            <button
-                id="btn-submit-order"
-                onclick="submitOrder()"
-                class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg"
-            >
-                KIRIM BUKTI (WA)
-            </button>
-
-        </div>
-
-    </section>
-
-    <!-- MY TICKETS -->
-
-    <section id="tab-my-tickets" class="tab-content">
-
-        <h2 class="text-3xl font-black mb-8">
-            Tiket Saya
-        </h2>
-
-        <div id="ticket-list" class="space-y-6"></div>
-
-    </section>
-
-    <!-- ADMIN -->
-
-    <section id="tab-admin-dashboard" class="tab-content">
-
-        <div class="flex justify-between items-center mb-8">
-
-            <h2 class="text-3xl font-black">
-                Dashboard Admin
-            </h2>
-
-            <div class="flex gap-2">
-
-                <button
-                    id="btn-list"
-                    onclick="switchAdminTab('list')"
-                    class="bg-white px-4 py-2 rounded-xl shadow font-bold"
-                >
-                    Approval
-                </button>
-
-                <button
-                    id="btn-scan"
-                    onclick="switchAdminTab('scan')"
-                    class="px-4 py-2 rounded-xl text-slate-500 font-bold"
-                >
-                    Scanner
-                </button>
-
-            </div>
-
-        </div>
-
-        <div id="adm-list-content">
-            <div id="admin-tickets"></div>
-        </div>
-
-        <div id="adm-scan-content" class="hidden max-w-md mx-auto">
-
-            <div
-                id="reader"
-                class="aspect-square bg-black rounded-[2rem] overflow-hidden mb-6"
-            ></div>
-
-            <div
-                id="scan-feedback"
-                class="hidden p-6 rounded-2xl text-center font-black"
-            ></div>
-
-        </div>
-
-    </section>
+</section>
 
 </main>
 
 <script>
 
-const WA_NUMBER = "6285158880014";
+const WA_NUMBER = "6285771234567";
 
 const ADMIN_EMAILS = [
-    "sobatambyar1990@gmail.com"
+"agus@gmail.com"
 ];
 
 const MAX_TICKETS = 3000;
@@ -327,490 +234,411 @@ let currentUser = null;
 let selectedTicket = null;
 let html5QrScanner = null;
 
-window.addEventListener('load', () => {
+window.addEventListener('load',()=>{
 
-    lucide.createIcons();
+lucide.createIcons();
 
-    onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth,(user)=>{
 
-        currentUser = user;
+currentUser = user;
 
-        updateNav();
+updateNav();
 
-        if(user){
-            loadUserTickets();
-        }
+if(user){
+loadUserTickets();
+}
 
-    });
+});
 
 });
 
 function updateNav(){
 
-    const nav = document.getElementById('nav-user');
+const nav = document.getElementById('nav-user');
 
-    if(currentUser){
+if(currentUser){
 
-        nav.innerHTML = `
+nav.innerHTML = `
+<div class="flex items-center gap-3">
 
-            <div class="flex items-center gap-3">
+<button onclick="showTab('my-tickets')"
+class="text-sm font-bold text-slate-600">
+Tiket Saya
+</button>
 
-                <button
-                    onclick="showTab('my-tickets')"
-                    class="text-sm font-bold text-slate-600"
-                >
-                    Tiket Saya
-                </button>
+<img src="${currentUser.photoURL}"
+class="w-10 h-10 rounded-full border-2 border-white shadow">
 
-                <img
-                    src="${currentUser.photoURL}"
-                    class="w-10 h-10 rounded-full border-2 border-white shadow"
-                >
+<button onclick="openAdminPanel()"
+class="text-indigo-600">
+<i data-lucide="shield-check"></i>
+</button>
 
-                <button
-                    onclick="openAdminPanel()"
-                    class="text-indigo-600"
-                >
-                    <i data-lucide="shield-check"></i>
-                </button>
+<button onclick="signOut(auth)"
+class="text-red-500">
+<i data-lucide="log-out"></i>
+</button>
 
-                <button
-                    onclick="signOut(auth)"
-                    class="text-red-500"
-                >
-                    <i data-lucide="log-out"></i>
-                </button>
+</div>
+`;
 
-            </div>
+}else{
 
-        `;
+nav.innerHTML = `
+<button onclick="handleGoogleLogin()"
+class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">
+Login Google
+</button>
+`;
 
-    } else {
-
-        nav.innerHTML = `
-
-            <button
-                onclick="handleGoogleLogin()"
-                class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold"
-            >
-                Login Google
-            </button>
-
-        `;
-    }
-
-    lucide.createIcons();
 }
 
-window.handleGoogleLogin = async () => {
+lucide.createIcons();
 
-    try{
+}
 
-        await signInWithPopup(auth, provider);
+window.handleGoogleLogin = async()=>{
 
-    }catch(err){
+try{
+await signInWithPopup(auth,provider);
+}catch(err){
+alert('Login gagal');
+console.error(err);
+}
 
-        console.error(err);
-
-        alert("Login gagal");
-
-    }
 };
 
-window.showTab = (id) => {
+window.showTab = (id)=>{
 
-    document
-        .querySelectorAll('.tab-content')
-        .forEach(t => t.classList.remove('active'));
+document.querySelectorAll('.tab-content')
+.forEach(t=>t.classList.remove('active'));
 
-    document
-        .getElementById(`tab-${id}`)
-        .classList.add('active');
+document.getElementById(`tab-${id}`)
+.classList.add('active');
 
-    if(html5QrScanner){
-        html5QrScanner.stop().catch(()=>{});
-    }
+if(html5QrScanner){
+html5QrScanner.stop().catch(()=>{});
+}
+
 };
 
-window.startOrder = (type,price) => {
+window.startOrder = (type,price)=>{
 
-    if(!currentUser){
+if(!currentUser){
+handleGoogleLogin();
+return;
+}
 
-        handleGoogleLogin();
-        return;
-    }
+selectedTicket = { type, price };
 
-    selectedTicket = { type, price };
+document.getElementById('order-summary').innerHTML = `
+${type}<br>
+Rp ${price.toLocaleString('id-ID')}
+`;
 
-    document.getElementById('order-summary').innerHTML = `
-        ${type}<br>
-        Rp ${price.toLocaleString('id-ID')}
-    `;
+showTab('payment');
 
-    showTab('payment');
 };
 
-window.submitOrder = async () => {
+window.submitOrder = async()=>{
 
-    const btn = document.getElementById('btn-submit-order');
+const btn = document.getElementById('btn-submit-order');
 
-    btn.disabled = true;
+btn.disabled = true;
+btn.innerHTML = 'Memproses...';
 
-    btn.innerHTML = "Memproses...";
+try{
 
-    try{
+const snap = await getDocs(collection(db,'tickets'));
 
-        const allTicketsSnapshot =
-            await getDocs(collection(db,"tickets"));
+if(snap.size >= MAX_TICKETS){
+alert('Tiket habis');
+return;
+}
 
-        if(allTicketsSnapshot.size >= MAX_TICKETS){
+const orderId =
+'HOL-' +
+Math.random().toString(36)
+.substr(2,5)
+.toUpperCase();
 
-            alert("Tiket sudah habis");
+await addDoc(collection(db,'tickets'),{
 
-            btn.disabled = false;
-            btn.innerHTML = "KIRIM BUKTI (WA)";
+order_id: orderId,
+user_id: currentUser.uid,
+name: currentUser.displayName,
+email: currentUser.email,
+photo: currentUser.photoURL,
+type: selectedTicket.type,
+price: selectedTicket.price,
+status: 'pending',
+check_in: false,
+created_at: Date.now()
 
-            return;
-        }
+});
 
-        const orderId =
-            'HOL-' +
-            Math.random().toString(36)
-            .substr(2,5)
-            .toUpperCase();
+const message = `Halo Admin Holistik Fest,%0A%0ASaya sudah transfer.%0A%0AOrder ID: ${orderId}%0AKategori: ${selectedTicket.type}%0ANama: ${currentUser.displayName}%0A%0ASaya lampirkan bukti transfer.`;
 
-        await addDoc(collection(db,"tickets"), {
+window.open(
+`https://wa.me/${WA_NUMBER}?text=${message}`,
+'_blank'
+);
 
-            order_id: orderId,
-            user_id: currentUser.uid,
-            name: currentUser.displayName,
-            email: currentUser.email,
-            photo: currentUser.photoURL,
-            type: selectedTicket.type,
-            price: selectedTicket.price,
-            status: 'pending',
-            check_in: false,
-            created_at: Date.now()
+showTab('my-tickets');
 
-        });
+}catch(err){
+console.error(err);
+alert('Gagal membuat tiket');
+}
 
-        const message = `Halo Admin Holistik Fest,%0A%0ASaya sudah transfer.%0A%0AOrder ID: ${orderId}%0AKategori: ${selectedTicket.type}%0ANama: ${currentUser.displayName}%0A%0ASaya lampirkan bukti transfer.`;
+btn.disabled = false;
+btn.innerHTML = 'KIRIM BUKTI (WA)';
 
-        window.open(
-            `https://wa.me/${WA_NUMBER}?text=${message}`,
-            '_blank'
-        );
-
-        showTab('my-tickets');
-
-    }catch(err){
-
-        console.error(err);
-
-        alert("Gagal membuat tiket");
-
-    }
-
-    btn.disabled = false;
-
-    btn.innerHTML = "KIRIM BUKTI (WA)";
 };
 
 function loadUserTickets(){
 
-    const container = document.getElementById('ticket-list');
+const container = document.getElementById('ticket-list');
 
-    const q = query(
-        collection(db,"tickets"),
-        where("user_id","==",currentUser.uid),
-        orderBy("created_at","desc")
-    );
+const q = query(
+collection(db,'tickets'),
+where('user_id','==',currentUser.uid)
+);
 
-    onSnapshot(q,(snap)=>{
+onSnapshot(q,(snap)=>{
 
-        container.innerHTML = snap.empty
-            ? '<div class="text-center py-20 text-slate-400">Belum ada tiket.</div>'
-            : '';
+container.innerHTML = '';
 
-        snap.forEach(docu => {
-
-            const t = docu.data();
-
-            const approved = t.status === 'approved';
-
-            const div = document.createElement('div');
-
-            div.className =
-                'bg-white p-6 rounded-[2rem] shadow border';
-
-            div.innerHTML = `
-
-                <div class="flex justify-between mb-5">
-
-                    <div>
-
-                        <p class="text-xs font-black text-indigo-500">
-                            ${t.order_id}
-                        </p>
-
-                        <h3 class="text-2xl font-black">
-                            ${t.type}
-                        </h3>
-
-                    </div>
-
-                    <span class="px-3 py-1 rounded-full text-xs font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">
-
-                        ${approved ? 'AKTIF' : 'PENDING'}
-
-                    </span>
-
-                </div>
-
-                <div class="flex items-center gap-5">
-
-                    <div id="qr-${t.order_id}" class="bg-slate-50 p-3 rounded-xl border"></div>
-
-                    <div>
-
-                        <p class="font-black text-lg">
-                            ${t.name}
-                        </p>
-
-                        <p class="text-sm text-slate-400">
-
-                            ${approved ? 'QR siap digunakan' : 'Menunggu approval admin'}
-
-                        </p>
-
-                    </div>
-
-                </div>
-
-            `;
-
-            container.appendChild(div);
-
-            if(approved && !t.check_in){
-
-                new QRCode(
-                    document.getElementById(`qr-${t.order_id}`),
-                    {
-                        text: t.order_id,
-                        width: 100,
-                        height: 100
-                    }
-                );
-
-            }else{
-
-                document.getElementById(`qr-${t.order_id}`).innerHTML = `
-
-                    <div class="w-[100px] h-[100px] bg-slate-100 rounded-xl flex items-center justify-center">
-
-                        <i data-lucide="lock" class="text-slate-300"></i>
-
-                    </div>
-
-                `;
-            }
-
-        });
-
-        lucide.createIcons();
-
-    });
+if(snap.empty){
+container.innerHTML = '<div class="text-center py-20 text-slate-400">Belum ada tiket.</div>';
+return;
 }
 
-window.openAdminPanel = () => {
+snap.forEach(docu=>{
 
-    if(!currentUser){
+const t = docu.data();
 
-        alert("Login dulu");
-        return;
-    }
+const approved = t.status === 'approved';
 
-    if(!ADMIN_EMAILS.includes(currentUser.email)){
+const div = document.createElement('div');
 
-        alert("Bukan admin");
-        return;
-    }
+div.className = 'bg-white p-6 rounded-[2rem] shadow border';
 
-    showTab('admin-dashboard');
+div.innerHTML = `
 
-    loadAdminTickets();
+<div class="flex justify-between mb-5">
+
+<div>
+<p class="text-xs font-black text-indigo-500">${t.order_id}</p>
+<h3 class="text-2xl font-black">${t.type}</h3>
+</div>
+
+<span class="px-3 py-1 rounded-full text-xs font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">
+${approved ? 'AKTIF' : 'PENDING'}
+</span>
+
+</div>
+
+<div class="flex items-center gap-5">
+
+<div id="qr-${t.order_id}" class="bg-slate-50 p-3 rounded-xl border"></div>
+
+<div>
+<p class="font-black text-lg">${t.name}</p>
+<p class="text-sm text-slate-400">
+${approved ? 'QR siap digunakan' : 'Menunggu approval admin'}
+</p>
+</div>
+
+</div>
+
+`;
+
+container.appendChild(div);
+
+if(approved && !t.check_in){
+
+new QRCode(
+ document.getElementById(`qr-${t.order_id}`),
+ {
+ text: t.order_id,
+ width: 100,
+ height: 100
+ }
+);
+
+}else{
+
+ document.getElementById(`qr-${t.order_id}`).innerHTML = `
+ <div class="w-[100px] h-[100px] bg-slate-100 rounded-xl flex items-center justify-center">
+ <i data-lucide="lock" class="text-slate-300"></i>
+ </div>
+ `;
+
+}
+
+});
+
+lucide.createIcons();
+
+});
+
+}
+
+window.openAdminPanel = ()=>{
+
+if(!currentUser){
+alert('Login dulu');
+return;
+}
+
+if(!ADMIN_EMAILS.includes(currentUser.email)){
+alert('Bukan admin');
+return;
+}
+
+showTab('admin-dashboard');
+
+loadAdminTickets();
+
 };
 
 function loadAdminTickets(){
 
-    const list = document.getElementById('admin-tickets');
+const list = document.getElementById('admin-tickets');
 
-    const q = query(
-        collection(db,"tickets"),
-        where("status","==","pending")
-    );
+const q = query(collection(db,'tickets'));
 
-    onSnapshot(q,(snap)=>{
+onSnapshot(q,(snap)=>{
 
-        list.innerHTML = snap.empty
-            ? '<div class="bg-white rounded-2xl shadow border p-10 text-center text-slate-400">Tidak ada tiket pending</div>'
-            : '';
+list.innerHTML = '';
 
-        snap.forEach(d => {
+snap.forEach(d=>{
 
-            const t = d.data();
+const t = d.data();
 
-            const div = document.createElement('div');
+if(t.status !== 'pending') return;
 
-            div.className =
-                'bg-white p-5 rounded-2xl shadow border flex justify-between items-center mb-4';
+const div = document.createElement('div');
 
-            div.innerHTML = `
+ div.className = 'bg-white p-5 rounded-2xl shadow border flex justify-between items-center mb-4';
 
-                <div>
+ div.innerHTML = `
+ <div>
+ <p class="font-black">${t.name}</p>
+ <p class="text-xs text-slate-400">
+ ${t.order_id} • ${t.type}
+ </p>
+ </div>
 
-                    <p class="font-black">
-                        ${t.name}
-                    </p>
+ <button onclick="approveTicket('${d.id}')"
+ class="bg-indigo-600 text-white px-5 py-2 rounded-xl text-xs font-black">
+ APPROVE
+ </button>
+ `;
 
-                    <p class="text-xs text-slate-400">
-                        ${t.order_id} • ${t.type}
-                    </p>
+ list.appendChild(div);
 
-                </div>
+});
 
-                <button
-                    onclick="approveTicket('${d.id}')"
-                    class="bg-indigo-600 text-white px-5 py-2 rounded-xl text-xs font-black"
-                >
-                    APPROVE
-                </button>
-
-            `;
-
-            list.appendChild(div);
-
-        });
-
-    });
+if(list.innerHTML === ''){
+list.innerHTML = '<div class="bg-white rounded-2xl shadow border p-10 text-center text-slate-400">Tidak ada tiket pending</div>';
 }
 
-window.approveTicket = async (id) => {
+});
 
-    await updateDoc(doc(db,"tickets",id),{
-        status:'approved'
-    });
+}
+
+window.approveTicket = async(id)=>{
+
+await updateDoc(doc(db,'tickets',id),{
+status:'approved'
+});
+
 };
 
-window.switchAdminTab = (tab) => {
+window.switchAdminTab = (tab)=>{
 
-    document
-        .getElementById('adm-list-content')
-        .classList.toggle('hidden', tab !== 'list');
+ document.getElementById('adm-list-content')
+ .classList.toggle('hidden', tab !== 'list');
 
-    document
-        .getElementById('adm-scan-content')
-        .classList.toggle('hidden', tab !== 'scan');
+ document.getElementById('adm-scan-content')
+ .classList.toggle('hidden', tab !== 'scan');
 
-    if(tab === 'scan'){
-        startScanner();
-    }
+ if(tab === 'scan'){
+ startScanner();
+ }
+
 };
 
 function startScanner(){
 
-    html5QrScanner = new Html5Qrcode("reader");
+html5QrScanner = new Html5Qrcode('reader');
 
-    const feedback =
-        document.getElementById('scan-feedback');
+const feedback = document.getElementById('scan-feedback');
 
-    html5QrScanner.start(
+html5QrScanner.start(
+{ facingMode:'environment' },
+{ fps:10, qrbox:250 },
 
-        { facingMode:"environment" },
+async(text)=>{
 
-        { fps:10, qrbox:250 },
+const snap = await getDocs(
+query(
+collection(db,'tickets'),
+where('order_id','==',text)
+)
+);
 
-        async(text)=>{
+feedback.classList.remove(
+'hidden',
+'bg-red-100',
+'bg-green-100',
+'text-red-700',
+'text-green-700'
+);
 
-            const snap = await getDocs(
+if(snap.empty){
 
-                query(
-                    collection(db,"tickets"),
-                    where("order_id","==",text)
-                )
+feedback.innerText = 'TIKET TIDAK VALID';
+feedback.classList.add('bg-red-100','text-red-700');
 
-            );
+}else{
 
-            feedback.classList.remove(
-                'hidden',
-                'bg-red-100',
-                'bg-green-100',
-                'text-red-700',
-                'text-green-700'
-            );
+const d = snap.docs[0];
+const data = d.data();
 
-            if(snap.empty){
+if(data.status !== 'approved'){
 
-                feedback.innerText = "TIKET TIDAK VALID";
+feedback.innerText = 'BELUM APPROVED';
+feedback.classList.add('bg-red-100','text-red-700');
 
-                feedback.classList.add(
-                    'bg-red-100',
-                    'text-red-700'
-                );
+}else if(data.check_in){
 
-            }else{
+feedback.innerText = 'SUDAH DIGUNAKAN';
+feedback.classList.add('bg-red-100','text-red-700');
 
-                const d = snap.docs[0];
+}else{
 
-                const data = d.data();
+feedback.innerText = `VALID: ${data.name}`;
+feedback.classList.add('bg-green-100','text-green-700');
 
-                if(data.status !== 'approved'){
+await updateDoc(doc(db,'tickets',d.id),{
+check_in:true
+});
 
-                    feedback.innerText =
-                        "BELUM APPROVED";
+await html5QrScanner.stop();
 
-                    feedback.classList.add(
-                        'bg-red-100',
-                        'text-red-700'
-                    );
+}
 
-                }else if(data.check_in){
+}
 
-                    feedback.innerText =
-                        "SUDAH DIGUNAKAN";
+feedback.classList.remove('hidden');
 
-                    feedback.classList.add(
-                        'bg-red-100',
-                        'text-red-700'
-                    );
+}
 
-                }else{
+).catch(console.error);
 
-                    feedback.innerText =
-                        `VALID: ${data.name}`;
-
-                    feedback.classList.add(
-                        'bg-green-100',
-                        'text-green-700'
-                    );
-
-                    await updateDoc(
-                        doc(db,"tickets",d.id),
-                        {
-                            check_in:true
-                        }
-                    );
-
-                    await html5QrScanner.stop();
-
-                }
-            }
-
-            feedback.classList.remove('hidden');
-
-        }
-
-    ).catch(console.error);
 }
 
 </script>
@@ -819,3 +647,13 @@ function startScanner(){
 </html>
 ```
 
+---
+
+Setelah replace:
+
+1. save `index.html`
+2. upload ulang ke GitHub
+3. commit changes
+4. tunggu Vercel redeploy otomatis
+
+Lalu test lagi approve tiketnya.
