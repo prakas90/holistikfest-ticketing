@@ -29,6 +29,7 @@ window.auth = getAuth(app);
 window.db = getFirestore(app);
 window.provider = new GoogleAuthProvider();
 
+// Daftarkan fungsi ke window agar bisa diakses di luar script module
 window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut = signOut;
@@ -72,7 +73,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     <!-- TAB: HOME -->
     <section id="tab-hero" class="tab-content active">
         <div class="text-center mb-12">
-            <h1 class="text-5xl font-black mb-4 tracking-tighter">Holistik Fest 2026</h1>
+            <h1 class="text-5xl font-black mb-4 tracking-tighter text-indigo-900">Holistik Fest 2026</h1>
             <p class="text-slate-500 font-medium max-w-md mx-auto leading-relaxed">Nikmati festival musik terbesar dengan sistem tiket aman dan instan.</p>
         </div>
 
@@ -179,7 +180,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     <!-- TAB: ADMIN DASHBOARD -->
     <section id="tab-admin-dashboard" class="tab-content">
         <div class="mb-10">
-            <h2 class="text-4xl font-black mb-2">Petugas Panel</h2>
+            <h2 class="text-4xl font-black mb-2 text-indigo-900">Petugas Panel</h2>
             <p class="text-slate-500">Kelola pesanan dan validasi tiket pengunjung.</p>
         </div>
 
@@ -353,7 +354,7 @@ window.submitOrder = async () => {
         const orderId = 'HOL-' + Math.random().toString(36).substr(2, 5).toUpperCase();
         await addDoc(collection(db, 'tickets'), {
             order_id: orderId, user_id: currentUser.uid, 
-            name: customName, // Using the custom name
+            name: customName, 
             google_name: currentUser.displayName,
             email: currentUser.email, photo: currentUser.photoURL, type: selectedTicket.type,
             price: selectedTicket.price, status: 'pending', check_in: false, created_at: Date.now()
@@ -362,7 +363,7 @@ window.submitOrder = async () => {
         const message = `Halo Admin Holistik Fest,%0A%0ASaya sudah transfer untuk tiket ${selectedTicket.type}.%0A%0AOrder ID: ${orderId}%0ANama Tiket: ${customName}%0A%0ABerikut saya lampirkan bukti transfernya.`;
         window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank');
         showTab('my-tickets');
-        showAlert('Pesanan Berhasil!', 'Data tiket telah disimpan. Segera kirim bukti transfer ke WhatsApp admin agar tiket diaktifkan.', 'success');
+        showAlert('Pesanan Berhasil!', 'Segera kirim bukti transfer ke WhatsApp admin agar tiket diaktifkan.', 'success');
     } catch (err) { showAlert('Error', 'Gagal memproses pesanan. Coba beberapa saat lagi.', 'error'); }
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="message-circle" class="w-6 h-6"></i> KONFIRMASI (WA)';
@@ -380,7 +381,7 @@ function loadUserTickets() {
             container.innerHTML = `
                 <div class="col-span-full py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed">
                     <i data-lucide="ticket" class="w-16 h-16 mx-auto mb-4 text-slate-200"></i>
-                    <p class="text-slate-400 font-medium">Belum ada tiket. Pilih kategori di Beranda.</p>
+                    <p class="text-slate-400 font-medium">Belum ada tiket.</p>
                 </div>`;
             lucide.createIcons();
             return;
@@ -393,9 +394,9 @@ function loadUserTickets() {
             const div = document.createElement('div');
             div.className = 'bg-white p-8 rounded-[2.5rem] shadow-sm border relative overflow-hidden group';
             
-            let statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-600">MENUNGGU KONFIRMASI</span>`;
+            let statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-600">PENDING</span>`;
             if (approved) statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-green-100 text-green-600 tracking-widest">AKTIF</span>`;
-            if (rejected) statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">DITOLAK / EXPIRED</span>`;
+            if (rejected) statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">DITOLAK</span>`;
 
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-8">
@@ -410,16 +411,15 @@ function loadUserTickets() {
                     <div>
                         <p class="font-black text-xl text-slate-800">${t.name}</p>
                         <p class="text-xs text-slate-400 leading-relaxed mt-2">
-                            ${approved ? 'Gunakan QR ini untuk scan di gerbang masuk.' : (rejected ? 'Hubungi admin jika ini kesalahan.' : 'Admin sedang memverifikasi bukti transfer Anda.')}
+                            ${approved ? (t.check_in ? 'Tiket telah dipindai petugas.' : 'Tunjukkan QR ini di gerbang masuk.') : 'Menunggu verifikasi admin.'}
                         </p>
                     </div>
                 </div>
-                ${t.check_in ? '<div class="absolute inset-0 bg-white/95 flex items-center justify-center font-black text-red-600 text-3xl border-8 border-red-500/20 rotate-[-10deg] z-20 backdrop-blur-sm">DIGUNAKAN</div>' : ''}
+                ${t.check_in ? '<div class="absolute bottom-4 right-4 bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] z-20 shadow-lg">SUDAH MASUK (CHECKED-IN)</div>' : ''}
             `;
             container.appendChild(div);
 
             if (approved) {
-                // QR Tetap muncul meskipun sudah check_in, namun tertutup overlay "DIGUNAKAN"
                 new QRCode(document.getElementById(`qr-${t.order_id}`), { text: t.order_id, width: 120, height: 120, colorDark: "#000000", colorLight: "#ffffff" });
             } else {
                 document.getElementById(`qr-${t.order_id}`).innerHTML = `<div class="w-[120px] h-[120px] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300"><i data-lucide="${rejected ? 'x-circle' : 'lock'}" class="w-12 h-12"></i></div>`;
@@ -464,7 +464,7 @@ function loadAdminTickets() {
     );
 
     if (filtered.length === 0) {
-        list.innerHTML = '<div class="p-10 text-center bg-white rounded-3xl border text-slate-400">Tidak ada data tiket ditemukan</div>';
+        list.innerHTML = '<div class="p-10 text-center bg-white rounded-3xl border text-slate-400">Data tidak ditemukan.</div>';
         return;
     }
 
@@ -485,10 +485,9 @@ function loadAdminTickets() {
                     <div class="flex items-center gap-2">
                         <p class="font-black">${t.name}</p>
                         <span class="text-[9px] font-black px-2 py-0.5 rounded-md ${statusColors[t.status]} uppercase">${t.status}</span>
-                        ${t.check_in ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-600 text-white uppercase">IN</span>' : ''}
+                        ${t.check_in ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-600 text-white uppercase">MASUK</span>' : ''}
                     </div>
-                    <p class="text-xs text-slate-400 font-mono">${t.order_id} • ${t.type} • Rp${t.price?.toLocaleString()}</p>
-                    <p class="text-[10px] text-slate-300 mt-1">Akun: ${t.google_name || 'N/A'}</p>
+                    <p class="text-xs text-slate-400 font-mono">${t.order_id} • ${t.type}</p>
                 </div>
             </div>
 
@@ -500,10 +499,6 @@ function loadAdminTickets() {
                     <button onclick="updateTicketStatus('${t.id}', 'pending')" class="border text-slate-400 px-3 py-2 rounded-xl text-[10px] font-bold hover:bg-slate-50">RESET STATUS</button>
                 `}
                 
-                ${t.check_in ? `
-                    <button onclick="resetCheckIn('${t.id}')" class="bg-indigo-100 text-indigo-600 px-3 py-2 rounded-xl text-[10px] font-bold">RESET CHECK-IN</button>
-                ` : ''}
-
                 <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
@@ -513,17 +508,17 @@ function loadAdminTickets() {
 }
 
 // LOGIC: ADMIN ACTIONS
-window.updateTicketStatus = async (id, status) => { await updateDoc(doc(db, 'tickets', id), { status: status }); };
-window.resetCheckIn = async (id) => { await updateDoc(doc(db, 'tickets', id), { check_in: false }); };
+window.updateTicketStatus = async (id, status) => { await window.updateDoc(window.doc(window.db, 'tickets', id), { status: status }); };
+window.resetCheckIn = async (id) => { await window.updateDoc(window.doc(window.db, 'tickets', id), { check_in: false }); };
 
-// PERBAIKAN: Fungsi deleteTicket sekarang menggunakan window.deleteDoc yang sudah didaftarkan secara global
+// PERBAIKAN: Fungsi deleteTicket menggunakan window. secara eksplisit untuk mencegah error scope
 window.deleteTicket = async (id) => { 
     if(confirm('Yakin ingin menghapus tiket ini secara permanen?')) {
         try {
-            await deleteDoc(doc(db, 'tickets', id)); 
+            await window.deleteDoc(window.doc(window.db, 'tickets', id)); 
         } catch (error) {
             console.error("Gagal menghapus:", error);
-            showAlert("Error", "Gagal menghapus tiket.", "error");
+            showAlert("Error", "Gagal menghapus tiket. Pastikan Rule Firebase Anda mengizinkan penghapusan (Write: true).", "error");
         }
     }
 };
@@ -553,7 +548,7 @@ function startScanner() {
     
     html5QrScanner = new Html5Qrcode('reader');
     html5QrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, async (text) => {
-        const snap = await getDocs(query(collection(db, 'tickets'), where('order_id', '==', text)));
+        const snap = await window.getDocs(window.query(window.collection(window.db, 'tickets'), window.where('order_id', '==', text)));
         
         feedback.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'bg-amber-100', 'text-red-700', 'text-green-700', 'text-amber-700');
         
@@ -573,7 +568,7 @@ function startScanner() {
             } else {
                 feedback.innerText = `VALID: ${data.name}`;
                 feedback.classList.add('bg-green-100', 'text-green-700');
-                await updateDoc(doc(db, 'tickets', d.id), { check_in: true });
+                await window.updateDoc(window.doc(window.db, 'tickets', d.id), { check_in: true });
             }
         }
         feedback.classList.remove('hidden');
