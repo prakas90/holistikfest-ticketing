@@ -69,7 +69,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
 <main class="pt-24 pb-20 px-6 max-w-6xl mx-auto">
 
-    <!-- TAB: HOME -->
+    <!-- TAB: HOME (Landing Page) -->
     <section id="tab-hero" class="tab-content active">
         <div class="text-center mb-12">
             <h1 class="text-5xl font-black mb-4 tracking-tighter text-indigo-900">Holistik Fest 2026</h1>
@@ -179,6 +179,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
 </main>
 
+<!-- Modal Alert -->
 <div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
     <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
         <div id="modal-icon" class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
@@ -270,12 +271,26 @@ window.submitOrder = async () => {
     } catch (err) { showAlert('Error', 'Gagal memproses.', 'error'); }
 };
 
-function toggleTicketDetails(orderId) {
+// Fungsi Baru: Dipanggil saat tiket diklik untuk memunculkan QR
+function toggleTicketDetails(orderId, status) {
     const section = document.getElementById(`section-qr-${orderId}`);
     const icon = document.getElementById(`icon-arrow-${orderId}`);
+    const qrDiv = document.getElementById(`qr-${orderId}`);
+
     if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
         if (icon) icon.style.transform = 'rotate(180deg)';
+        
+        // Buat QR Code saat pertama kali dibuka jika tiket AKTIF
+        if (status === 'approved' && qrDiv.innerHTML === '') {
+            new QRCode(qrDiv, {
+                text: orderId,
+                width: 160,
+                height: 160,
+                colorDark : "#000000",
+                colorLight : "#ffffff"
+            });
+        }
     } else {
         section.classList.add('hidden');
         if (icon) icon.style.transform = 'rotate(0deg)';
@@ -287,19 +302,21 @@ function loadUserTickets() {
     onSnapshot(query(collection(db, 'tickets'), where('user_id', '==', currentUser.uid)), (snap) => {
         container.innerHTML = snap.empty ? '<div class="col-span-full py-10 text-center text-slate-400">Belum ada tiket.</div>' : '';
         snap.forEach(docu => {
-            const t = docu.data(); const approved = t.status === 'approved';
+            const t = docu.data(); 
+            const approved = t.status === 'approved';
             const div = document.createElement('div');
-            div.className = 'bg-white p-6 rounded-[2rem] border ticket-card relative overflow-hidden cursor-pointer shadow-sm hover:shadow-md';
-            div.onclick = () => toggleTicketDetails(t.order_id);
+            div.className = 'bg-white p-6 rounded-[2rem] border ticket-card relative overflow-hidden cursor-pointer shadow-sm hover:shadow-md mb-2';
+            // Klik kartu memanggil fungsi toggle
+            div.onclick = () => toggleTicketDetails(t.order_id, t.status);
             
             div.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-[10px] font-black text-indigo-500 tracking-widest">#${t.order_id}</p>
-                        <h3 class="text-2xl font-black">${t.type}</h3>
-                        <p class="font-black text-lg text-slate-800">${t.name}</p>
+                        <p class="text-[10px] font-black text-indigo-500 tracking-widest uppercase">#${t.order_id}</p>
+                        <h3 class="text-2xl font-black text-slate-900">${t.type}</h3>
+                        <p class="font-bold text-slate-600">${t.name}</p>
                     </div>
-                    <div class="flex flex-col items-end gap-3">
+                    <div class="flex flex-col items-end gap-2">
                         <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
                         <i data-lucide="chevron-down" id="icon-arrow-${t.order_id}" class="text-slate-300 transition-transform duration-300"></i>
                     </div>
@@ -308,21 +325,21 @@ function loadUserTickets() {
                 <div id="section-qr-${t.order_id}" class="hidden mt-6 pt-6 border-t border-dashed border-slate-100">
                     <div class="flex flex-col items-center gap-4">
                         <div id="qr-${t.order_id}" class="bg-white p-3 rounded-2xl border shadow-inner"></div>
-                        <p class="text-xs text-slate-400 text-center px-4 leading-relaxed font-medium">
-                            ${approved ? (t.check_in ? 'Tiket ini sudah dipindai oleh petugas.' : 'Tunjukkan QR ini kepada petugas di gerbang masuk.') : 'QR Code akan muncul setelah admin memverifikasi bukti transfer Anda.'}
-                        </p>
-                        ${t.check_in ? '<div class="bg-red-600 text-white px-4 py-1.5 rounded-full font-black text-[10px] shadow-lg animate-pulse">SUDAH MASUK (CHECKED-IN)</div>' : ''}
+                        <div class="text-center">
+                            <p class="text-xs text-slate-500 font-medium px-4">
+                                ${approved ? 'Tunjukkan QR Code ini kepada petugas di gerbang masuk.' : 'QR Code akan muncul secara otomatis setelah admin menyetujui pembayaran Anda.'}
+                            </p>
+                        </div>
+                        ${t.check_in ? '<div class="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-xs shadow-lg animate-pulse">TIKET SUDAH MASUK (CHECKED-IN)</div>' : ''}
                     </div>
                 </div>
             `;
             container.appendChild(div);
-            if (approved) {
-                setTimeout(() => {
-                    const el = document.getElementById(`qr-${t.order_id}`);
-                    if (el) { el.innerHTML = ''; new QRCode(el, { text: t.order_id, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff" }); }
-                }, 100);
-            } else {
-                document.getElementById(`qr-${t.order_id}`).innerHTML = '<div class="w-[150px] h-[150px] bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-300 gap-2"><i data-lucide="lock" class="w-8 h-8"></i><span class="text-[10px] font-bold">TERKUNCI</span></div>';
+            
+            // Jika PENDING, tampilkan ikon kunci agar user tahu kenapa QR belum ada
+            if (!approved) {
+                const qrEl = document.getElementById(`qr-${t.order_id}`);
+                qrEl.innerHTML = '<div class="w-[120px] h-[120px] bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-300 gap-2"><i data-lucide="lock" class="w-8 h-8"></i><span class="text-[10px] font-bold">TERKUNCI</span></div>';
             }
         });
         lucide.createIcons();
@@ -346,8 +363,8 @@ function loadAdminTickets() {
         div.innerHTML = `
             <div><p class="font-black text-slate-800">${t.name}</p><p class="text-xs text-slate-400 font-medium">${t.order_id} • ${t.type}</p></div>
             <div class="flex gap-2">
-                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition-colors">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg hover:bg-slate-50">RESET</button>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg hover:bg-slate-50">RESET</button>`}
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
         list.appendChild(div);
@@ -357,14 +374,15 @@ function loadAdminTickets() {
 
 window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal memperbarui status.', 'error'); } };
 
+// Perbaikan: Pastikan Rule Firebase (Write: true) sudah dipublish
 window.deleteTicket = async (id) => { 
-    if(confirm('Yakin ingin menghapus tiket ini secara permanen?')) {
+    if(confirm('Hapus tiket ini secara permanen dari server?')) {
         try {
             const ticketRef = window.doc(window.db, 'tickets', id);
             await window.deleteDoc(ticketRef); 
         } catch (error) {
-            console.error("Gagal menghapus:", error);
-            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (Write: true) sudah Anda terapkan di Firebase Console.", "error");
+            console.error("Hapus Gagal:", error);
+            showAlert("Gagal Menghapus", "Pastikan aturan (Rules) di Firebase Console Anda mengizinkan penghapusan data (allow write: if true).", "error");
         }
     }
 };
