@@ -13,6 +13,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB4YSxte_dvyQzdl5Cg1_eJJ3namhGhN4U",
@@ -26,8 +27,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 window.auth = getAuth(app);
 window.db = getFirestore(app);
+window.storage = getStorage(app);
 window.provider = new GoogleAuthProvider();
-window.appId = "holistik-fest-2026"; // ID Unik Aplikasi
+window.appId = "holistik-fest-2026";
 
 // Register Firebase functions to window
 window.signInWithPopup = signInWithPopup;
@@ -45,6 +47,9 @@ window.deleteDoc = deleteDoc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
 window.orderBy = orderBy;
+window.ref = ref;
+window.uploadBytes = uploadBytes;
+window.getDownloadURL = getDownloadURL;
 </script>
 
 <style>
@@ -79,7 +84,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
     <!-- TAB: HOME -->
     <section id="tab-hero" class="tab-content active">
-        <!-- Banner Acara Dinamis -->
         <div id="main-banner" class="event-banner w-full h-[300px] md:h-[450px] mb-12 flex flex-col items-center justify-center text-center p-8 text-white shadow-2xl overflow-hidden relative group transition-all">
             <div class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all"></div>
             <div class="relative z-10">
@@ -109,7 +113,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
         </div>
 
         <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <!-- VIP CARD -->
             <div onclick="startOrder('VIP')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all group">
                 <div class="flex justify-between items-start mb-6">
                     <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Premium Row</span>
@@ -122,7 +125,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                 </div>
                 <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold group-hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">Pilih VIP</button>
             </div>
-            <!-- REGULER CARD -->
             <div onclick="startOrder('Reguler')" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all group">
                 <div class="flex justify-between items-start mb-6">
                     <span class="bg-slate-100 text-slate-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Festival Area</span>
@@ -190,20 +192,33 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
         <div id="adm-list-content"><div id="admin-tickets" class="space-y-4"></div></div>
         
-        <!-- PENGATURAN EVENT -->
+        <!-- PENGATURAN EVENT DENGAN UPLOAD FILE -->
         <div id="adm-settings-content" class="hidden">
             <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
                 <h3 class="text-2xl font-black mb-8 flex items-center gap-2"><i data-lucide="settings" class="text-indigo-600"></i> Edit Informasi Event</h3>
                 
                 <div class="space-y-6">
-                    <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Event</label>
-                        <input type="text" id="set-title" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Event</label>
+                        <input type="text" id="set-title" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold">
+                    </div>
                     
-                    <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner URL (Image Link)</label>
-                        <input type="text" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-medium text-sm" placeholder="https://images.unsplash.com/..."></div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner Acara</label>
+                        <div class="flex flex-col gap-3">
+                            <input type="text" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-medium text-xs" placeholder="URL Gambar atau Upload di bawah...">
+                            <div class="flex items-center gap-4">
+                                <input type="file" id="banner-file" class="hidden" accept="image/*" onchange="uploadBannerFile(this)">
+                                <button onclick="document.getElementById('banner-file').click()" class="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black hover:bg-indigo-100 transition-all flex items-center gap-2 border border-indigo-100">
+                                    <i data-lucide="upload" class="w-4 h-4"></i> UPLOAD FOTO BARU
+                                </button>
+                                <span id="upload-status" class="text-[10px] font-black text-indigo-500 uppercase tracking-tighter"></span>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu (Jam)</label>
+                        <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu</label>
                             <input type="text" id="set-time" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
                         <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal</label>
                             <input type="text" id="set-date" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold"></div>
@@ -220,7 +235,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                     </div>
 
                     <div class="pt-4">
-                        <button onclick="saveEventSettings()" id="btn-save-settings" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">SIMPAN PERUBAHAN</button>
+                        <button onclick="saveEventSettings()" id="btn-save-settings" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">SIMPAN SEMUA PERUBAHAN</button>
                     </div>
                 </div>
             </div>
@@ -228,8 +243,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
         <div id="adm-scan-content" class="hidden max-w-md mx-auto">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border text-center">
-                <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6"></div>
+                <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
                 <div id="scan-feedback" class="hidden p-6 rounded-2xl font-black text-xl text-center"></div>
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Posisikan QR di kotak</p>
             </div>
         </div>
     </section>
@@ -239,7 +255,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 <div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
     <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
         <div id="modal-icon" class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
-        <h3 id="modal-title" class="text-2xl font-black mb-2"></h3>
+        <h3 id="modal-title" class="text-2xl font-black mb-2 text-slate-800"></h3>
         <p id="modal-msg" class="text-slate-500 mb-8 text-sm leading-relaxed"></p>
         <button onclick="closeModal()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold">Tutup</button>
     </div>
@@ -277,7 +293,6 @@ window.addEventListener('load', () => {
             }
         }
     });
-    // Listen to real-time settings
     listenToSettings();
 });
 
@@ -289,7 +304,6 @@ function listenToSettings() {
             eventConfig = docSnap.data();
             applyUIConfig();
         } else {
-            // Jika belum ada, buat default
             setDoc(docRef, eventConfig);
         }
     });
@@ -316,6 +330,30 @@ function initSettingsInputs() {
     document.getElementById('set-reg').value = eventConfig.regPrice;
 }
 
+// FUNGSI UPLOAD FILE BARU
+window.uploadBannerFile = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const status = document.getElementById('upload-status');
+    status.innerText = "MENGUNGGAH...";
+
+    try {
+        // Path storage: artifacts/holistik-fest-2026/banner_timestamp.jpg
+        const storageRef = window.ref(window.storage, `artifacts/${window.appId}/banner_${Date.now()}.jpg`);
+        const snapshot = await window.uploadBytes(storageRef, file);
+        const downloadURL = await window.getDownloadURL(snapshot.ref);
+
+        document.getElementById('set-banner').value = downloadURL;
+        status.innerText = "BERHASIL!";
+        setTimeout(() => status.innerText = "", 3000);
+    } catch (e) {
+        console.error(e);
+        status.innerText = "GAGAL UPLOAD";
+        showAlert("Error", "Gagal mengunggah gambar. Pastikan layanan Storage di Firebase Console sudah diaktifkan.", "error");
+    }
+};
+
 window.saveEventSettings = async () => {
     const btn = document.getElementById('btn-save-settings');
     btn.disabled = true;
@@ -339,7 +377,7 @@ window.saveEventSettings = async () => {
         showAlert("Error", "Gagal menyimpan. Pastikan internet aktif.", "error");
     } finally {
         btn.disabled = false;
-        btn.innerHTML = "SIMPAN PERUBAHAN";
+        btn.innerHTML = "SIMPAN SEMUA PERUBAHAN";
     }
 };
 
@@ -355,7 +393,7 @@ function updateNav() {
     if (currentUser) {
         nav.innerHTML = `
             <div class="flex items-center gap-3">
-                <button onclick="showTab('my-tickets')" class="text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors tracking-tight">Tiket Saya</button>
+                <button onclick="showTab('my-tickets')" class="text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors">Tiket Saya</button>
                 <img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm">
                 ${ADMIN_EMAILS.includes(currentUser.email) ? `
                     <button onclick="showTab('admin-dashboard')" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"><i data-lucide="shield-check" class="w-5 h-5"></i></button>
@@ -415,7 +453,7 @@ function loadUserTickets() {
     const container = document.getElementById('ticket-list');
     const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), where('user_id', '==', currentUser.uid));
     onSnapshot(q, (snap) => {
-        container.innerHTML = snap.empty ? '<div class="col-span-full py-10 text-center text-slate-400 font-bold">Belum ada tiket terjadwal.</div>' : '';
+        container.innerHTML = snap.empty ? '<div class="col-span-full py-10 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Belum ada tiket</div>' : '';
         snap.forEach(docu => {
             const t = docu.data(); const approved = t.status === 'approved';
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${t.order_id}`;
@@ -437,7 +475,7 @@ function loadUserTickets() {
                         ${approved ? `<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR Code">` : `<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-300 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-xs font-black uppercase tracking-widest">Terkunci</p></div>`}
                         ${t.check_in ? `<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>` : ''}
                     </div>
-                    <div class="text-center"><p class="text-xs text-slate-500 font-bold uppercase tracking-widest">${approved ? (t.check_in ? 'Tiket sudah digunakan' : 'Tunjukkan QR di Gerbang') : 'Menunggu verifikasi admin'}</p></div>
+                    <div class="text-center"><p class="text-xs text-slate-500 font-bold uppercase tracking-widest leading-relaxed">${approved ? (t.check_in ? 'Tiket sudah digunakan' : 'Tunjukkan QR di Gerbang') : 'Menunggu verifikasi admin'}</p></div>
                 </div>
             `;
             container.appendChild(div);
@@ -463,20 +501,19 @@ function loadAdminTickets() {
     const list = document.getElementById('admin-tickets'); 
     const search = document.getElementById('admin-search').value.toLowerCase(); 
     list.innerHTML = '';
-    
     allTicketsData.filter(t => (t.name && t.name.toLowerCase().includes(search)) || t.order_id.toLowerCase().includes(search)).forEach(t => {
         const div = document.createElement('div'); 
         div.className = 'bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm hover:shadow-md transition-all';
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.order_id}`;
         div.innerHTML = `
             <div class="flex items-center gap-4 w-full sm:w-auto">
-                <div class="bg-slate-50 p-1.5 rounded-2xl border border-slate-100"><img src="${qrUrl}" class="w-20 h-20 block rounded-md"></div>
-                <div class="flex-1"><p class="text-[10px] font-black text-indigo-500 uppercase">#${t.order_id}</p><p class="font-black text-slate-800 text-lg leading-none mb-1">${t.name}</p><p class="text-[10px] font-bold text-slate-400 uppercase">${t.type}</p></div>
+                <div class="bg-slate-50 p-1.5 rounded-2xl border border-slate-100"><img src="${qrUrl}" class="w-20 h-20 block rounded-md shadow-sm"></div>
+                <div class="flex-1"><p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id}</p><p class="font-black text-slate-800 text-lg leading-none mb-1">${t.name}</p><p class="text-[10px] font-bold text-slate-400 uppercase">${t.type}</p></div>
             </div>
             <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <span class="px-3 py-1 rounded-full text-[9px] font-black ${t.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${t.status.toUpperCase()}</span>
-                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-green-100">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1.5 border rounded-lg">RESET</button>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-green-100 hover:bg-green-700 transition-all">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1.5 border rounded-lg hover:bg-slate-50 transition-all">RESET</button>`}
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2 transition-all"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
             </div>
         `;
         list.appendChild(div);
@@ -484,13 +521,13 @@ function loadAdminTickets() {
     lucide.createIcons();
 }
 
-window.updateStatus = async (id, status) => { await window.updateDoc(window.doc(window.db, 'artifacts', appId, 'public', 'data', 'tickets', id), { status }); };
+window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'artifacts', appId, 'public', 'data', 'tickets', id), { status }); } catch(e) {} };
 
 window.deleteTicket = async (id) => { 
     if(confirm('Hapus tiket ini selamanya?')) {
         try {
             await window.deleteDoc(window.doc(window.db, 'artifacts', appId, 'public', 'data', 'tickets', id)); 
-        } catch (error) { showAlert("Error", "Gagal menghapus.", "error"); }
+        } catch (error) { showAlert("Error", "Gagal menghapus data.", "error"); }
     }
 };
 
@@ -498,11 +535,9 @@ window.switchAdminTab = (tab) => {
     document.getElementById('adm-list-content').classList.toggle('hidden', tab !== 'list');
     document.getElementById('adm-scan-content').classList.toggle('hidden', tab !== 'scan');
     document.getElementById('adm-settings-content').classList.toggle('hidden', tab !== 'settings');
-    
-    document.getElementById('btn-adm-list').className = tab === 'list' ? "flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
-    document.getElementById('btn-adm-settings').className = tab === 'settings' ? "flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
-    document.getElementById('btn-adm-scan').className = tab === 'scan' ? "flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
-    
+    document.getElementById('btn-adm-list').className = tab === 'list' ? "flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all" : "flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
+    document.getElementById('btn-adm-settings').className = tab === 'settings' ? "flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all" : "flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
+    document.getElementById('btn-adm-scan').className = tab === 'scan' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
     if (tab === 'scan') startScanner(); else stopScanner();
 };
 
