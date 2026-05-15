@@ -6,7 +6,6 @@
 <title>Holistik Fest 2026 - Management System</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -69,11 +68,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
 <main class="pt-24 pb-20 px-6 max-w-6xl mx-auto">
 
-    <!-- TAB: HOME (Landing Page) -->
+    <!-- TAB: HOME -->
     <section id="tab-hero" class="tab-content active">
         <div class="text-center mb-12">
             <h1 class="text-5xl font-black mb-4 tracking-tighter text-indigo-900">Holistik Fest 2026</h1>
-            <p class="text-slate-500 font-medium max-w-md mx-auto leading-relaxed">Nikmati festival musik terbesar dengan sistem tiket aman dan instan.</p>
+            <p class="text-slate-500 font-medium max-w-md mx-auto leading-relaxed">Festival musik terbesar dengan sistem tiket aman.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
@@ -98,7 +97,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                     <i data-lucide="crown" class="text-amber-400"></i>
                 </div>
                 <h3 class="text-3xl font-black mb-2">VIP ACCESS</h3>
-                <p class="text-slate-500 text-sm mb-6">Akses area khusus baris paling depan dengan view panggung terbaik.</p>
+                <p class="text-slate-500 text-sm mb-6">Akses area khusus baris paling depan.</p>
                 <div class="flex items-baseline gap-1 mb-8">
                     <span class="text-5xl font-black text-indigo-600">Rp 55K</span>
                 </div>
@@ -110,7 +109,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                     <i data-lucide="users" class="text-slate-400"></i>
                 </div>
                 <h3 class="text-3xl font-black mb-2">REGULER</h3>
-                <p class="text-slate-500 text-sm mb-6">Akses area festival umum untuk menikmati seluruh rangkaian acara.</p>
+                <p class="text-slate-500 text-sm mb-6">Akses area festival umum.</p>
                 <div class="flex items-baseline gap-1 mb-8">
                     <span class="text-5xl font-black text-slate-900">Rp 35K</span>
                 </div>
@@ -134,7 +133,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
             <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8">
                 <p class="text-center text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
                 <p class="text-center font-bold text-slate-500 mb-6 text-sm">BCA - A/N HOLISTIK FEST</p>
-                <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-center text-[10px] font-black leading-relaxed">
+                <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-center text-[10px] font-black leading-relaxed uppercase">
                     WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP!
                 </div>
             </div>
@@ -147,8 +146,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
     <!-- TAB: MY TICKETS -->
     <section id="tab-my-tickets" class="tab-content">
-        <h2 class="text-4xl font-black mb-10">Tiket Saya</h2>
-        <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start"></div>
+        <h2 class="text-4xl font-black mb-10 text-indigo-900">Tiket Saya</h2>
+        <div id="ticket-list" class="grid md:grid-cols-2 gap-4 items-start"></div>
     </section>
 
     <!-- TAB: ADMIN -->
@@ -271,31 +270,18 @@ window.submitOrder = async () => {
     } catch (err) { showAlert('Error', 'Gagal memproses.', 'error'); }
 };
 
-// Fungsi Baru: Dipanggil saat tiket diklik untuk memunculkan QR
-function toggleTicketDetails(orderId, status) {
-    const section = document.getElementById(`section-qr-${orderId}`);
-    const icon = document.getElementById(`icon-arrow-${orderId}`);
-    const qrDiv = document.getElementById(`qr-${orderId}`);
-
-    if (section.classList.contains('hidden')) {
-        section.classList.remove('hidden');
-        if (icon) icon.style.transform = 'rotate(180deg)';
-        
-        // Buat QR Code saat pertama kali dibuka jika tiket AKTIF
-        if (status === 'approved' && qrDiv.innerHTML === '') {
-            new QRCode(qrDiv, {
-                text: orderId,
-                width: 160,
-                height: 160,
-                colorDark : "#000000",
-                colorLight : "#ffffff"
-            });
-        }
+// Fungsi Accordion: Klik tiket untuk buka tutup detail QR
+window.toggleTicket = (orderId) => {
+    const detail = document.getElementById(`detail-${orderId}`);
+    const arrow = document.getElementById(`arrow-${orderId}`);
+    if (detail.classList.contains('hidden')) {
+        detail.classList.remove('hidden');
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
     } else {
-        section.classList.add('hidden');
-        if (icon) icon.style.transform = 'rotate(0deg)';
+        detail.classList.add('hidden');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
     }
-}
+};
 
 function loadUserTickets() {
     const container = document.getElementById('ticket-list');
@@ -305,42 +291,39 @@ function loadUserTickets() {
             const t = docu.data(); 
             const approved = t.status === 'approved';
             const div = document.createElement('div');
-            div.className = 'bg-white p-6 rounded-[2rem] border ticket-card relative overflow-hidden cursor-pointer shadow-sm hover:shadow-md mb-2';
-            // Klik kartu memanggil fungsi toggle
-            div.onclick = () => toggleTicketDetails(t.order_id, t.status);
+            div.className = 'bg-white rounded-[2rem] border overflow-hidden mb-3 shadow-sm hover:shadow-md transition-all';
             
+            // Menggunakan Image API agar QR Code PASTI TAMPIL tanpa masalah library
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${t.order_id}`;
+
             div.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-[10px] font-black text-indigo-500 tracking-widest uppercase">#${t.order_id}</p>
-                        <h3 class="text-2xl font-black text-slate-900">${t.type}</h3>
-                        <p class="font-bold text-slate-600">${t.name}</p>
+                <div class="p-6 cursor-pointer flex justify-between items-center bg-white" onclick="toggleTicket('${t.order_id}')">
+                    <div class="flex-1">
+                        <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id}</p>
+                        <h3 class="text-xl font-black text-slate-900">${t.name}</h3>
+                        <p class="text-xs font-bold text-slate-400 uppercase">${t.type} PASS</p>
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
-                        <i data-lucide="chevron-down" id="icon-arrow-${t.order_id}" class="text-slate-300 transition-transform duration-300"></i>
+                        <i data-lucide="chevron-down" id="arrow-${t.order_id}" class="text-slate-300 transition-transform"></i>
                     </div>
                 </div>
 
-                <div id="section-qr-${t.order_id}" class="hidden mt-6 pt-6 border-t border-dashed border-slate-100">
-                    <div class="flex flex-col items-center gap-4">
-                        <div id="qr-${t.order_id}" class="bg-white p-3 rounded-2xl border shadow-inner"></div>
-                        <div class="text-center">
-                            <p class="text-xs text-slate-500 font-medium px-4">
-                                ${approved ? 'Tunjukkan QR Code ini kepada petugas di gerbang masuk.' : 'QR Code akan muncul secara otomatis setelah admin menyetujui pembayaran Anda.'}
-                            </p>
-                        </div>
-                        ${t.check_in ? '<div class="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-xs shadow-lg animate-pulse">TIKET SUDAH MASUK (CHECKED-IN)</div>' : ''}
+                <div id="detail-${t.order_id}" class="hidden bg-slate-50 border-t border-dashed border-slate-200 p-8 flex flex-col items-center gap-6">
+                    <div class="bg-white p-4 rounded-3xl shadow-inner border border-slate-100 relative">
+                        ${approved ? `<img src="${qrUrl}" class="w-48 h-48 block" alt="QR Code">` : 
+                        `<div class="w-48 h-48 flex flex-col items-center justify-center text-slate-300 gap-2"><i data-lucide="lock" class="w-10 h-10"></i><p class="text-[10px] font-bold">TERKUNCI</p></div>`}
+                        
+                        ${t.check_in ? `<div class="absolute inset-0 bg-white/80 flex items-center justify-center"><span class="bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] shadow-lg">SUDAH MASUK</span></div>` : ''}
+                    </div>
+                    <div class="text-center max-w-[200px]">
+                        <p class="text-[10px] text-slate-400 font-medium leading-relaxed">
+                            ${approved ? (t.check_in ? 'Tiket sudah digunakan.' : 'Tunjukkan QR ini di gerbang masuk.') : 'Menunggu verifikasi admin.'}
+                        </p>
                     </div>
                 </div>
             `;
             container.appendChild(div);
-            
-            // Jika PENDING, tampilkan ikon kunci agar user tahu kenapa QR belum ada
-            if (!approved) {
-                const qrEl = document.getElementById(`qr-${t.order_id}`);
-                qrEl.innerHTML = '<div class="w-[120px] h-[120px] bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-300 gap-2"><i data-lucide="lock" class="w-8 h-8"></i><span class="text-[10px] font-bold">TERKUNCI</span></div>';
-            }
         });
         lucide.createIcons();
     });
@@ -361,10 +344,10 @@ function loadAdminTickets() {
     allTicketsData.filter(t => (t.name && t.name.toLowerCase().includes(search)) || t.order_id.toLowerCase().includes(search)).forEach(t => {
         const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm';
         div.innerHTML = `
-            <div><p class="font-black text-slate-800">${t.name}</p><p class="text-xs text-slate-400 font-medium">${t.order_id} • ${t.type}</p></div>
+            <div><p class="font-black text-slate-800">${t.name}</p><p class="text-xs text-slate-400">${t.order_id} • ${t.type}</p></div>
             <div class="flex gap-2">
-                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg hover:bg-slate-50">RESET</button>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg">RESET</button>`}
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
         list.appendChild(div);
@@ -372,17 +355,17 @@ function loadAdminTickets() {
     lucide.createIcons();
 }
 
-window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal memperbarui status.', 'error'); } };
+window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal update.', 'error'); } };
 
-// Perbaikan: Pastikan Rule Firebase (Write: true) sudah dipublish
+// Perbaikan Hapus: Menggunakan window eksplisit
 window.deleteTicket = async (id) => { 
-    if(confirm('Hapus tiket ini secara permanen dari server?')) {
+    if(confirm('Hapus tiket ini selamanya?')) {
         try {
             const ticketRef = window.doc(window.db, 'tickets', id);
             await window.deleteDoc(ticketRef); 
         } catch (error) {
-            console.error("Hapus Gagal:", error);
-            showAlert("Gagal Menghapus", "Pastikan aturan (Rules) di Firebase Console Anda mengizinkan penghapusan data (allow write: if true).", "error");
+            console.error("Gagal hapus:", error);
+            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (allow write) sudah aktif.", "error");
         }
     }
 };
@@ -401,15 +384,15 @@ function startScanner() {
     html5QrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, async (text) => {
         const snap = await window.getDocs(window.query(window.collection(window.db, 'tickets'), window.where('order_id', '==', text)));
         fb.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-700', 'text-green-700');
-        if (snap.empty) { fb.innerText = 'TIKET TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
+        if (snap.empty) { fb.innerText = 'TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
         else {
             const d = snap.docs[0]; const data = d.data();
-            if (data.status !== 'approved') { fb.innerText = 'BELUM DIBAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
+            if (data.status !== 'approved') { fb.innerText = 'BELUM BAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
             else if (data.check_in) { fb.innerText = 'SUDAH DIGUNAKAN'; fb.classList.add('bg-red-100', 'text-red-700'); }
             else { fb.innerText = 'VALID: ' + data.name; fb.classList.add('bg-green-100', 'text-green-700'); await window.updateDoc(window.doc(window.db, 'tickets', d.id), { check_in: true }); }
         }
         fb.classList.remove('hidden');
-    }).catch(e => showAlert('Error', 'Gagal mengakses kamera.', 'error'));
+    }).catch(e => showAlert('Error', 'Gagal buka kamera.', 'error'));
 }
 
 function stopScanner() { if(html5QrScanner) html5QrScanner.stop().then(() => html5QrScanner = null).catch(e => {}); }
