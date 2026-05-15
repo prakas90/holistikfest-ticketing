@@ -207,12 +207,13 @@ function updateNav() {
     const nav = document.getElementById('nav-user');
     if (currentUser) {
         nav.innerHTML = `
-            <div class="flex items-center gap-2">
-                <img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white">
+            <div class="flex items-center gap-3">
+                <button onclick="showTab('my-tickets')" class="text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors">Tiket Saya</button>
+                <img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm">
                 ${ADMIN_EMAILS.includes(currentUser.email) ? `
-                    <button onclick="showTab('admin-dashboard')" class="p-2 text-indigo-600"><i data-lucide="shield-check"></i></button>
+                    <button onclick="showTab('admin-dashboard')" class="p-2 text-indigo-600"><i data-lucide="shield-check" class="w-5 h-5"></i></button>
                 ` : ''}
-                <button onclick="signOut(auth)" class="p-2 text-red-500"><i data-lucide="log-out"></i></button>
+                <button onclick="signOut(auth)" class="p-2 text-red-500"><i data-lucide="log-out" class="w-5 h-5"></i></button>
             </div>
         `;
     } else {
@@ -315,7 +316,6 @@ function loadAdminTickets() {
         const div = document.createElement('div'); 
         div.className = 'bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm';
         
-        // QR Code langsung tampil di Panel Petugas
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.order_id}`;
 
         div.innerHTML = `
@@ -332,7 +332,7 @@ function loadAdminTickets() {
             <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <span class="px-3 py-1 rounded-full text-[10px] font-black ${t.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${t.status.toUpperCase()}</span>
                 ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg hover:bg-slate-50">RESET</button>`}
-                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
         list.appendChild(div);
