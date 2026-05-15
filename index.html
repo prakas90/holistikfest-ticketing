@@ -29,7 +29,7 @@ window.auth = getAuth(app);
 window.db = getFirestore(app);
 window.provider = new GoogleAuthProvider();
 
-// Daftarkan fungsi ke window agar bisa diakses di luar script module
+// Daftarkan fungsi ke window agar bisa diakses secara global
 window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut = signOut;
@@ -51,8 +51,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.admin-card { transition: all 0.2s ease; }
-.admin-card:hover { transform: translateY(-2px); }
 .step-number { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800; }
 </style>
 </head>
@@ -77,39 +75,35 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
             <p class="text-slate-500 font-medium max-w-md mx-auto leading-relaxed">Nikmati festival musik terbesar dengan sistem tiket aman dan instan.</p>
         </div>
 
-        <!-- Panduan Pembeli -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
             <div class="bg-indigo-50/50 p-4 rounded-2xl flex items-center gap-4">
                 <div class="step-number bg-indigo-600 text-white">1</div>
-                <p class="text-xs font-bold text-indigo-900">Pilih Tiket & Isi Nama</p>
+                <p class="text-xs font-bold text-indigo-900">Pilih & Isi Nama</p>
             </div>
             <div class="bg-indigo-50/50 p-4 rounded-2xl flex items-center gap-4">
                 <div class="step-number bg-indigo-600 text-white">2</div>
-                <p class="text-xs font-bold text-indigo-900">Transfer & Kirim Bukti</p>
+                <p class="text-xs font-bold text-indigo-900">Transfer & Bukti</p>
             </div>
             <div class="bg-indigo-50/50 p-4 rounded-2xl flex items-center gap-4">
                 <div class="step-number bg-indigo-600 text-white">3</div>
-                <p class="text-xs font-bold text-indigo-900">Scan QR di Lokasi</p>
+                <p class="text-xs font-bold text-indigo-900">Scan di Lokasi</p>
             </div>
         </div>
 
         <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div onclick="startOrder('VIP', 55000)" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all group">
+            <div onclick="startOrder('VIP', 55000)" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all">
                 <div class="flex justify-between items-start mb-6">
-                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Premium Access</span>
+                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Premium Row</span>
                     <i data-lucide="crown" class="text-amber-400"></i>
                 </div>
                 <h3 class="text-3xl font-black mb-2">VIP ACCESS</h3>
                 <p class="text-slate-500 text-sm mb-6">Akses area khusus baris paling depan dengan view panggung terbaik.</p>
                 <div class="flex items-baseline gap-1 mb-8">
                     <span class="text-5xl font-black text-indigo-600">Rp 55K</span>
-                    <span class="text-slate-400 text-sm">/tiket</span>
                 </div>
-                <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold group-hover:bg-indigo-700 flex items-center justify-center gap-2">
-                    Beli Tiket VIP <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
+                <button class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold">Pilih VIP</button>
             </div>
-            <div onclick="startOrder('Reguler', 35000)" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all group">
+            <div onclick="startOrder('Reguler', 35000)" class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all">
                 <div class="flex justify-between items-start mb-6">
                     <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Festival Area</span>
                     <i data-lucide="users" class="text-slate-400"></i>
@@ -118,126 +112,78 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
                 <p class="text-slate-500 text-sm mb-6">Akses area festival umum untuk menikmati seluruh rangkaian acara.</p>
                 <div class="flex items-baseline gap-1 mb-8">
                     <span class="text-5xl font-black text-slate-900">Rp 35K</span>
-                    <span class="text-slate-400 text-sm">/tiket</span>
                 </div>
-                <button class="w-full py-4 rounded-2xl bg-black text-white font-bold group-hover:bg-slate-800 flex items-center justify-center gap-2">
-                    Beli Tiket Reguler <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
+                <button class="w-full py-4 rounded-2xl bg-black text-white font-bold">Pilih Reguler</button>
             </div>
         </div>
     </section>
 
-    <!-- TAB: PAYMENT (Checkout) -->
+    <!-- TAB: PAYMENT -->
     <section id="tab-payment" class="tab-content max-w-md mx-auto">
         <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
-            <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="arrow-left"></i></button>
-            
-            <h2 class="text-3xl font-black text-center mb-2 mt-4">Checkout</h2>
-            <p class="text-center text-slate-400 text-sm mb-8">Lengkapi data untuk tiket Anda</p>
-            
+            <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400"><i data-lucide="arrow-left"></i></button>
+            <h2 class="text-3xl font-black text-center mb-6 mt-4">Checkout</h2>
             <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl"></div>
             
-            <!-- Input Nama Pembeli -->
             <div class="mb-8">
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nama Di Tiket</label>
-                <input type="text" id="order-name" placeholder="Masukkan nama lengkap..." class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold transition-all" />
-                <p class="text-[10px] text-slate-400 mt-2 ml-1 italic">*Nama ini yang akan muncul saat scan di lokasi.</p>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Nama Di Tiket</label>
+                <input type="text" id="order-name" placeholder="Nama lengkap..." class="w-full px-5 py-4 bg-slate-50 border rounded-2xl outline-none font-bold" />
             </div>
 
             <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8">
-                <div class="flex items-center justify-center gap-2 mb-4 text-amber-600">
-                    <i data-lucide="info" class="w-4 h-4"></i>
-                    <p class="text-xs font-bold tracking-widest uppercase">Instruksi Pembayaran</p>
-                </div>
                 <p class="text-center text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
                 <p class="text-center font-bold text-slate-500 mb-6 text-sm">BCA - A/N HOLISTIK FEST</p>
                 <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-center text-[10px] font-black leading-relaxed">
-                    SETELAH TRANSFER, WAJIB KLIK TOMBOL DI BAWAH UNTUK KIRIM BUKTI KE ADMIN!
+                    WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP!
                 </div>
             </div>
 
-            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-green-100 hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-3">
-                <i data-lucide="message-circle" class="w-6 h-6"></i> KONFIRMASI (WA)
+            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg">
+                KIRIM BUKTI (WA)
             </button>
         </div>
     </section>
 
     <!-- TAB: MY TICKETS -->
     <section id="tab-my-tickets" class="tab-content">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
-            <div>
-                <h2 class="text-4xl font-black mb-1">Tiket Saya</h2>
-                <p class="text-slate-400 text-sm font-medium">Data tiket tersimpan aman di akun Google Anda.</p>
-            </div>
-            <div class="bg-white px-4 py-2 rounded-xl border flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-600">Update Real-time</span>
-            </div>
-        </div>
+        <h2 class="text-4xl font-black mb-10">Tiket Saya</h2>
         <div id="ticket-list" class="grid md:grid-cols-2 gap-6"></div>
     </section>
 
-    <!-- TAB: ADMIN DASHBOARD -->
+    <!-- TAB: ADMIN -->
     <section id="tab-admin-dashboard" class="tab-content">
-        <div class="mb-10">
-            <h2 class="text-4xl font-black mb-2 text-indigo-900">Petugas Panel</h2>
-            <p class="text-slate-500">Kelola pesanan dan validasi tiket pengunjung.</p>
-        </div>
+        <div class="mb-10"><h2 class="text-4xl font-black text-indigo-900">Petugas Panel</h2></div>
 
-        <!-- Realtime Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total Pesanan</p>
-                <p id="stat-total" class="text-3xl font-black">0</p>
-            </div>
-            <div class="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm">
-                <p class="text-amber-600 text-[10px] font-bold uppercase mb-1">Pending</p>
-                <p id="stat-pending" class="text-3xl font-black text-amber-700">0</p>
-            </div>
-            <div class="bg-green-50 p-6 rounded-3xl border border-green-100 shadow-sm">
-                <p class="text-green-600 text-[10px] font-bold uppercase mb-1">Approved</p>
-                <p id="stat-approved" class="text-3xl font-black text-green-700">0</p>
-            </div>
-            <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-sm">
-                <p class="text-indigo-600 text-[10px] font-bold uppercase mb-1">Check-in</p>
-                <p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p>
-            </div>
+            <div class="bg-white p-6 rounded-3xl border shadow-sm"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p><p id="stat-total" class="text-3xl font-black">0</p></div>
+            <div class="bg-amber-50 p-6 rounded-3xl border border-amber-100"><p id="stat-pending" class="text-3xl font-black text-amber-700">0</p></div>
+            <div class="bg-green-50 p-6 rounded-3xl border border-green-100"><p id="stat-approved" class="text-3xl font-black text-green-700">0</p></div>
+            <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100"><p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p></div>
         </div>
 
-        <!-- Admin Navigation & Search -->
-        <div class="bg-white p-4 rounded-3xl border mb-8 flex flex-col md:flex-row gap-4 items-center">
-            <div class="flex p-1 bg-slate-100 rounded-2xl w-full md:w-auto">
-                <button onclick="switchAdminTab('list')" id="btn-adm-list" class="flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all">Kelola Tiket</button>
-                <button onclick="switchAdminTab('scan')" id="btn-adm-scan" class="flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all">Scanner</button>
+        <div class="bg-white p-4 rounded-3xl border mb-8 flex flex-col md:flex-row gap-4">
+            <div class="flex p-1 bg-slate-100 rounded-2xl">
+                <button onclick="switchAdminTab('list')" id="btn-adm-list" class="px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all">Daftar</button>
+                <button onclick="switchAdminTab('scan')" id="btn-adm-scan" class="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all">Scanner</button>
             </div>
-            <div class="relative w-full">
-                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                <input type="text" id="admin-search" placeholder="Cari Nama atau Order ID..." oninput="loadAdminTickets()" class="w-full pl-12 pr-4 py-3 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
+            <input type="text" id="admin-search" placeholder="Cari Nama/ID..." oninput="loadAdminTickets()" class="w-full px-6 py-3 bg-slate-50 border rounded-2xl outline-none">
         </div>
 
-        <div id="adm-list-content">
-            <div id="admin-tickets" class="space-y-4"></div>
-        </div>
-
+        <div id="adm-list-content"><div id="admin-tickets" class="space-y-4"></div></div>
         <div id="adm-scan-content" class="hidden max-w-md mx-auto">
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border text-center">
-                <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
-                <div id="scan-feedback" class="hidden p-6 rounded-2xl font-black text-xl animate-bounce"></div>
-                <p class="text-slate-400 text-sm">Posisikan QR Code di tengah kotak</p>
-            </div>
+            <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6"></div>
+            <div id="scan-feedback" class="hidden p-6 rounded-2xl font-black text-xl text-center"></div>
         </div>
     </section>
 
 </main>
 
-<!-- MODAL: Custom Message Box (Replacement for Alert) -->
 <div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
-    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl scale-in">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
         <div id="modal-icon" class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
         <h3 id="modal-title" class="text-2xl font-black mb-2"></h3>
-        <p id="modal-msg" class="text-slate-500 mb-8 leading-relaxed"></p>
-        <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg">Tutup</button>
+        <p id="modal-msg" class="text-slate-500 mb-8"></p>
+        <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold">Tutup</button>
     </div>
 </div>
 
@@ -251,7 +197,6 @@ let selectedTicket = null;
 let html5QrScanner = null;
 let allTicketsData = [];
 
-// INITIALIZE
 window.addEventListener('load', () => {
     lucide.createIcons();
     onAuthStateChanged(auth, (user) => {
@@ -264,33 +209,26 @@ window.addEventListener('load', () => {
     });
 });
 
-// UI UTILS
 function showTab(id) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
     if (html5QrScanner && id !== 'admin-dashboard') stopScanner();
-    window.scrollTo(0,0);
 }
 
 function updateNav() {
     const nav = document.getElementById('nav-user');
     if (currentUser) {
         nav.innerHTML = `
-            <div class="flex items-center gap-2 md:gap-4">
-                <button onclick="showTab('my-tickets')" class="hidden md:block text-sm font-bold text-slate-600 hover:text-indigo-600">Tiket Saya</button>
+            <div class="flex items-center gap-2">
                 <img src="${currentUser.photoURL}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm">
                 ${ADMIN_EMAILS.includes(currentUser.email) ? `
-                    <button onclick="showTab('admin-dashboard')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-full">
-                        <i data-lucide="shield-check" class="w-5 h-5"></i>
-                    </button>
+                    <button onclick="showTab('admin-dashboard')" class="p-2 text-indigo-600"><i data-lucide="shield-check"></i></button>
                 ` : ''}
-                <button onclick="signOut(auth)" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-full">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
-                </button>
+                <button onclick="signOut(auth)" class="p-2 text-red-500"><i data-lucide="log-out"></i></button>
             </div>
         `;
     } else {
-        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Login Google</button>`;
+        nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">Masuk</button>`;
     }
     lucide.createIcons();
 }
@@ -300,205 +238,88 @@ function showAlert(title, msg, type = 'info') {
     const icon = document.getElementById('modal-icon');
     const t = document.getElementById('modal-title');
     const m = document.getElementById('modal-msg');
-    
-    t.innerText = title;
-    m.innerText = msg;
-    
-    if (type === 'success') {
-        icon.className = "w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-green-100 text-green-600";
-        icon.innerHTML = '<i data-lucide="check-circle" class="w-10 h-10"></i>';
-    } else if (type === 'error') {
-        icon.className = "w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-red-100 text-red-600";
-        icon.innerHTML = '<i data-lucide="alert-circle" class="w-10 h-10"></i>';
-    } else {
-        icon.className = "w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600";
-        icon.innerHTML = '<i data-lucide="info" class="w-10 h-10"></i>';
-    }
-    
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    lucide.createIcons();
+    t.innerText = title; m.innerText = msg;
+    if (type === 'success') { icon.className = "bg-green-100 text-green-600 w-20 h-20 mx-auto rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="check"></i>'; }
+    else if (type === 'error') { icon.className = "bg-red-100 text-red-600 w-20 h-20 mx-auto rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="alert-circle"></i>'; }
+    else { icon.className = "bg-indigo-100 text-indigo-600 w-20 h-20 mx-auto rounded-full flex items-center justify-center"; icon.innerHTML = '<i data-lucide="info"></i>'; }
+    modal.classList.remove('hidden'); modal.classList.add('flex'); lucide.createIcons();
 }
 
-function closeModal() {
-    document.getElementById('modal-alert').classList.add('hidden');
-}
+function closeModal() { document.getElementById('modal-alert').classList.add('hidden'); }
 
-// LOGIC: AUTH
-window.handleGoogleLogin = async () => {
-    try { await signInWithPopup(auth, provider); } 
-    catch (err) { showAlert('Login Gagal', 'Pastikan koneksi stabil dan domain diizinkan di Firebase.', 'error'); }
-};
+window.handleGoogleLogin = async () => { try { await signInWithPopup(auth, provider); } catch (err) { showAlert('Error', 'Gagal login.', 'error'); } };
 
-// LOGIC: ORDER
 window.startOrder = (type, price) => {
     if (!currentUser) { handleGoogleLogin(); return; }
     selectedTicket = { type, price };
-    document.getElementById('order-summary').innerHTML = `${type} PASS<br><span class="text-3xl">Rp ${price.toLocaleString('id-ID')}</span>`;
-    document.getElementById('order-name').value = currentUser.displayName; // Default to Google Name
+    document.getElementById('order-summary').innerHTML = `${type}<br>Rp ${price.toLocaleString()}`;
+    document.getElementById('order-name').value = currentUser.displayName;
     showTab('payment');
 };
 
 window.submitOrder = async () => {
     const customName = document.getElementById('order-name').value.trim();
-    if (!customName) { showAlert('Nama Kosong', 'Harap isi nama yang akan dicantumkan di tiket.', 'error'); return; }
-
-    const btn = document.getElementById('btn-submit-order');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="animate-pulse">MEMPROSES...</span>';
-
+    if (!customName) return;
     try {
-        const snap = await getDocs(collection(db, 'tickets'));
-        if (snap.size >= MAX_TICKETS) { showAlert('Tiket Habis', 'Maaf, semua slot tiket Holistik Fest sudah terisi.', 'error'); return; }
-
         const orderId = 'HOL-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-        await addDoc(collection(db, 'tickets'), {
-            order_id: orderId, user_id: currentUser.uid, 
-            name: customName, 
-            google_name: currentUser.displayName,
-            email: currentUser.email, photo: currentUser.photoURL, type: selectedTicket.type,
-            price: selectedTicket.price, status: 'pending', check_in: false, created_at: Date.now()
-        });
-
-        const message = `Halo Admin Holistik Fest,%0A%0ASaya sudah transfer untuk tiket ${selectedTicket.type}.%0A%0AOrder ID: ${orderId}%0ANama Tiket: ${customName}%0A%0ABerikut saya lampirkan bukti transfernya.`;
-        window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank');
+        await addDoc(collection(db, 'tickets'), { order_id: orderId, user_id: currentUser.uid, name: customName, email: currentUser.email, type: selectedTicket.type, price: selectedTicket.price, status: 'pending', check_in: false, created_at: Date.now() });
+        window.open(`https://wa.me/${WA_NUMBER}?text=Halo Admin, Konfirmasi Pembayaran.%0AOrder ID: ${orderId}%0ANama: ${customName}`, '_blank');
         showTab('my-tickets');
-        showAlert('Pesanan Berhasil!', 'Segera kirim bukti transfer ke WhatsApp admin agar tiket diaktifkan.', 'success');
-    } catch (err) { showAlert('Error', 'Gagal memproses pesanan. Coba beberapa saat lagi.', 'error'); }
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="message-circle" class="w-6 h-6"></i> KONFIRMASI (WA)';
-    lucide.createIcons();
+    } catch (err) { showAlert('Error', 'Gagal memproses.', 'error'); }
 };
 
-// LOGIC: USER TICKETS
 function loadUserTickets() {
     const container = document.getElementById('ticket-list');
-    const q = query(collection(db, 'tickets'), where('user_id', '==', currentUser.uid));
-    
-    onSnapshot(q, (snap) => {
+    onSnapshot(query(collection(db, 'tickets'), where('user_id', '==', currentUser.uid)), (snap) => {
         container.innerHTML = '';
-        if (snap.empty) {
-            container.innerHTML = `
-                <div class="col-span-full py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed">
-                    <i data-lucide="ticket" class="w-16 h-16 mx-auto mb-4 text-slate-200"></i>
-                    <p class="text-slate-400 font-medium">Belum ada tiket.</p>
-                </div>`;
-            lucide.createIcons();
-            return;
-        }
-
         snap.forEach(docu => {
-            const t = docu.data();
-            const approved = t.status === 'approved';
-            const rejected = t.status === 'rejected';
+            const t = docu.data(); const approved = t.status === 'approved';
             const div = document.createElement('div');
-            div.className = 'bg-white p-8 rounded-[2.5rem] shadow-sm border relative overflow-hidden group';
-            
-            let statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-600">PENDING</span>`;
-            if (approved) statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-green-100 text-green-600 tracking-widest">AKTIF</span>`;
-            if (rejected) statusBadge = `<span class="px-4 py-1.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">DITOLAK</span>`;
-
+            div.className = 'bg-white p-6 rounded-[2rem] border relative overflow-hidden';
             div.innerHTML = `
-                <div class="flex justify-between items-start mb-8">
-                    <div>
-                        <p class="text-xs font-black text-indigo-500 mb-1 tracking-widest">#${t.order_id}</p>
-                        <h3 class="text-3xl font-black">${t.type}</h3>
-                    </div>
-                    ${statusBadge}
+                <div class="flex justify-between mb-4">
+                    <div><p class="text-xs font-black text-indigo-500 tracking-widest">#${t.order_id}</p><h3 class="text-2xl font-black">${t.type}</h3></div>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}">${approved ? 'AKTIF' : 'PENDING'}</span>
                 </div>
-                <div class="flex items-center gap-8">
-                    <div id="qr-${t.order_id}" class="bg-slate-50 p-4 rounded-3xl border border-slate-100 transition-all group-hover:bg-white shadow-inner"></div>
-                    <div>
-                        <p class="font-black text-xl text-slate-800">${t.name}</p>
-                        <p class="text-xs text-slate-400 leading-relaxed mt-2">
-                            ${approved ? (t.check_in ? 'Tiket telah dipindai petugas.' : 'Tunjukkan QR ini di gerbang masuk.') : 'Menunggu verifikasi admin.'}
-                        </p>
-                    </div>
+                <div class="flex items-center gap-6">
+                    <div id="qr-${t.order_id}" class="bg-slate-50 p-2 rounded-xl border"></div>
+                    <div><p class="font-black text-lg">${t.name}</p><p class="text-xs text-slate-400">${approved ? (t.check_in ? 'Tiket sudah dipindai.' : 'Tunjukkan QR di pintu masuk.') : 'Menunggu verifikasi admin.'}</p></div>
                 </div>
-                ${t.check_in ? '<div class="absolute bottom-4 right-4 bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] z-20 shadow-lg">SUDAH MASUK (CHECKED-IN)</div>' : ''}
+                ${t.check_in ? '<div class="absolute bottom-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full font-black text-[9px] shadow-lg animate-pulse">SUDAH MASUK</div>' : ''}
             `;
             container.appendChild(div);
-
             if (approved) {
-                new QRCode(document.getElementById(`qr-${t.order_id}`), { text: t.order_id, width: 120, height: 120, colorDark: "#000000", colorLight: "#ffffff" });
+                // Gunakan timeout kecil agar elemen ID benar-benar sudah ada di DOM
+                setTimeout(() => {
+                    const el = document.getElementById(`qr-${t.order_id}`);
+                    if (el) { el.innerHTML = ''; new QRCode(el, { text: t.order_id, width: 100, height: 100 }); }
+                }, 50);
             } else {
-                document.getElementById(`qr-${t.order_id}`).innerHTML = `<div class="w-[120px] h-[120px] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300"><i data-lucide="${rejected ? 'x-circle' : 'lock'}" class="w-12 h-12"></i></div>`;
+                document.getElementById(`qr-${t.order_id}`).innerHTML = '<div class="w-[100px] h-[100px] bg-slate-100 rounded-xl flex items-center justify-center text-slate-300"><i data-lucide="lock"></i></div>';
             }
         });
         lucide.createIcons();
     });
 }
 
-// LOGIC: ADMIN - STATS & LIST
 function listenToAllTickets() {
-    const q = query(collection(db, 'tickets'), orderBy('created_at', 'desc'));
-    onSnapshot(q, (snap) => {
-        allTicketsData = [];
-        let stats = { total: 0, pending: 0, approved: 0, checkin: 0 };
-        
-        snap.forEach(d => {
-            const t = d.data();
-            allTicketsData.push({ id: d.id, ...t });
-            stats.total++;
-            if (t.status === 'pending') stats.pending++;
-            if (t.status === 'approved') stats.approved++;
-            if (t.check_in) stats.checkin++;
-        });
-
-        document.getElementById('stat-total').innerText = stats.total;
-        document.getElementById('stat-pending').innerText = stats.pending;
-        document.getElementById('stat-approved').innerText = stats.approved;
-        document.getElementById('stat-checkin').innerText = stats.checkin;
-        
+    onSnapshot(query(collection(db, 'tickets'), orderBy('created_at', 'desc')), (snap) => {
+        allTicketsData = []; let stats = { total: 0, pending: 0, approved: 0, checkin: 0 };
+        snap.forEach(d => { const t = d.data(); allTicketsData.push({ id: d.id, ...t }); stats.total++; if (t.status === 'pending') stats.pending++; if (t.status === 'approved') stats.approved++; if (t.check_in) stats.checkin++; });
+        document.getElementById('stat-total').innerText = stats.total; document.getElementById('stat-pending').innerText = stats.pending;
+        document.getElementById('stat-approved').innerText = stats.approved; document.getElementById('stat-checkin').innerText = stats.checkin;
         loadAdminTickets();
     });
 }
 
 function loadAdminTickets() {
-    const list = document.getElementById('admin-tickets');
-    const search = document.getElementById('admin-search').value.toLowerCase();
-    list.innerHTML = '';
-
-    const filtered = allTicketsData.filter(t => 
-        (t.name && t.name.toLowerCase().includes(search)) || t.order_id.toLowerCase().includes(search)
-    );
-
-    if (filtered.length === 0) {
-        list.innerHTML = '<div class="p-10 text-center bg-white rounded-3xl border text-slate-400">Data tidak ditemukan.</div>';
-        return;
-    }
-
-    filtered.forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'bg-white p-6 rounded-3xl shadow-sm border admin-card flex flex-col md:flex-row gap-6 justify-between items-center';
-        
-        const statusColors = {
-            'pending': 'bg-amber-100 text-amber-700',
-            'approved': 'bg-green-100 text-green-700',
-            'rejected': 'bg-red-100 text-red-700'
-        };
-
+    const list = document.getElementById('admin-tickets'); const search = document.getElementById('admin-search').value.toLowerCase(); list.innerHTML = '';
+    allTicketsData.filter(t => (t.name && t.name.toLowerCase().includes(search)) || t.order_id.toLowerCase().includes(search)).forEach(t => {
+        const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-2xl border flex justify-between items-center';
         div.innerHTML = `
-            <div class="flex items-center gap-4 w-full">
-                <img src="${t.photo || ''}" class="w-12 h-12 rounded-full bg-slate-200">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <p class="font-black">${t.name}</p>
-                        <span class="text-[9px] font-black px-2 py-0.5 rounded-md ${statusColors[t.status]} uppercase">${t.status}</span>
-                        ${t.check_in ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-600 text-white uppercase">MASUK</span>' : ''}
-                    </div>
-                    <p class="text-xs text-slate-400 font-mono">${t.order_id} • ${t.type}</p>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2 justify-end w-full md:w-auto">
-                ${t.status === 'pending' ? `
-                    <button onclick="updateTicketStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700">APPROVE</button>
-                    <button onclick="updateTicketStatus('${t.id}', 'rejected')" class="bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-500 hover:text-white transition-all">REJECT</button>
-                ` : `
-                    <button onclick="updateTicketStatus('${t.id}', 'pending')" class="border text-slate-400 px-3 py-2 rounded-xl text-[10px] font-bold hover:bg-slate-50">RESET STATUS</button>
-                `}
-                
+            <div><p class="font-black">${t.name}</p><p class="text-xs text-slate-400">${t.order_id} • ${t.type}</p></div>
+            <div class="flex gap-2">
+                ${t.status === 'pending' ? `<button onclick="updateStatus('${t.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold">APPROVE</button>` : `<button onclick="updateStatus('${t.id}', 'pending')" class="text-slate-400 text-xs px-3 py-1 border rounded-lg">RESET</button>`}
                 <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
@@ -507,18 +328,17 @@ function loadAdminTickets() {
     lucide.createIcons();
 }
 
-// LOGIC: ADMIN ACTIONS
-window.updateTicketStatus = async (id, status) => { await window.updateDoc(window.doc(window.db, 'tickets', id), { status: status }); };
-window.resetCheckIn = async (id) => { await window.updateDoc(window.doc(window.db, 'tickets', id), { check_in: false }); };
+window.updateStatus = async (id, status) => { try { await window.updateDoc(window.doc(window.db, 'tickets', id), { status }); } catch(e) { showAlert('Error', 'Gagal update.', 'error'); } };
 
-// PERBAIKAN: Fungsi deleteTicket menggunakan window. secara eksplisit untuk mencegah error scope
+// FUNGSI HAPUS: Menggunakan window. eksplisit
 window.deleteTicket = async (id) => { 
-    if(confirm('Yakin ingin menghapus tiket ini secara permanen?')) {
+    if(confirm('Yakin ingin menghapus tiket ini?')) {
         try {
-            await window.deleteDoc(window.doc(window.db, 'tickets', id)); 
+            const ticketRef = window.doc(window.db, 'tickets', id);
+            await window.deleteDoc(ticketRef); 
         } catch (error) {
             console.error("Gagal menghapus:", error);
-            showAlert("Error", "Gagal menghapus tiket. Pastikan Rule Firebase Anda mengizinkan penghapusan (Write: true).", "error");
+            showAlert("Gagal Menghapus", "Pastikan Rule Firebase (Write: true) sudah Anda Publish di Firebase Console.", "error");
         }
     }
 };
@@ -526,58 +346,29 @@ window.deleteTicket = async (id) => {
 window.switchAdminTab = (tab) => {
     document.getElementById('adm-list-content').classList.toggle('hidden', tab !== 'list');
     document.getElementById('adm-scan-content').classList.toggle('hidden', tab !== 'scan');
-    
-    const btnList = document.getElementById('btn-adm-list');
-    const btnScan = document.getElementById('btn-adm-scan');
-    
-    if(tab === 'list') {
-        btnList.className = "flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all";
-        btnScan.className = "flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
-        stopScanner();
-    } else {
-        btnScan.className = "flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm transition-all";
-        btnList.className = "flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 transition-all";
-        startScanner();
-    }
+    document.getElementById('btn-adm-list').className = tab === 'list' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
+    document.getElementById('btn-adm-scan').className = tab === 'scan' ? "px-6 py-2.5 rounded-xl font-bold text-sm bg-white shadow-sm" : "px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500";
+    if (tab === 'scan') startScanner(); else stopScanner();
 };
 
-// LOGIC: SCANNER
 function startScanner() {
-    const feedback = document.getElementById('scan-feedback');
-    feedback.classList.add('hidden');
-    
     html5QrScanner = new Html5Qrcode('reader');
+    const fb = document.getElementById('scan-feedback');
     html5QrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, async (text) => {
         const snap = await window.getDocs(window.query(window.collection(window.db, 'tickets'), window.where('order_id', '==', text)));
-        
-        feedback.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'bg-amber-100', 'text-red-700', 'text-green-700', 'text-amber-700');
-        
-        if (snap.empty) {
-            feedback.innerText = 'TIKET TIDAK VALID';
-            feedback.classList.add('bg-red-100', 'text-red-700');
-        } else {
-            const d = snap.docs[0];
-            const data = d.data();
-            
-            if (data.status !== 'approved') {
-                feedback.innerText = 'BELUM DIBAYAR / APPROVED';
-                feedback.classList.add('bg-amber-100', 'text-amber-700');
-            } else if (data.check_in) {
-                feedback.innerText = 'SUDAH DIGUNAKAN';
-                feedback.classList.add('bg-red-100', 'text-red-700');
-            } else {
-                feedback.innerText = `VALID: ${data.name}`;
-                feedback.classList.add('bg-green-100', 'text-green-700');
-                await window.updateDoc(window.doc(window.db, 'tickets', d.id), { check_in: true });
-            }
+        fb.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-700', 'text-green-700');
+        if (snap.empty) { fb.innerText = 'TIDAK VALID'; fb.classList.add('bg-red-100', 'text-red-700'); }
+        else {
+            const d = snap.docs[0]; const data = d.data();
+            if (data.status !== 'approved') { fb.innerText = 'BELUM BAYAR'; fb.classList.add('bg-red-100', 'text-red-700'); }
+            else if (data.check_in) { fb.innerText = 'SUDAH DIGUNAKAN'; fb.classList.add('bg-red-100', 'text-red-700'); }
+            else { fb.innerText = 'VALID: ' + data.name; fb.classList.add('bg-green-100', 'text-green-700'); await window.updateDoc(window.doc(window.db, 'tickets', d.id), { check_in: true }); }
         }
-        feedback.classList.remove('hidden');
-    }).catch(err => showAlert('Kamera Gagal', 'Mohon izinkan akses kamera di browser Anda.', 'error'));
+        fb.classList.remove('hidden');
+    }).catch(e => showAlert('Error', 'Gagal buka kamera.', 'error'));
 }
 
-function stopScanner() {
-    if(html5QrScanner) html5QrScanner.stop().then(() => html5QrScanner = null).catch(console.error);
-}
+function stopScanner() { if(html5QrScanner) html5QrScanner.stop().then(() => html5QrScanner = null).catch(e => {}); }
 </script>
 
 </body>
