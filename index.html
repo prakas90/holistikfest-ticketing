@@ -13,7 +13,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, writeBatch, getDoc, limit } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -26,12 +26,12 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
 };
 
 const app = initializeApp(firebaseConfig);
-window.auth     = getAuth(app);
-window.db       = getFirestore(app);
-window.storage  = getStorage(app);
-window.provider = new GoogleAuthProvider();
-window.appId    = typeof __app_id !== 'undefined' ? __app_id : 'holistik-fest-2026';
-window.signInWithPopup  = signInWithPopup;
+window.auth      = getAuth(app);
+window.db        = getFirestore(app);
+window.storage   = getStorage(app);
+window.provider  = new GoogleAuthProvider();
+window.appId     = typeof __app_id !== 'undefined' ? __app_id : 'holistik-fest-2026';
+window.signInWithPopup   = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut   = signOut;
 window.collection = collection; window.addDoc = addDoc; window.query = query;
@@ -39,7 +39,7 @@ window.where = where; window.onSnapshot = onSnapshot; window.doc = doc;
 window.updateDoc = updateDoc; window.getDocs = getDocs; window.deleteDoc = deleteDoc;
 window.setDoc = setDoc; window.orderBy = orderBy; window.ref = ref;
 window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
-window.writeBatch = writeBatch; window.getDoc = getDoc;
+window.writeBatch = writeBatch; window.getDoc = getDoc; window.limit = limit;
 </script>
 
 <style>
@@ -63,12 +63,12 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 .quota-bar { height:6px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
 .quota-fill { height:100%; border-radius:999px; transition:width 0.6s ease; }
 .ticket-card-sold { opacity:0.6; pointer-events:none; }
-
-/* Petugas scan UI */
-.scan-overlay { position:fixed; inset:0; background:#0f172a; z-index:200; display:flex; flex-direction:column; align-items:center; justify-content:center; }
 .scan-result-valid   { background:#dcfce7; color:#166534; border:2px solid #86efac; }
 .scan-result-invalid { background:#fee2e2; color:#991b1b; border:2px solid #fca5a5; }
 .scan-result-warn    { background:#fef9c3; color:#854d0e; border:2px solid #fde047; }
+.log-row-valid   { border-left:3px solid #22c55e; }
+.log-row-invalid { border-left:3px solid #ef4444; }
+.log-row-warn    { border-left:3px solid #eab308; }
 </style>
 </head>
 <body class="text-slate-900 min-h-screen">
@@ -113,23 +113,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
         </div>
       </div>
     </div>
-
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
-      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-        <div class="step-number bg-indigo-600 text-white">1</div>
-        <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Pilih Tiket & Nama</p>
-      </div>
-      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-        <div class="step-number bg-indigo-600 text-white">2</div>
-        <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Transfer & Kirim Bukti</p>
-      </div>
-      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm">
-        <div class="step-number bg-indigo-600 text-white">3</div>
-        <p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Cek Tiket & Scan QR</p>
-      </div>
+      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm"><div class="step-number bg-indigo-600 text-white">1</div><p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Pilih Tiket & Nama</p></div>
+      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm"><div class="step-number bg-indigo-600 text-white">2</div><p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Transfer & Kirim Bukti</p></div>
+      <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 shadow-sm"><div class="step-number bg-indigo-600 text-white">3</div><p class="text-xs font-bold text-slate-600 uppercase tracking-tight">Cek Tiket & Scan QR</p></div>
     </div>
-
-    <!-- TOTAL KUOTA -->
     <div class="max-w-4xl mx-auto mb-8 bg-white rounded-3xl border p-5 shadow-sm">
       <div class="flex items-center justify-between mb-3">
         <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Total Kuota Tersisa</span>
@@ -137,60 +125,29 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       </div>
       <div class="quota-bar"><div id="total-quota-bar" class="quota-fill bg-indigo-500" style="width:100%"></div></div>
     </div>
-
-    <!-- TIKET CARDS -->
     <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-      <!-- VIP 1 -->
       <div id="card-VIP 1" onclick="startOrder('VIP 1')" class="bg-white p-7 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-amber-400 cursor-pointer transition-all group">
-        <div class="flex justify-between items-start mb-5">
-          <span class="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Premium</span>
-          <i data-lucide="crown" class="text-amber-400 w-5 h-5"></i>
-        </div>
+        <div class="flex justify-between items-start mb-5"><span class="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Premium</span><i data-lucide="crown" class="text-amber-400 w-5 h-5"></i></div>
         <h3 class="text-2xl font-black mb-1 text-slate-900">VIP 1</h3>
         <p class="text-slate-500 text-xs mb-4 leading-relaxed">Baris paling depan, view panggung terbaik.</p>
         <div class="mb-3"><span class="text-4xl font-black text-amber-500">Rp 65K</span></div>
-        <div class="mb-4">
-          <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-            <span>Kuota</span><span id="quota-label-VIP 1" class="text-amber-500">500 tersisa</span>
-          </div>
-          <div class="quota-bar"><div id="quota-bar-VIP 1" class="quota-fill bg-amber-400" style="width:100%"></div></div>
-        </div>
+        <div class="mb-4"><div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Kuota</span><span id="quota-label-VIP 1" class="text-amber-500">500 tersisa</span></div><div class="quota-bar"><div id="quota-bar-VIP 1" class="quota-fill bg-amber-400" style="width:100%"></div></div></div>
         <button id="btn-VIP 1" class="w-full py-3.5 rounded-2xl bg-amber-500 text-white font-bold group-hover:bg-amber-600 shadow-lg transition-all text-sm">Pilih VIP 1</button>
       </div>
-
-      <!-- VIP 2 -->
       <div id="card-VIP 2" onclick="startOrder('VIP 2')" class="bg-white p-7 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all group">
-        <div class="flex justify-between items-start mb-5">
-          <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Eksklusif</span>
-          <i data-lucide="star" class="text-indigo-400 w-5 h-5"></i>
-        </div>
+        <div class="flex justify-between items-start mb-5"><span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Eksklusif</span><i data-lucide="star" class="text-indigo-400 w-5 h-5"></i></div>
         <h3 class="text-2xl font-black mb-1 text-slate-900">VIP 2</h3>
         <p class="text-slate-500 text-xs mb-4 leading-relaxed">Area VIP dengan akses fasilitas khusus.</p>
         <div class="mb-3"><span class="text-4xl font-black text-indigo-600">Rp 55K</span></div>
-        <div class="mb-4">
-          <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-            <span>Kuota</span><span id="quota-label-VIP 2" class="text-indigo-500">1000 tersisa</span>
-          </div>
-          <div class="quota-bar"><div id="quota-bar-VIP 2" class="quota-fill bg-indigo-500" style="width:100%"></div></div>
-        </div>
+        <div class="mb-4"><div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Kuota</span><span id="quota-label-VIP 2" class="text-indigo-500">1000 tersisa</span></div><div class="quota-bar"><div id="quota-bar-VIP 2" class="quota-fill bg-indigo-500" style="width:100%"></div></div></div>
         <button id="btn-VIP 2" class="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-bold group-hover:bg-indigo-700 shadow-lg transition-all text-sm">Pilih VIP 2</button>
       </div>
-
-      <!-- REGULER -->
       <div id="card-Reguler" onclick="startOrder('Reguler')" class="bg-white p-7 rounded-[2.5rem] shadow-xl border-2 border-transparent hover:border-slate-900 cursor-pointer transition-all group">
-        <div class="flex justify-between items-start mb-5">
-          <span class="bg-slate-100 text-slate-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Festival</span>
-          <i data-lucide="users" class="text-slate-400 w-5 h-5"></i>
-        </div>
+        <div class="flex justify-between items-start mb-5"><span class="bg-slate-100 text-slate-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Festival</span><i data-lucide="users" class="text-slate-400 w-5 h-5"></i></div>
         <h3 class="text-2xl font-black mb-1 text-slate-900">Reguler</h3>
         <p class="text-slate-500 text-xs mb-4 leading-relaxed">Akses area festival umum seluruh acara.</p>
         <div class="mb-3"><span class="text-4xl font-black text-slate-900">Rp 35K</span></div>
-        <div class="mb-4">
-          <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-            <span>Kuota</span><span id="quota-label-Reguler" class="text-slate-500">1500 tersisa</span>
-          </div>
-          <div class="quota-bar"><div id="quota-bar-Reguler" class="quota-fill bg-slate-500" style="width:100%"></div></div>
-        </div>
+        <div class="mb-4"><div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1"><span>Kuota</span><span id="quota-label-Reguler" class="text-slate-500">1500 tersisa</span></div><div class="quota-bar"><div id="quota-bar-Reguler" class="quota-fill bg-slate-500" style="width:100%"></div></div></div>
         <button id="btn-Reguler" class="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-bold group-hover:bg-black shadow-lg transition-all text-sm">Pilih Reguler</button>
       </div>
     </div>
@@ -229,11 +186,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     <div id="ticket-list" class="grid md:grid-cols-2 gap-6 items-start"></div>
   </section>
 
-  <!-- ADMIN -->
+  <!-- ADMIN DASHBOARD -->
   <section id="tab-admin-dashboard" class="tab-content">
     <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h2 class="text-4xl font-black text-indigo-900">Petugas Panel</h2>
+        <h2 class="text-4xl font-black text-indigo-900">Admin Panel</h2>
         <p class="text-slate-500 font-medium">Monitoring pesanan dan pengaturan event.</p>
       </div>
       <button onclick="exportCSV()" class="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-emerald-700 transition-all self-start md:self-auto">
@@ -243,69 +200,38 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
     <!-- STATS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-      <div class="bg-white p-5 rounded-3xl border shadow-sm">
-        <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p>
-        <p id="stat-total" class="text-3xl font-black text-slate-800">0</p>
-      </div>
-      <div class="bg-amber-50 p-5 rounded-3xl border border-amber-100">
-        <p class="text-amber-500 text-[10px] font-bold uppercase mb-1">Pending</p>
-        <p id="stat-pending" class="text-3xl font-black text-amber-700">0</p>
-      </div>
-      <div class="bg-green-50 p-5 rounded-3xl border border-green-100">
-        <p class="text-green-500 text-[10px] font-bold uppercase mb-1">Approved</p>
-        <p id="stat-approved" class="text-3xl font-black text-green-700">0</p>
-      </div>
-      <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100">
-        <p class="text-indigo-400 text-[10px] font-bold uppercase mb-1">Check-in</p>
-        <p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p>
-      </div>
+      <div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p><p id="stat-total" class="text-3xl font-black text-slate-800">0</p></div>
+      <div class="bg-amber-50 p-5 rounded-3xl border border-amber-100"><p class="text-amber-500 text-[10px] font-bold uppercase mb-1">Pending</p><p id="stat-pending" class="text-3xl font-black text-amber-700">0</p></div>
+      <div class="bg-green-50 p-5 rounded-3xl border border-green-100"><p class="text-green-500 text-[10px] font-bold uppercase mb-1">Approved</p><p id="stat-approved" class="text-3xl font-black text-green-700">0</p></div>
+      <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100"><p class="text-indigo-400 text-[10px] font-bold uppercase mb-1">Check-in</p><p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p></div>
     </div>
 
-    <!-- REVENUE + KUOTA -->
+    <!-- REVENUE -->
     <div class="bg-white p-6 rounded-3xl border shadow-sm mb-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-black text-slate-700 flex items-center gap-2 text-sm"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Revenue & Kuota (Approved)</h3>
         <span id="stat-revenue-total" class="text-2xl font-black text-emerald-600">Rp 0</span>
       </div>
       <div class="space-y-3">
-        <div>
-          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>VIP 1 <span id="stat-vip1-count" class="text-amber-400 font-black"></span></span>
-            <span id="stat-revenue-vip1" class="text-amber-600">Rp 0</span>
-          </div>
-          <div class="bg-slate-100 rounded-full h-2"><div id="bar-vip1" class="rev-bar bg-amber-400" style="width:0%"></div></div>
-        </div>
-        <div>
-          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>VIP 2 <span id="stat-vip2-count" class="text-indigo-400 font-black"></span></span>
-            <span id="stat-revenue-vip2" class="text-indigo-600">Rp 0</span>
-          </div>
-          <div class="bg-slate-100 rounded-full h-2"><div id="bar-vip2" class="rev-bar bg-indigo-500" style="width:0%"></div></div>
-        </div>
-        <div>
-          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>Reguler <span id="stat-reg-count" class="text-slate-400 font-black"></span></span>
-            <span id="stat-revenue-reg" class="text-slate-600">Rp 0</span>
-          </div>
-          <div class="bg-slate-100 rounded-full h-2"><div id="bar-reg" class="rev-bar bg-slate-500" style="width:0%"></div></div>
-        </div>
+        <div><div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5"><span>VIP 1 <span id="stat-vip1-count" class="text-amber-400 font-black"></span></span><span id="stat-revenue-vip1" class="text-amber-600">Rp 0</span></div><div class="bg-slate-100 rounded-full h-2"><div id="bar-vip1" class="rev-bar bg-amber-400" style="width:0%"></div></div></div>
+        <div><div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5"><span>VIP 2 <span id="stat-vip2-count" class="text-indigo-400 font-black"></span></span><span id="stat-revenue-vip2" class="text-indigo-600">Rp 0</span></div><div class="bg-slate-100 rounded-full h-2"><div id="bar-vip2" class="rev-bar bg-indigo-500" style="width:0%"></div></div></div>
+        <div><div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5"><span>Reguler <span id="stat-reg-count" class="text-slate-400 font-black"></span></span><span id="stat-revenue-reg" class="text-slate-600">Rp 0</span></div><div class="bg-slate-100 rounded-full h-2"><div id="bar-reg" class="rev-bar bg-slate-500" style="width:0%"></div></div></div>
       </div>
     </div>
 
-    <!-- TOOLBAR -->
+    <!-- TOOLBAR TABS -->
     <div class="bg-white p-4 rounded-3xl border mb-5 space-y-3">
       <div class="flex flex-wrap gap-3 items-center justify-between">
-        <div class="flex p-1 bg-slate-100 rounded-2xl gap-0.5 overflow-x-auto">
+        <div class="flex p-1 bg-slate-100 rounded-2xl gap-0.5 overflow-x-auto flex-wrap">
           <button onclick="switchAdminTab('list')"     id="btn-adm-list"     class="px-4 py-2 rounded-xl font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all whitespace-nowrap">Tiket</button>
           <button onclick="switchAdminTab('petugas')"  id="btn-adm-petugas"  class="px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap">Petugas</button>
+          <button onclick="switchAdminTab('log')"      id="btn-adm-log"      class="px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap">Log Aktivitas</button>
           <button onclick="switchAdminTab('settings')" id="btn-adm-settings" class="px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap">Settings</button>
           <button onclick="switchAdminTab('scan')"     id="btn-adm-scan"     class="px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap">Scan QR</button>
         </div>
         <div id="bulk-bar" class="hidden items-center gap-2">
           <span id="bulk-count" class="text-xs font-black text-slate-500 uppercase"></span>
-          <button onclick="bulkApprove()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition-all flex items-center gap-1">
-            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Approve Semua
-          </button>
+          <button onclick="bulkApprove()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition-all flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Approve Semua</button>
           <button onclick="clearSelection()" class="text-slate-400 text-xs px-3 py-2 border rounded-xl hover:bg-slate-50 font-black">Batal</button>
         </div>
       </div>
@@ -330,39 +256,21 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       <div id="admin-tickets" class="space-y-3"></div>
     </div>
 
-    <!-- ══════════════════════ MANAJEMEN PETUGAS ══════════════════════ -->
+    <!-- MANAJEMEN PETUGAS -->
     <div id="adm-petugas-content" class="hidden">
       <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
-        <h3 class="text-2xl font-black mb-2 flex items-center gap-2 text-indigo-600">
-          <i data-lucide="shield-check"></i> Manajemen Petugas Scan
-        </h3>
+        <h3 class="text-2xl font-black mb-2 flex items-center gap-2 text-indigo-600"><i data-lucide="shield-check"></i> Manajemen Petugas Scan</h3>
         <p class="text-slate-400 text-xs font-bold mb-8 uppercase tracking-wide">Petugas yang didaftarkan bisa login Google lalu scan QR. Mereka tidak bisa akses data tiket atau admin panel.</p>
-
-        <!-- Form Tambah Petugas -->
         <div class="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100">
           <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Tambah Petugas Baru</p>
           <div class="space-y-3">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nama Petugas</label>
-              <input type="text" id="petugas-name" maxlength="100" placeholder="Nama lengkap petugas..." class="w-full px-4 py-3 bg-white border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold text-sm transition-all">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Email Google Petugas</label>
-              <input type="email" id="petugas-email" maxlength="200" placeholder="email@gmail.com" class="w-full px-4 py-3 bg-white border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold text-sm transition-all">
-              <p class="text-[10px] text-slate-400 font-bold mt-1.5 ml-1">⚠️ Email harus sama persis dengan akun Google petugas.</p>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Posisi / Keterangan</label>
-              <input type="text" id="petugas-role" maxlength="100" placeholder="Contoh: Gate A, Pintu Utama..." class="w-full px-4 py-3 bg-white border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold text-sm transition-all">
-            </div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nama Petugas</label><input type="text" id="petugas-name" maxlength="100" placeholder="Nama lengkap petugas..." class="w-full px-4 py-3 bg-white border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold text-sm transition-all"></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Email Google Petugas</label><input type="email" id="petugas-email" maxlength="200" placeholder="email@gmail.com" class="w-full px-4 py-3 bg-white border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold text-sm transition-all"><p class="text-[10px] text-slate-400 font-bold mt-1.5 ml-1">⚠️ Email harus sama persis dengan akun Google petugas.</p></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Posisi / Keterangan</label><input type="text" id="petugas-role" maxlength="100" placeholder="Contoh: Gate A, Pintu Utama..." class="w-full px-4 py-3 bg-white border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold text-sm transition-all"></div>
           </div>
           <p id="petugas-add-error" class="text-red-500 text-xs font-bold mt-3 hidden"></p>
-          <button onclick="addPetugas()" id="btn-add-petugas" class="mt-4 w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2">
-            <i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Petugas
-          </button>
+          <button onclick="addPetugas()" id="btn-add-petugas" class="mt-4 w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Petugas</button>
         </div>
-
-        <!-- Info Cara Kerja -->
         <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-8">
           <p class="text-[10px] font-black text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5"></i> Cara Kerja</p>
           <ol class="text-xs text-amber-700 font-bold space-y-1 list-decimal ml-4">
@@ -370,20 +278,46 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
             <li>Petugas buka website ini dan Login dengan Google</li>
             <li>Petugas akan otomatis diarahkan ke halaman Scan QR</li>
             <li>Petugas scan QR tiket tamu untuk check-in</li>
-            <li>Petugas tidak bisa akses data lain selain scan QR</li>
+            <li>Setiap scan tercatat di Log Aktivitas (tab admin)</li>
           </ol>
         </div>
-
-        <!-- Daftar Petugas -->
         <div>
           <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-between">
             <span>Daftar Petugas Aktif</span>
             <span id="petugas-count-badge" class="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[10px]">0 petugas</span>
           </p>
-          <div id="petugas-list" class="space-y-3">
-            <div class="py-8 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">Memuat data...</div>
-          </div>
+          <div id="petugas-list" class="space-y-3"><div class="py-8 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">Memuat data...</div></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ LOG AKTIVITAS ══ -->
+    <div id="adm-log-content" class="hidden">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm mb-4">
+        <!-- Statistik log -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <div class="bg-green-50 rounded-2xl p-4 border border-green-100 text-center"><p class="text-[10px] font-black text-green-500 uppercase mb-1">Valid</p><p id="log-stat-valid" class="text-2xl font-black text-green-700">0</p></div>
+          <div class="bg-red-50 rounded-2xl p-4 border border-red-100 text-center"><p class="text-[10px] font-black text-red-400 uppercase mb-1">Ditolak</p><p id="log-stat-invalid" class="text-2xl font-black text-red-700">0</p></div>
+          <div class="bg-amber-50 rounded-2xl p-4 border border-amber-100 text-center"><p class="text-[10px] font-black text-amber-500 uppercase mb-1">Warning</p><p id="log-stat-warn" class="text-2xl font-black text-amber-700">0</p></div>
+          <div class="bg-slate-50 rounded-2xl p-4 border text-center"><p class="text-[10px] font-black text-slate-400 uppercase mb-1">Total Scan</p><p id="log-stat-total" class="text-2xl font-black text-slate-700">0</p></div>
+        </div>
+        <!-- Filter log -->
+        <div class="flex flex-wrap gap-2 items-center mb-4">
+          <input type="text" id="log-search" placeholder="Cari nama petugas / tamu / order ID..." oninput="renderLogList()" class="flex-1 min-w-[200px] px-4 py-2.5 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-900">
+          <button onclick="setLogFilter('all')"     id="lf-all"     class="filter-pill active">Semua</button>
+          <button onclick="setLogFilter('valid')"   id="lf-valid"   class="filter-pill">Valid</button>
+          <button onclick="setLogFilter('invalid')" id="lf-invalid" class="filter-pill">Ditolak</button>
+          <button onclick="setLogFilter('warn')"    id="lf-warn"    class="filter-pill">Warning</button>
+        </div>
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Riwayat Scan (200 terbaru)</p>
+          <button onclick="exportLogCSV()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Log
+          </button>
+        </div>
+      </div>
+      <div id="log-list" class="space-y-2">
+        <div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Memuat log...</div>
       </div>
     </div>
 
@@ -392,52 +326,35 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
         <h3 class="text-2xl font-black mb-8 flex items-center gap-2 text-indigo-600"><i data-lucide="settings"></i> Konfigurasi Event</h3>
         <div class="space-y-5">
-          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Acara</label>
-            <input type="text" id="set-title" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal & Waktu Event (untuk Countdown)</label>
-            <input type="datetime-local" id="set-eventdate" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Acara</label><input type="text" id="set-title" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal & Waktu Event (untuk Countdown)</label><input type="datetime-local" id="set-eventdate" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
           <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner (URL atau Upload)</label>
             <div class="flex flex-col gap-2">
               <input type="url" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-medium text-xs text-slate-500" placeholder="https://...">
               <div class="flex items-center gap-3">
                 <input type="file" id="banner-file" class="hidden" accept="image/jpeg,image/png,image/webp" onchange="uploadBannerFile(this)">
-                <button onclick="document.getElementById('banner-file').click()" class="px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black hover:bg-indigo-100 border border-indigo-100 flex items-center gap-2">
-                  <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Foto
-                </button>
+                <button onclick="document.getElementById('banner-file').click()" class="px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black hover:bg-indigo-100 border border-indigo-100 flex items-center gap-2"><i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Foto</button>
                 <span id="upload-status" class="text-[10px] font-black text-indigo-500 uppercase"></span>
               </div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu Tampil</label>
-              <input type="text" id="set-time" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal Tampil</label>
-              <input type="text" id="set-date" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu Tampil</label><input type="text" id="set-time" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
+            <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal Tampil</label><input type="text" id="set-date" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
           </div>
-          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lokasi</label>
-            <input type="text" id="set-loc" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-
+          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lokasi</label><input type="text" id="set-loc" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
           <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border">
             <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Harga & Kuota Tiket</p>
             <div class="grid grid-cols-2 gap-3">
-              <div><label class="block text-[10px] font-bold text-amber-500 uppercase mb-1">Harga VIP 1</label>
-                <input type="number" id="set-vip1-price" min="0" max="10000000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-amber-600 text-sm"></div>
-              <div><label class="block text-[10px] font-bold text-amber-500 uppercase mb-1">Kuota VIP 1</label>
-                <input type="number" id="set-vip1-quota" min="0" max="100000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-amber-600 text-sm"></div>
-              <div><label class="block text-[10px] font-bold text-indigo-500 uppercase mb-1">Harga VIP 2</label>
-                <input type="number" id="set-vip2-price" min="0" max="10000000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-indigo-600 text-sm"></div>
-              <div><label class="block text-[10px] font-bold text-indigo-500 uppercase mb-1">Kuota VIP 2</label>
-                <input type="number" id="set-vip2-quota" min="0" max="100000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-indigo-600 text-sm"></div>
-              <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Harga Reguler</label>
-                <input type="number" id="set-reg-price" min="0" max="10000000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-slate-700 text-sm"></div>
-              <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kuota Reguler</label>
-                <input type="number" id="set-reg-quota" min="0" max="100000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-slate-700 text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-amber-500 uppercase mb-1">Harga VIP 1</label><input type="number" id="set-vip1-price" min="0" max="10000000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-amber-600 text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-amber-500 uppercase mb-1">Kuota VIP 1</label><input type="number" id="set-vip1-quota" min="0" max="100000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-amber-600 text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-indigo-500 uppercase mb-1">Harga VIP 2</label><input type="number" id="set-vip2-price" min="0" max="10000000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-indigo-600 text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-indigo-500 uppercase mb-1">Kuota VIP 2</label><input type="number" id="set-vip2-quota" min="0" max="100000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-indigo-600 text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Harga Reguler</label><input type="number" id="set-reg-price" min="0" max="10000000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-slate-700 text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kuota Reguler</label><input type="number" id="set-reg-quota" min="0" max="100000" class="w-full p-3 bg-white border rounded-xl outline-none font-black text-slate-700 text-sm"></div>
             </div>
           </div>
-
-          <div class="pt-2">
-            <button onclick="saveEventSettings()" id="btn-save-settings" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">SIMPAN PERUBAHAN</button>
-          </div>
+          <div class="pt-2"><button onclick="saveEventSettings()" id="btn-save-settings" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">SIMPAN PERUBAHAN</button></div>
         </div>
       </div>
     </div>
@@ -452,25 +369,18 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     </div>
   </section>
 
-  <!-- ══════════════════════ PETUGAS SCAN VIEW (full page) ══════════════════════ -->
+  <!-- PETUGAS SCAN VIEW -->
   <section id="tab-petugas-scan" class="tab-content">
     <div class="max-w-md mx-auto">
-      <!-- Header petugas -->
       <div class="bg-white rounded-[2.5rem] shadow-xl border p-6 mb-4 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-          <i data-lucide="shield-check" class="w-6 h-6 text-indigo-600"></i>
-        </div>
+        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center"><i data-lucide="shield-check" class="w-6 h-6 text-indigo-600"></i></div>
         <div class="flex-1">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mode Petugas Scan</p>
           <p id="petugas-scan-name" class="font-black text-slate-800 text-sm"></p>
           <p id="petugas-scan-role" class="text-[10px] text-slate-400 font-bold"></p>
         </div>
-        <button onclick="window.signOut(window.auth)" class="p-2 text-red-400 hover:bg-red-50 rounded-full transition-all">
-          <i data-lucide="log-out" class="w-5 h-5"></i>
-        </button>
+        <button onclick="window.signOut(window.auth)" class="p-2 text-red-400 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out" class="w-5 h-5"></i></button>
       </div>
-
-      <!-- Scanner area -->
       <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border text-center">
         <div class="flex items-center justify-center gap-2 mb-5">
           <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -478,19 +388,17 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
         </div>
         <div id="petugas-reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
         <div id="petugas-scan-feedback" class="hidden p-6 rounded-3xl font-black text-xl text-center mb-4 transition-all"></div>
-
-        <!-- Statistik check-in session -->
-        <div class="grid grid-cols-2 gap-3 mt-4">
-          <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
-            <p class="text-[10px] font-black text-green-500 uppercase mb-1">Check-in Sesi Ini</p>
-            <p id="petugas-stat-checkin" class="text-3xl font-black text-green-700">0</p>
-          </div>
-          <div class="bg-red-50 rounded-2xl p-4 border border-red-100">
-            <p class="text-[10px] font-black text-red-400 uppercase mb-1">Ditolak</p>
-            <p id="petugas-stat-reject" class="text-3xl font-black text-red-700">0</p>
-          </div>
+        <!-- Info tiket terakhir -->
+        <div id="petugas-last-ticket" class="hidden bg-slate-50 rounded-2xl p-4 border mb-4 text-left">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tiket Terakhir Discan</p>
+          <p id="plt-name" class="font-black text-slate-800 text-sm"></p>
+          <p id="plt-type" class="text-[10px] text-indigo-500 font-black uppercase"></p>
+          <p id="plt-order" class="text-[10px] text-slate-400 font-bold"></p>
         </div>
-
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div class="bg-green-50 rounded-2xl p-4 border border-green-100"><p class="text-[10px] font-black text-green-500 uppercase mb-1">Check-in Sesi Ini</p><p id="petugas-stat-checkin" class="text-3xl font-black text-green-700">0</p></div>
+          <div class="bg-red-50 rounded-2xl p-4 border border-red-100"><p class="text-[10px] font-black text-red-400 uppercase mb-1">Ditolak</p><p id="petugas-stat-reject" class="text-3xl font-black text-red-700">0</p></div>
+        </div>
         <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mt-5">Arahkan kamera ke QR Code tiket</p>
       </div>
     </div>
@@ -509,120 +417,109 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 </div>
 
 <script>
+// ══════════════════════════════════════════════
+// KONFIGURASI — sesuaikan di sini
+// ══════════════════════════════════════════════
 const WA_NUMBER    = "6285158880014";
 const ADMIN_EMAILS = ["sobatambyar1990@gmail.com", "staycoustikmanagement@gmail.com"];
 const MAX_PER_USER = 5;
+const QR_SECRET    = 'h0l1st1k_s3cr3t_2026_!xK9#mP7qRvZ';
 
 // ── HMAC QR SECURITY ──
-const QR_SECRET = 'h0l1st1k_s3cr3t_2026_!xK9#mP7qRvZ';
-
-async function signOrderId(orderId) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(QR_SECRET),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(orderId));
+async function signOrderId(orderId){
+  const enc=new TextEncoder();
+  const key=await crypto.subtle.importKey('raw',enc.encode(QR_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const sig=await crypto.subtle.sign('HMAC',key,enc.encode(orderId));
   return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
 }
-async function verifyOrderId(orderId, sig) {
-  return (await signOrderId(orderId)) === sig;
-}
-async function makeQrData(orderId) {
-  return `${orderId}|${await signOrderId(orderId)}`;
-}
+async function verifyOrderId(orderId,sig){ return (await signOrderId(orderId))===sig; }
+async function makeQrData(orderId){ return `${orderId}|${await signOrderId(orderId)}`; }
 
-const TICKET_TYPES = {
-  'VIP 1':   { price: 65000, quota: 500  },
-  'VIP 2':   { price: 55000, quota: 1000 },
-  'Reguler': { price: 35000, quota: 1500 }
-};
-const TOTAL_QUOTA = 3000;
+// ── KONSTANTA ──
+const TICKET_TYPES = {'VIP 1':{price:65000,quota:500},'VIP 2':{price:55000,quota:1000},'Reguler':{price:35000,quota:1500}};
+const TOTAL_QUOTA  = 3000;
 
-let currentUser    = null, selectedType = null;
-let html5QrScanner = null, petugasQrScanner = null;
-let allTicketsData = [], petugasData = [];
-let unsubUser = null, unsubAdmin = null, unsubPetugas = null;
-let scanCooldown = false, activeFilter = 'all', selectedIds = new Set();
-let prevStatuses = {}, countdownTimer = null;
-let currentUserRole = 'guest'; // 'guest' | 'user' | 'petugas' | 'admin'
-let petugasSessionCheckin = 0, petugasSessionReject = 0;
-let eventConfig = {
-  title:"Holistik Fest", bannerUrl:"https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
-  date:"15 Mei 2026", location:"Stadion Utama", time:"16:00 - Selesai",
+// ── STATE ──
+let currentUser=null, selectedType=null;
+let html5QrScanner=null, petugasQrScanner=null;
+let allTicketsData=[], petugasData=[], allLogData=[];
+let unsubUser=null, unsubAdmin=null, unsubPetugas=null, unsubLog=null;
+let scanCooldown=false, activeFilter='all', activeLogFilter='all', selectedIds=new Set();
+let prevStatuses={}, countdownTimer=null;
+let currentUserRole='guest'; // 'guest'|'user'|'petugas'|'admin'
+let petugasSessionCheckin=0, petugasSessionReject=0;
+let currentPetugasData=null; // data petugas yang sedang login
+let eventConfig={
+  title:"Holistik Fest",
+  bannerUrl:"https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
+  date:"15 Mei 2026",location:"Stadion Utama",time:"16:00 - Selesai",
   eventDatetime:"2026-05-15T16:00",
-  tickets:{ 'VIP 1':{price:65000,quota:500}, 'VIP 2':{price:55000,quota:1000}, 'Reguler':{price:35000,quota:1500} }
+  tickets:{'VIP 1':{price:65000,quota:500},'VIP 2':{price:55000,quota:1000},'Reguler':{price:35000,quota:1500}}
 };
 
 // ── HELPERS ──
 function sanitizeText(s){ return typeof s==='string'?s.replace(/[<>&"'/\\]/g,'').trim():''; }
+function sanitizeForDisplay(s){ return String(s).replace(/[<>&"]/g,''); }
 function isValidName(n){ return /^[\p{L}\s'\-\.]{2,100}$/u.test(n.trim()); }
 function isValidEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()); }
 function generateOrderId(){ const a=new Uint8Array(5);crypto.getRandomValues(a);return 'HOL-'+Array.from(a,b=>b.toString(36)).join('').toUpperCase().substr(0,6); }
 function fmtRupiah(n){ return 'Rp '+Number(n||0).toLocaleString('id-ID'); }
 function fmtDate(ts){ return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-'; }
+function fmtTime(ts){ return ts?new Date(ts).toLocaleString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'-'; }
 function isAdmin(u){ return !!(u&&u.email&&ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase())); }
 
 // ── QUOTA UI ──
 function updateQuotaUI(soldCounts){
-  const cfg = eventConfig.tickets || TICKET_TYPES;
-  let totalSold = 0;
-  Object.entries(cfg).forEach(([type, info])=>{
-    const sold = soldCounts[type]||0, quota = info.quota||0, sisa = Math.max(0,quota-sold);
-    const pct = quota>0?(sisa/quota*100):0;
-    totalSold += sold;
-    const lbl=document.getElementById('quota-label-'+type);
-    const bar=document.getElementById('quota-bar-'+type);
-    const card=document.getElementById('card-'+type);
-    const btn=document.getElementById('btn-'+type);
-    if(lbl) lbl.textContent = sisa>0?`${sisa} tersisa`:'HABIS';
-    if(bar) bar.style.width = pct+'%';
+  const cfg=eventConfig.tickets||TICKET_TYPES;
+  let totalSold=0;
+  Object.entries(cfg).forEach(([type,info])=>{
+    const sold=soldCounts[type]||0,quota=info.quota||0,sisa=Math.max(0,quota-sold),pct=quota>0?(sisa/quota*100):0;
+    totalSold+=sold;
+    const lbl=document.getElementById('quota-label-'+type),bar=document.getElementById('quota-bar-'+type);
+    const card=document.getElementById('card-'+type),btn=document.getElementById('btn-'+type);
+    if(lbl)lbl.textContent=sisa>0?`${sisa} tersisa`:'HABIS';
+    if(bar)bar.style.width=pct+'%';
     if(sisa<=0){
       if(card){card.classList.add('ticket-card-sold');card.onclick=null;}
       if(btn){btn.textContent='HABIS';btn.className='w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed';}
-    } else {
-      if(card) card.classList.remove('ticket-card-sold');
-    }
+    } else { if(card)card.classList.remove('ticket-card-sold'); }
   });
-  const totalSisa=TOTAL_QUOTA-totalSold;
-  const totalPct=Math.max(0,totalSisa/TOTAL_QUOTA*100);
-  const tb=document.getElementById('total-quota-bar'), tt=document.getElementById('total-quota-text');
-  if(tb) tb.style.width=totalPct+'%';
-  if(tt) tt.textContent=`${Math.max(0,totalSisa)} / ${TOTAL_QUOTA} tersisa`;
+  const totalSisa=TOTAL_QUOTA-totalSold,totalPct=Math.max(0,totalSisa/TOTAL_QUOTA*100);
+  const tb=document.getElementById('total-quota-bar'),tt=document.getElementById('total-quota-text');
+  if(tb)tb.style.width=totalPct+'%';
+  if(tt)tt.textContent=`${Math.max(0,totalSisa)} / ${TOTAL_QUOTA} tersisa`;
 }
 
 // ── COUNTDOWN ──
 function startCountdown(dt){
-  if(countdownTimer) clearInterval(countdownTimer);
-  if(!dt) return;
+  if(countdownTimer)clearInterval(countdownTimer);
+  if(!dt)return;
   const target=new Date(dt).getTime();
   function tick(){
-    const diff=target-Date.now();
-    const wrap=document.getElementById('countdown-wrap');
+    const diff=target-Date.now(),wrap=document.getElementById('countdown-wrap');
     if(diff<=0){if(wrap)wrap.innerHTML='<div class="countdown-box"><div class="countdown-num" style="font-size:1rem;padding:4px">🎉 EVENT DIMULAI!</div></div>';clearInterval(countdownTimer);return;}
-    const pad=n=>String(n).padStart(2,'0');
-    const el=id=>document.getElementById(id);
-    if(el('cd-d')) el('cd-d').textContent=pad(Math.floor(diff/86400000));
-    if(el('cd-h')) el('cd-h').textContent=pad(Math.floor(diff%86400000/3600000));
-    if(el('cd-m')) el('cd-m').textContent=pad(Math.floor(diff%3600000/60000));
-    if(el('cd-s')) el('cd-s').textContent=pad(Math.floor(diff%60000/1000));
+    const pad=n=>String(n).padStart(2,'0'),el=id=>document.getElementById(id);
+    if(el('cd-d'))el('cd-d').textContent=pad(Math.floor(diff/86400000));
+    if(el('cd-h'))el('cd-h').textContent=pad(Math.floor(diff%86400000/3600000));
+    if(el('cd-m'))el('cd-m').textContent=pad(Math.floor(diff%3600000/60000));
+    if(el('cd-s'))el('cd-s').textContent=pad(Math.floor(diff%60000/1000));
   }
-  tick(); countdownTimer=setInterval(tick,1000);
+  tick();countdownTimer=setInterval(tick,1000);
 }
 
 // ── NOTIFIKASI ──
 function checkNotifSupport(){
   const btn=document.getElementById('btn-notif');if(!btn)return;
   if(!('Notification' in window))return;
-  if(Notification.permission==='granted') btn.classList.add('hidden');
-  else if(Notification.permission!=='denied') btn.classList.remove('hidden');
+  if(Notification.permission==='granted')btn.classList.add('hidden');
+  else if(Notification.permission!=='denied')btn.classList.remove('hidden');
 }
 window.requestNotifPermission=async()=>{
   const p=await Notification.requestPermission();
   if(p==='granted'){document.getElementById('btn-notif').classList.add('hidden');showToast('Notifikasi aktif!','Anda akan diberitahu saat tiket disetujui','success');}
 };
 function sendBrowserNotif(title,body){
-  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
   try{new Notification(title,{body});}catch(e){}
 }
 
@@ -639,29 +536,27 @@ function showToast(title,msg,type='info'){
   icon.innerHTML=`<i data-lucide="${ico[type]||'bell'}" class="w-5 h-5"></i>`;
   lucide.createIcons();
   toast.classList.add('show');
-  if(toastTimer) clearTimeout(toastTimer);
+  if(toastTimer)clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>toast.classList.remove('show'),4500);
 }
 
 // ── INIT ──
 window.addEventListener('load',async()=>{
   lucide.createIcons();
-  try{if(typeof __initial_auth_token!=='undefined'&&__initial_auth_token) await window.signInWithCustomToken(window.auth,__initial_auth_token);}
+  try{if(typeof __initial_auth_token!=='undefined'&&__initial_auth_token)await window.signInWithCustomToken(window.auth,__initial_auth_token);}
   catch(e){console.warn('Auth:',e.message);}
   window.onAuthStateChanged(window.auth,async user=>{
     currentUser=user;
     if(user&&!user.isAnonymous){
-      listenToSettings(); checkNotifSupport();
+      listenToSettings();checkNotifSupport();
       if(isAdmin(user)){
         currentUserRole='admin';
         if(unsubUser){unsubUser();unsubUser=null;}
-        listenToAllTickets();
-        listenToPetugas();
+        listenToAllTickets();listenToPetugas();
       } else {
-        // Cek apakah petugas
-        const petugasDoc = await checkIsPetugas(user.uid);
+        const petugasDoc=await checkIsPetugas(user.uid);
         if(petugasDoc){
-          currentUserRole='petugas';
+          currentUserRole='petugas';currentPetugasData=petugasDoc;
           if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
           activatePetugasScanMode(petugasDoc);
         } else {
@@ -671,11 +566,11 @@ window.addEventListener('load',async()=>{
         }
       }
     } else {
-      currentUserRole='guest';
+      currentUserRole='guest';currentPetugasData=null;
       if(unsubUser){unsubUser();unsubUser=null;}
       if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
-      listenToSettings();
-      stopPetugasScanner();
+      if(unsubLog){unsubLog();unsubLog=null;}
+      listenToSettings();stopPetugasScanner();
     }
     updateNav();
   });
@@ -684,164 +579,58 @@ window.addEventListener('load',async()=>{
 
 // ── CEK PETUGAS ──
 async function checkIsPetugas(uid){
+  // 1. Cek koleksi petugas (uid-based)
   try{
-    const ref = window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid);
-    const snap = await window.getDoc(ref);
-    if(snap.exists()) return snap.data();
-    return null;
-  }catch(e){ return null; }
+    const rA=window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid);
+    const sA=await window.getDoc(rA);
+    if(sA.exists())return sA.data();
+  }catch(e){}
+  // 2. Cek petugas_pending (email-based, belum pernah login)
+  if(!currentUser?.email)return null;
+  try{
+    const emailKey=currentUser.email.toLowerCase().replace(/[.@]/g,'_');
+    const rP=window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey);
+    const sP=await window.getDoc(rP);
+    if(sP.exists()){
+      const data=sP.data();
+      // Claim → pindah ke petugas/{uid}
+      try{
+        await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid),{...data,uid,claimed_at:Date.now()});
+        await window.deleteDoc(rP);
+      }catch(e){console.warn('Claim petugas error:',e);}
+      return data;
+    }
+  }catch(e){}
+  return null;
 }
 
 // ── ACTIVATE PETUGAS MODE ──
 function activatePetugasScanMode(data){
-  // Sembunyikan semua tab lain, langsung ke scan
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-petugas-scan').classList.add('active');
-  const nameEl=document.getElementById('petugas-scan-name');
-  const roleEl=document.getElementById('petugas-scan-role');
-  if(nameEl) nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas';
-  if(roleEl) roleEl.textContent=data.role||'Petugas Scan';
-  petugasSessionCheckin=0; petugasSessionReject=0;
-  updatePetugasStat();
+  const nameEl=document.getElementById('petugas-scan-name'),roleEl=document.getElementById('petugas-scan-role');
+  if(nameEl)nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas';
+  if(roleEl)roleEl.textContent=data.role||'Petugas Scan';
+  petugasSessionCheckin=0;petugasSessionReject=0;updatePetugasStat();
   startPetugasScanner();
 }
-
 function updatePetugasStat(){
-  const ci=document.getElementById('petugas-stat-checkin');
-  const rj=document.getElementById('petugas-stat-reject');
-  if(ci) ci.textContent=petugasSessionCheckin;
-  if(rj) rj.textContent=petugasSessionReject;
+  const ci=document.getElementById('petugas-stat-checkin'),rj=document.getElementById('petugas-stat-reject');
+  if(ci)ci.textContent=petugasSessionCheckin;
+  if(rj)rj.textContent=petugasSessionReject;
 }
 
 // ── LISTEN SOLD COUNTS ──
 function listenSoldCounts(){
-  window.onSnapshot(
-    window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
-    snap=>{
-      const sold={'VIP 1':0,'VIP 2':0,'Reguler':0};
-      snap.forEach(d=>{const t=d.data();if(sold[t.type]!==undefined)sold[t.type]++;});
-      updateQuotaUI(sold);
-    }, ()=>{}
-  );
+  window.onSnapshot(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
+    snap=>{const sold={'VIP 1':0,'VIP 2':0,'Reguler':0};snap.forEach(d=>{const t=d.data();if(sold[t.type]!==undefined)sold[t.type]++;});updateQuotaUI(sold);},()=>{});
 }
 
-// ── LISTEN PETUGAS (admin only) ──
+// ── LISTEN PETUGAS GABUNGAN ──
 function listenToPetugas(){
-  if(unsubPetugas){unsubPetugas();unsubPetugas=null;}
-  unsubPetugas=window.onSnapshot(
-    window.collection(window.db,'artifacts',window.appId,'public','data','petugas'),
-    snap=>{
-      petugasData=[];
-      snap.forEach(d=>petugasData.push({id:d.id,...d.data()}));
-      renderPetugasList();
-    }, ()=>{}
-  );
-}
-
-// ── RENDER PETUGAS LIST ──
-function renderPetugasList(){
-  const list=document.getElementById('petugas-list');
-  const badge=document.getElementById('petugas-count-badge');
-  if(!list) return;
-  if(badge) badge.textContent=`${petugasData.length} petugas`;
-  if(!petugasData.length){
-    list.innerHTML='<div class="py-8 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">Belum ada petugas terdaftar</div>';
-    return;
-  }
-  list.innerHTML='';
-  petugasData.forEach(p=>{
-    const div=document.createElement('div');
-    div.className='bg-slate-50 rounded-2xl p-4 border flex items-center gap-3 hover:border-indigo-200 transition-all';
-    div.innerHTML=`
-      <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 font-black text-indigo-600 text-sm">${(p.name||'P')[0].toUpperCase()}</div>
-      <div class="flex-1 min-w-0">
-        <p class="font-black text-slate-800 text-sm truncate">${sanitizeForDisplay(p.name||'')}</p>
-        <p class="text-[10px] text-slate-400 font-bold truncate">${sanitizeForDisplay(p.email||'')}</p>
-        <p class="text-[10px] text-indigo-400 font-bold">${sanitizeForDisplay(p.role||'')}</p>
-      </div>
-      <div class="text-right flex-shrink-0 flex flex-col items-end gap-2">
-        <span class="px-2.5 py-1 rounded-full text-[9px] font-black bg-green-100 text-green-600">AKTIF</span>
-        <button onclick="deletePetugas('${p.id}','${encodeURIComponent(p.name||'')}')" class="text-red-300 hover:text-red-600 transition-all p-1">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
-      </div>`;
-    list.appendChild(div);
-  });
-  lucide.createIcons();
-}
-
-function sanitizeForDisplay(s){ return String(s).replace(/[<>&"]/g,''); }
-
-// ── ADD PETUGAS ──
-window.addPetugas=async()=>{
-  const nameRaw = document.getElementById('petugas-name').value.trim();
-  const emailRaw = document.getElementById('petugas-email').value.trim().toLowerCase();
-  const roleRaw = document.getElementById('petugas-role').value.trim();
-  const errEl = document.getElementById('petugas-add-error');
-  const btn = document.getElementById('btn-add-petugas');
-
-  errEl.classList.add('hidden');
-
-  if(!nameRaw||nameRaw.length<2){ errEl.textContent='Nama petugas minimal 2 karakter.'; errEl.classList.remove('hidden'); return; }
-  if(!isValidEmail(emailRaw)){ errEl.textContent='Format email tidak valid.'; errEl.classList.remove('hidden'); return; }
-  if(ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(emailRaw)){ errEl.textContent='Email tersebut adalah email admin.'; errEl.classList.remove('hidden'); return; }
-
-  // Cek duplikat email
-  const sudahAda = petugasData.some(p=>(p.email||'').toLowerCase()===emailRaw);
-  if(sudahAda){ errEl.textContent='Email ini sudah terdaftar sebagai petugas.'; errEl.classList.remove('hidden'); return; }
-
-  btn.disabled=true; btn.textContent='Menyimpan...';
-  try{
-    // Simpan dengan key = email (untuk lookup saat login)
-    // Tapi kita juga perlu UID untuk Firestore rules isPetugas()
-    // Karena kita tidak tahu UID sebelum login, kita simpan dulu by email
-    // dan saat petugas login pertama kali, sistem akan "claim" dokumen tersebut
-    // Solusi: simpan dengan auto-ID, store email, lalu saat login cek by email
-    // NAMUN rules pakai uid sebagai doc ID → kita simpan 2 dokumen:
-    //   1. petugas_pending/{email} → untuk lookup saat petugas login
-    //   2. petugas/{uid} → dibuat saat petugas pertama kali login (lihat onAuthStateChanged)
-    // Untuk simplicity: simpan di sub-koleksi petugas_pending dg doc = sanitized email
-    const safeEmailKey = emailRaw.replace(/[.@]/g,'_');
-    await window.setDoc(
-      window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',safeEmailKey),
-      { name: sanitizeText(nameRaw).substring(0,100), email: emailRaw, role: sanitizeText(roleRaw).substring(0,100), created_at: Date.now(), added_by: currentUser.email }
-    );
-    document.getElementById('petugas-name').value='';
-    document.getElementById('petugas-email').value='';
-    document.getElementById('petugas-role').value='';
-    showToast('Petugas ditambahkan!',`${sanitizeText(nameRaw)} (${emailRaw})`,'success');
-  }catch(e){
-    errEl.textContent='Gagal menyimpan: '+e.message;
-    errEl.classList.remove('hidden');
-  }finally{
-    btn.disabled=false;
-    btn.innerHTML='<i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Petugas';
-    lucide.createIcons();
-  }
-};
-
-// ── DELETE PETUGAS ──
-window.deletePetugas=async(id,encodedName)=>{
-  const name=decodeURIComponent(encodedName);
-  if(!confirm(`Hapus petugas "${name}"?\n\nPetugas tidak akan bisa scan QR lagi.`)) return;
-  try{
-    // Cek apakah id adalah email-based (petugas_pending) atau uid-based (petugas)
-    // ID dari petugasData bisa dari kedua koleksi; kita coba keduanya
-    const p = petugasData.find(x=>x.id===id);
-    if(p && p._collection === 'petugas'){
-      await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',id));
-    } else {
-      await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',id));
-    }
-    showToast('Petugas dihapus',name,'info');
-  }catch(e){ showAlert('Error','Gagal hapus petugas: '+e.message,'error'); }
-};
-
-// ── LISTEN PETUGAS GABUNGAN (pending + aktif) ──
-function listenToPetugas(){
-  if(unsubPetugas) unsubPetugas();
-  let dataAktif=[], dataPending=[];
-  let unsubA, unsubP;
+  if(unsubPetugas)unsubPetugas();
+  let dataAktif=[],dataPending=[];
+  let unsubA,unsubP;
   function merge(){
     petugasData=[
       ...dataAktif.map(d=>({...d,_collection:'petugas'})),
@@ -857,35 +646,173 @@ function listenToPetugas(){
   unsubPetugas=()=>{unsubA&&unsubA();unsubP&&unsubP();};
 }
 
-// ── CEK PETUGAS SAAT LOGIN (cek petugas_pending by email) ──
-async function checkIsPetugas(uid){
-  // Cek koleksi petugas (uid-based, sudah login sebelumnya)
-  try{
-    const rA=window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid);
-    const sA=await window.getDoc(rA);
-    if(sA.exists()) return sA.data();
-  }catch(e){}
-
-  // Cek petugas_pending (email-based, belum pernah login)
-  if(!currentUser?.email) return null;
-  try{
-    const emailKey=currentUser.email.toLowerCase().replace(/[.@]/g,'_');
-    const rP=window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey);
-    const sP=await window.getDoc(rP);
-    if(sP.exists()){
-      const data=sP.data();
-      // "Claim" → pindahkan ke petugas/{uid}, hapus dari pending
-      try{
-        await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid),{
-          ...data, uid, claimed_at: Date.now()
-        });
-        await window.deleteDoc(rP);
-      }catch(e){ console.warn('Claim petugas error:', e); }
-      return data;
-    }
-  }catch(e){}
-  return null;
+function renderPetugasList(){
+  const list=document.getElementById('petugas-list'),badge=document.getElementById('petugas-count-badge');
+  if(!list)return;
+  if(badge)badge.textContent=`${petugasData.length} petugas`;
+  if(!petugasData.length){list.innerHTML='<div class="py-8 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">Belum ada petugas terdaftar</div>';return;}
+  list.innerHTML='';
+  petugasData.forEach(p=>{
+    const isPending=p._collection==='petugas_pending';
+    const div=document.createElement('div');
+    div.className='bg-slate-50 rounded-2xl p-4 border flex items-center gap-3 hover:border-indigo-200 transition-all';
+    div.innerHTML=`
+      <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 font-black text-indigo-600 text-sm">${(p.name||'P')[0].toUpperCase()}</div>
+      <div class="flex-1 min-w-0">
+        <p class="font-black text-slate-800 text-sm truncate">${sanitizeForDisplay(p.name||'')}</p>
+        <p class="text-[10px] text-slate-400 font-bold truncate">${sanitizeForDisplay(p.email||'')}</p>
+        <p class="text-[10px] text-indigo-400 font-bold">${sanitizeForDisplay(p.role||'')}</p>
+      </div>
+      <div class="text-right flex-shrink-0 flex flex-col items-end gap-2">
+        <span class="px-2.5 py-1 rounded-full text-[9px] font-black ${isPending?'bg-amber-100 text-amber-600':'bg-green-100 text-green-600'}">${isPending?'BELUM LOGIN':'AKTIF'}</span>
+        <button onclick="deletePetugas('${p.id}','${encodeURIComponent(p.name||'')}','${p._collection}')" class="text-red-300 hover:text-red-600 transition-all p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+      </div>`;
+    list.appendChild(div);
+  });
+  lucide.createIcons();
 }
+
+window.addPetugas=async()=>{
+  const nameRaw=document.getElementById('petugas-name').value.trim();
+  const emailRaw=document.getElementById('petugas-email').value.trim().toLowerCase();
+  const roleRaw=document.getElementById('petugas-role').value.trim();
+  const errEl=document.getElementById('petugas-add-error'),btn=document.getElementById('btn-add-petugas');
+  errEl.classList.add('hidden');
+  if(!nameRaw||nameRaw.length<2){errEl.textContent='Nama petugas minimal 2 karakter.';errEl.classList.remove('hidden');return;}
+  if(!isValidEmail(emailRaw)){errEl.textContent='Format email tidak valid.';errEl.classList.remove('hidden');return;}
+  if(ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(emailRaw)){errEl.textContent='Email tersebut adalah email admin.';errEl.classList.remove('hidden');return;}
+  const sudahAda=petugasData.some(p=>(p.email||'').toLowerCase()===emailRaw);
+  if(sudahAda){errEl.textContent='Email ini sudah terdaftar sebagai petugas.';errEl.classList.remove('hidden');return;}
+  btn.disabled=true;btn.textContent='Menyimpan...';
+  try{
+    const safeEmailKey=emailRaw.replace(/[.@]/g,'_');
+    await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',safeEmailKey),
+      {name:sanitizeText(nameRaw).substring(0,100),email:emailRaw,role:sanitizeText(roleRaw).substring(0,100),created_at:Date.now(),added_by:currentUser.email});
+    document.getElementById('petugas-name').value='';
+    document.getElementById('petugas-email').value='';
+    document.getElementById('petugas-role').value='';
+    showToast('Petugas ditambahkan!',`${sanitizeText(nameRaw)} (${emailRaw})`,'success');
+  }catch(e){errEl.textContent='Gagal menyimpan: '+e.message;errEl.classList.remove('hidden');}
+  finally{btn.disabled=false;btn.innerHTML='<i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Petugas';lucide.createIcons();}
+};
+
+window.deletePetugas=async(id,encodedName,col)=>{
+  const name=decodeURIComponent(encodedName);
+  if(!confirm(`Hapus petugas "${name}"?\n\nPetugas tidak akan bisa scan QR lagi.`))return;
+  try{
+    const collName=col==='petugas'?'petugas':'petugas_pending';
+    await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data',collName,id));
+    showToast('Petugas dihapus',name,'info');
+  }catch(e){showAlert('Error','Gagal hapus petugas: '+e.message,'error');}
+};
+
+// ══════════════════════════════════════════════
+// LOG AKTIVITAS
+// ══════════════════════════════════════════════
+
+// Tulis log ke Firestore
+async function writeScanLog(logData){
+  try{
+    await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),{
+      ...logData,
+      created_at: Date.now()
+    });
+  }catch(e){console.warn('Log error:',e);}
+}
+
+// Listen log (admin)
+function listenToLog(){
+  if(unsubLog){unsubLog();unsubLog=null;}
+  unsubLog=window.onSnapshot(
+    window.query(
+      window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),
+      window.orderBy('created_at','desc'),
+      window.limit(200)
+    ),
+    snap=>{
+      allLogData=[];
+      snap.forEach(d=>allLogData.push({id:d.id,...d.data()}));
+      updateLogStats();
+      renderLogList();
+    },
+    ()=>{}
+  );
+}
+
+function updateLogStats(){
+  let valid=0,invalid=0,warn=0;
+  allLogData.forEach(l=>{
+    if(l.result==='valid')valid++;
+    else if(l.result==='invalid')invalid++;
+    else warn++;
+  });
+  const el=id=>document.getElementById(id);
+  if(el('log-stat-valid'))el('log-stat-valid').textContent=valid;
+  if(el('log-stat-invalid'))el('log-stat-invalid').textContent=invalid;
+  if(el('log-stat-warn'))el('log-stat-warn').textContent=warn;
+  if(el('log-stat-total'))el('log-stat-total').textContent=allLogData.length;
+}
+
+window.setLogFilter=f=>{
+  activeLogFilter=f;
+  ['all','valid','invalid','warn'].forEach(k=>{
+    const e=document.getElementById('lf-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');
+  });
+  renderLogList();
+};
+
+function renderLogList(){
+  const list=document.getElementById('log-list');if(!list)return;
+  const search=(document.getElementById('log-search')?.value||'').toLowerCase();
+  let filtered=allLogData;
+  if(activeLogFilter!=='all') filtered=filtered.filter(l=>l.result===activeLogFilter);
+  if(search) filtered=filtered.filter(l=>
+    (l.petugas_name||'').toLowerCase().includes(search)||
+    (l.guest_name||'').toLowerCase().includes(search)||
+    (l.order_id||'').toLowerCase().includes(search)||
+    (l.petugas_email||'').toLowerCase().includes(search)
+  );
+  if(!filtered.length){
+    list.innerHTML='<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada log</div>';
+    return;
+  }
+  list.innerHTML='';
+  filtered.forEach(l=>{
+    const isValid=l.result==='valid',isWarn=l.result==='warn';
+    const rowCls=isValid?'log-row-valid':isWarn?'log-row-warn':'log-row-invalid';
+    const badgeCls=isValid?'bg-green-100 text-green-700':isWarn?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700';
+    const resultLabel=isValid?'✅ VALID':isWarn?`⚠️ ${sanitizeForDisplay(l.reason||'WARN')}`:`❌ ${sanitizeForDisplay(l.reason||'DITOLAK')}`;
+    const div=document.createElement('div');
+    div.className=`bg-white rounded-2xl border p-4 ${rowCls} flex flex-col sm:flex-row sm:items-center gap-3`;
+    div.innerHTML=`
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${badgeCls}">${resultLabel}</span>
+          ${l.ticket_type?`<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-100 text-indigo-600">${sanitizeForDisplay(l.ticket_type)}</span>`:''}
+        </div>
+        <p class="font-black text-slate-800 text-sm truncate">${l.guest_name?sanitizeForDisplay(l.guest_name):'<span class="text-slate-300 font-bold">—</span>'}</p>
+        <p class="text-[10px] text-slate-400 font-bold">${l.order_id?`#${sanitizeForDisplay(l.order_id)}`:''}</p>
+      </div>
+      <div class="flex-shrink-0 text-right">
+        <p class="text-[10px] font-black text-slate-500">${sanitizeForDisplay(l.petugas_name||l.petugas_email||'Admin')}</p>
+        <p class="text-[10px] text-indigo-400 font-bold">${sanitizeForDisplay(l.petugas_role||'')}</p>
+        <p class="text-[10px] text-slate-300 font-bold mt-1">${fmtDate(l.created_at)}</p>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+window.exportLogCSV=()=>{
+  if(!allLogData.length){showAlert('Info','Belum ada log aktivitas','info');return;}
+  const hdr=['Waktu','Petugas','Email Petugas','Posisi','Hasil','Alasan','Order ID','Nama Tamu','Tipe Tiket'];
+  const rows=allLogData.map(l=>[fmtDate(l.created_at),l.petugas_name||'',l.petugas_email||'',l.petugas_role||'',l.result||'',l.reason||'',l.order_id||'',l.guest_name||'',l.ticket_type||'']);
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`log-scan-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('Log CSV diunduh!',`${allLogData.length} baris data`,'success');
+};
 
 // ── SETTINGS ──
 function listenToSettings(){
@@ -938,7 +865,7 @@ window.saveEventSettings=async()=>{
   try{
     await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),{
       title:sanitizeText(document.getElementById('set-title').value).substring(0,100),
-      bannerUrl, date:sanitizeText(document.getElementById('set-date').value).substring(0,50),
+      bannerUrl,date:sanitizeText(document.getElementById('set-date').value).substring(0,50),
       location:sanitizeText(document.getElementById('set-loc').value).substring(0,100),
       time:sanitizeText(document.getElementById('set-time').value).substring(0,50),
       eventDatetime:document.getElementById('set-eventdate').value,
@@ -951,31 +878,23 @@ window.saveEventSettings=async()=>{
 
 // ── NAV ──
 function showTab(id){
-  // Jika petugas, hanya boleh di tab petugas-scan
-  if(currentUserRole==='petugas'&&id!=='petugas-scan') return;
+  if(currentUserRole==='petugas'&&id!=='petugas-scan')return;
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   const target=document.getElementById(`tab-${id}`);
-  if(target) target.classList.add('active');
-  if(html5QrScanner&&id!=='admin-dashboard') stopScanner();
+  if(target)target.classList.add('active');
+  if(html5QrScanner&&id!=='admin-dashboard')stopScanner();
   window.scrollTo(0,0);
 }
-
 function updateNav(){
   const nav=document.getElementById('nav-user');if(!nav)return;
   if(currentUser&&!currentUser.isAnonymous){
     const photo=currentUser.photoURL
       ?`<img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm" alt="">`
       :`<div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-black text-indigo-600 text-sm">${(currentUser.email||'U')[0].toUpperCase()}</div>`;
-
     if(currentUserRole==='petugas'){
-      nav.innerHTML=`<div class="flex items-center gap-3">
-        <span class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>PETUGAS</span>
-        ${photo}
-        <button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button>
-      </div>`;
+      nav.innerHTML=`<div class="flex items-center gap-3"><span class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>PETUGAS</span>${photo}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
     } else if(currentUserRole==='admin'){
-      const adm=`<button onclick="switchAdminTab('list');showTab('admin-dashboard')" class="flex items-center gap-1 p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all"><i data-lucide="shield-check" class="w-5 h-5"></i><span class="text-[10px] font-black uppercase pr-1 hidden sm:inline">Admin</span></button>`;
-      nav.innerHTML=`<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}${adm}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
+      nav.innerHTML=`<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}<button onclick="switchAdminTab('list');showTab('admin-dashboard')" class="flex items-center gap-1 p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all"><i data-lucide="shield-check" class="w-5 h-5"></i><span class="text-[10px] font-black uppercase pr-1 hidden sm:inline">Admin</span></button><button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
     } else {
       nav.innerHTML=`<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
     }
@@ -990,8 +909,7 @@ window.handleGoogleLogin=async()=>{try{await window.signInWithPopup(window.auth,
 window.startOrder=type=>{
   if(!currentUser||currentUser.isAnonymous){handleGoogleLogin();return;}
   selectedType=type;
-  const cfg=eventConfig.tickets||TICKET_TYPES;
-  const price=cfg[type]?.price||0;
+  const cfg=eventConfig.tickets||TICKET_TYPES,price=cfg[type]?.price||0;
   const s=document.getElementById('order-summary');s.textContent='';
   const l1=document.createElement('div');l1.textContent=type;s.appendChild(l1);
   const l2=document.createElement('div');l2.textContent=fmtRupiah(price);s.appendChild(l2);
@@ -1000,7 +918,6 @@ window.startOrder=type=>{
   showTab('payment');
 };
 
-// ── SUBMIT ORDER ──
 window.submitOrder=async()=>{
   const name=sanitizeText(document.getElementById('order-name').value);
   const err=document.getElementById('name-error');
@@ -1010,20 +927,12 @@ window.submitOrder=async()=>{
   const btn=document.getElementById('btn-submit-order');btn.disabled=true;btn.textContent='MEMPROSES...';
   try{
     await currentUser.getIdToken(true);
-    const cfg=eventConfig.tickets||TICKET_TYPES;
-    const quota=cfg[selectedType]?.quota||0;
-    const soldSnap=await window.getDocs(window.query(
-      window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
-      window.where('type','==',selectedType)
-    ));
+    const cfg=eventConfig.tickets||TICKET_TYPES,quota=cfg[selectedType]?.quota||0;
+    const soldSnap=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('type','==',selectedType)));
     if(soldSnap.size>=quota){showAlert('Kuota Habis',`Tiket ${selectedType} sudah habis!`,'error');return;}
-    const ex=await window.getDocs(window.query(
-      window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
-      window.where('user_id','==',currentUser.uid)
-    ));
+    const ex=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)));
     if(ex.size>=MAX_PER_USER){showAlert('Batas',`Maks ${MAX_PER_USER} tiket per akun`,'error');return;}
-    const price=parseInt(cfg[selectedType]?.price||0);
-    const orderId=generateOrderId();
+    const price=parseInt(cfg[selectedType]?.price||0),orderId=generateOrderId();
     await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),{
       order_id:orderId,user_id:currentUser.uid,name,email:currentUser.email,
       type:selectedType,price,status:'pending',check_in:false,created_at:Date.now()
@@ -1032,14 +941,10 @@ window.submitOrder=async()=>{
     showTab('my-tickets');
   }catch(e){
     let msg='Gagal pesan, coba lagi';
-    if(e.code==='permission-denied') msg='Akses ditolak Firestore. Coba logout lalu login ulang.';
-    else if(e.message) msg=e.message;
+    if(e.code==='permission-denied')msg='Akses ditolak Firestore. Coba logout lalu login ulang.';
+    else if(e.message)msg=e.message;
     showAlert('Error',msg,'error');
-  }finally{
-    btn.disabled=false;
-    btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';
-    lucide.createIcons();
-  }
+  }finally{btn.disabled=false;btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';lucide.createIcons();}
 };
 
 // ── USER TICKETS ──
@@ -1051,26 +956,16 @@ function loadUserTickets(){
     window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)),
     async snap=>{
       snap.forEach(d=>{const t=d.data(),prev=prevStatuses[d.id];
-        if(prev&&prev!==t.status&&t.status==='approved'){
-          sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif.`);
-          showToast('Tiket Disetujui! 🎉',`${t.name} — ${t.type}`,'success');
-        }
+        if(prev&&prev!==t.status&&t.status==='approved'){sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif.`);showToast('Tiket Disetujui! 🎉',`${t.name} — ${t.type}`,'success');}
         prevStatuses[d.id]=t.status;
       });
       container.innerHTML='';
-      if(snap.empty){
-        container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';
-        return;
-      }
+      if(snap.empty){container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';return;}
       const renders=[];
       snap.forEach(docu=>renders.push((async()=>{
-        const t=docu.data();
-        const approved=t.status==='approved';
+        const t=docu.data(),approved=t.status==='approved';
         let qrUrl='';
-        if(approved){
-          const qrData=await makeQrData(t.order_id);
-          qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
-        }
+        if(approved){const qrData=await makeQrData(t.order_id);qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;}
         const div=document.createElement('div');
         div.className='bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
         div.innerHTML=`
@@ -1082,10 +977,7 @@ function loadUserTickets(){
           </div>
           <div class="bg-slate-50 p-8 flex flex-col items-center gap-5">
             <div id="tp-${docu.id}" class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
-              ${approved
-                ?`<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`
-                :`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`
-              }
+              ${approved?`<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`:`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
               ${t.check_in?`<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>`:''}
             </div>
             <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center st"></p>
@@ -1097,19 +989,16 @@ function loadUserTickets(){
         div.querySelector('.st').textContent=approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin';
         container.appendChild(div);
       })()));
-      await Promise.all(renders);
-      lucide.createIcons();
-    }, err=>console.warn('user ticket err:',err.code)
+      await Promise.all(renders);lucide.createIcons();
+    },err=>console.warn('user ticket err:',err.code)
   );
 }
 
-// ── SIMPAN TIKET GAMBAR ──
 window.saveTicketImage=async(docId,orderId,encodedName,type)=>{
   const name=decodeURIComponent(encodedName);
   const qrData=await makeQrData(orderId);
   const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
-  const wrap=document.createElement('div');
-  wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;';
+  const wrap=document.createElement('div');wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;';
   const card=document.createElement('div');
   card.style.cssText='width:360px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border-radius:24px;padding:32px;font-family:sans-serif;';
   card.innerHTML=`
@@ -1165,18 +1054,15 @@ function listenToAllTickets(){
       el('bar-vip2').style.width=(s.revVip2/tot*100)+'%';
       el('bar-reg').style.width=(s.revReg/tot*100)+'%';
       loadAdminTickets();
-    }, err=>console.warn('admin err:',err.code)
+    },err=>console.warn('admin err:',err.code)
   );
 }
 
 window.setFilter=f=>{
   activeFilter=f;
-  ['all','pending','approved','checkin','VIP 1','VIP 2','Reguler'].forEach(k=>{
-    const e=document.getElementById('fp-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');
-  });
+  ['all','pending','approved','checkin','VIP 1','VIP 2','Reguler'].forEach(k=>{const e=document.getElementById('fp-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');});
   selectedIds.clear();updateBulkBar();loadAdminTickets();
 };
-
 function applyFilter(arr){
   return arr.filter(t=>{
     if(activeFilter==='all')return true;
@@ -1186,7 +1072,6 @@ function applyFilter(arr){
     return t.type===activeFilter;
   });
 }
-
 function loadAdminTickets(){
   const list=document.getElementById('admin-tickets');
   const search=(document.getElementById('admin-search').value||'').toLowerCase();
@@ -1231,7 +1116,6 @@ function loadAdminTickets(){
   lucide.createIcons();
 }
 
-// ── BULK ──
 window.toggleSelect=(id,checked)=>{
   checked?selectedIds.add(id):selectedIds.delete(id);
   const row=document.getElementById(`tr-${id}`);
@@ -1253,8 +1137,6 @@ window.bulkApprove=async()=>{
   catch(e){showAlert('Error','Bulk approve gagal','error');}
 };
 window.clearSelection=()=>{selectedIds.clear();updateBulkBar();loadAdminTickets();};
-
-// ── UPDATE STATUS ──
 window.updateStatus=async(id,status,evt)=>{
   if(evt)evt.stopPropagation();
   try{
@@ -1268,8 +1150,6 @@ window.deleteTicket=async id=>{
   try{await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id));}
   catch(e){showAlert('Error','Gagal hapus','error');}
 };
-
-// ── EXPORT CSV ──
 window.exportCSV=()=>{
   if(!allTicketsData.length){showAlert('Info','Belum ada data','info');return;}
   const hdr=['Order ID','Nama','Email','Tipe','Harga','Status','Check-in','Waktu Order'];
@@ -1284,36 +1164,37 @@ window.exportCSV=()=>{
 
 // ── ADMIN TAB SWITCH ──
 window.switchAdminTab=tab=>{
-  const tabs=['list','petugas','scan','settings'];
-  tabs.forEach(t=>{
-    const el=document.getElementById(`adm-${t}-content`);
-    if(el) el.classList.toggle('hidden',t!==tab);
-  });
-  // Toolbar filter: sembunyikan saat bukan di list
+  const tabs=['list','petugas','log','scan','settings'];
+  tabs.forEach(t=>{const el=document.getElementById(`adm-${t}-content`);if(el)el.classList.toggle('hidden',t!==tab);});
   const filterBar=document.getElementById('filter-bar');
-  if(filterBar) filterBar.classList.toggle('hidden',tab!=='list');
-
+  if(filterBar)filterBar.classList.toggle('hidden',tab!=='list');
   const ac='px-4 py-2 rounded-xl font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all whitespace-nowrap';
   const in_='px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap';
-  ['list','petugas','settings','scan'].forEach(t=>{
-    const btn=document.getElementById(`btn-adm-${t}`);if(btn) btn.className=t===tab?ac:in_;
-  });
-  if(tab==='scan') startScanner(); else stopScanner();
-  if(tab==='settings') initSettingsInputs();
-  if(tab==='petugas'&&!unsubPetugas) listenToPetugas();
+  ['list','petugas','log','settings','scan'].forEach(t=>{const btn=document.getElementById(`btn-adm-${t}`);if(btn)btn.className=t===tab?ac:in_;});
+  if(tab==='scan')startScanner();else stopScanner();
+  if(tab==='settings')initSettingsInputs();
+  if(tab==='petugas'&&!unsubPetugas)listenToPetugas();
+  if(tab==='log'){if(!unsubLog)listenToLog();else{updateLogStats();renderLogList();}}
 };
 
-// ── SCANNER LOGIC (shared) ──
-async function handleQrScan(text, feedbackEl, isAdmin, onSuccess){
+// ══════════════════════════════════════════════
+// SCANNER LOGIC (shared — admin & petugas)
+// ══════════════════════════════════════════════
+async function handleQrScan(text, feedbackEl, scannerName, onSuccess){
+  // Siapkan data identitas scanner
+  const petugasInfo = currentPetugasData || (currentUserRole==='admin'?{name:currentUser?.displayName||currentUser?.email||'Admin',email:currentUser?.email||'',role:'Admin'}:null);
+
   const parts=text.split('|');
   if(parts.length!==2){
     showScanFeedback(feedbackEl,'❌ FORMAT QR TIDAK VALID','invalid');
+    await writeScanLog({result:'invalid',reason:'FORMAT QR TIDAK VALID',order_id:'',guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
     return false;
   }
   const [scannedOrderId,scannedSig]=parts;
   const isLegit=await verifyOrderId(scannedOrderId,scannedSig);
   if(!isLegit){
     showScanFeedback(feedbackEl,'🚨 QR PALSU TERDETEKSI!','invalid');
+    await writeScanLog({result:'invalid',reason:'QR PALSU',order_id:scannedOrderId,guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
     return false;
   }
   try{
@@ -1323,51 +1204,53 @@ async function handleQrScan(text, feedbackEl, isAdmin, onSuccess){
     ));
     if(snap.empty){
       showScanFeedback(feedbackEl,'❌ TIKET TIDAK DITEMUKAN','invalid');
+      await writeScanLog({result:'invalid',reason:'TIKET TIDAK DITEMUKAN',order_id:scannedOrderId,guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
       return false;
     }
-    const d=snap.docs[0];const data=d.data();
+    const d=snap.docs[0],data=d.data();
     if(data.status!=='approved'){
       showScanFeedback(feedbackEl,'⚠️ BELUM DIAPPROVE','warn');
+      await writeScanLog({result:'warn',reason:'BELUM DIAPPROVE',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
       return false;
     }
     if(data.check_in){
       showScanFeedback(feedbackEl,'🔴 SUDAH DIGUNAKAN','invalid');
+      await writeScanLog({result:'invalid',reason:'SUDAH DIGUNAKAN',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
       return false;
     }
+    // ✅ VALID — lakukan check-in dan tulis log
     showScanFeedback(feedbackEl,`✅ VALID\n${data.name}\n${data.type}`,'valid');
     await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',d.id),{check_in:true});
-    if(onSuccess) onSuccess(data);
+    await writeScanLog({result:'valid',reason:'CHECK-IN BERHASIL',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+    if(onSuccess)onSuccess(data);
     return true;
   }catch(e){
     showScanFeedback(feedbackEl,'⚠️ ERROR KONEKSI','warn');
+    await writeScanLog({result:'warn',reason:'ERROR KONEKSI',order_id:scannedOrderId||'',guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
     return false;
   }
 }
 
-function showScanFeedback(el, text, type){
+function showScanFeedback(el,text,type){
   if(!el)return;
   el.className='p-6 rounded-2xl font-black text-lg text-center whitespace-pre-line';
-  if(type==='valid') el.classList.add('scan-result-valid');
-  else if(type==='invalid') el.classList.add('scan-result-invalid');
+  if(type==='valid')el.classList.add('scan-result-valid');
+  else if(type==='invalid')el.classList.add('scan-result-invalid');
   else el.classList.add('scan-result-warn');
-  el.textContent=text;
-  el.classList.remove('hidden');
+  el.textContent=text;el.classList.remove('hidden');
 }
 
 // ── ADMIN SCANNER ──
 function startScanner(){
   if(html5QrScanner)return;
   html5QrScanner=new Html5Qrcode('reader');
-  const fb=document.getElementById('scan-feedback');
-  scanCooldown=false;
+  const fb=document.getElementById('scan-feedback');scanCooldown=false;
   html5QrScanner.start({facingMode:'environment'},{fps:5,qrbox:220},async text=>{
     if(scanCooldown)return;scanCooldown=true;setTimeout(()=>scanCooldown=false,3000);
-    await handleQrScan(text,fb,true,null);
+    await handleQrScan(text,fb,'admin',null);
   }).catch(()=>showAlert('Error','Izinkan akses kamera di browser','error'));
 }
-function stopScanner(){
-  if(html5QrScanner) html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>html5QrScanner=null);
-}
+function stopScanner(){if(html5QrScanner)html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>html5QrScanner=null);}
 
 // ── PETUGAS SCANNER ──
 function startPetugasScanner(){
@@ -1377,29 +1260,31 @@ function startPetugasScanner(){
   let petugasCooldown=false;
   petugasQrScanner.start({facingMode:'environment'},{fps:5,qrbox:250},async text=>{
     if(petugasCooldown)return;petugasCooldown=true;setTimeout(()=>petugasCooldown=false,3000);
-    const ok=await handleQrScan(text,fb,false,()=>{
-      petugasSessionCheckin++;
-      updatePetugasStat();
-      showToast('Check-in Berhasil! ✅','','success');
+    const ok=await handleQrScan(text,fb,'petugas',data=>{
+      petugasSessionCheckin++;updatePetugasStat();
+      showToast('Check-in Berhasil! ✅',`${data.name} — ${data.type}`,'success');
+      // Tampil info tiket terakhir
+      const lt=document.getElementById('petugas-last-ticket');
+      if(lt){
+        lt.classList.remove('hidden');
+        const nm=document.getElementById('plt-name'),tp=document.getElementById('plt-type'),or=document.getElementById('plt-order');
+        if(nm)nm.textContent=data.name||'';
+        if(tp)tp.textContent=data.type||'';
+        if(or)or.textContent=`#${data.order_id||''}`;
+      }
     });
-    if(!ok){
-      petugasSessionReject++;
-      updatePetugasStat();
-    }
+    if(!ok){petugasSessionReject++;updatePetugasStat();}
   }).catch(()=>{
     const fb=document.getElementById('petugas-scan-feedback');
     showScanFeedback(fb,'❌ Tidak bisa akses kamera.\nIzinkan akses kamera di browser.','invalid');
   });
 }
-function stopPetugasScanner(){
-  if(petugasQrScanner) petugasQrScanner.stop().then(()=>petugasQrScanner=null).catch(()=>petugasQrScanner=null);
-}
+function stopPetugasScanner(){if(petugasQrScanner)petugasQrScanner.stop().then(()=>petugasQrScanner=null).catch(()=>petugasQrScanner=null);}
 
 // ── MODAL ──
 function showAlert(title,msg,type){
   document.getElementById('modal-alert').classList.replace('hidden','flex');
-  document.getElementById('modal-title').textContent=title;
-  document.getElementById('modal-msg').textContent=msg;
+  document.getElementById('modal-title').textContent=title;document.getElementById('modal-msg').textContent=msg;
   const cls={success:'bg-green-100 text-green-500',error:'bg-red-100 text-red-500',info:'bg-indigo-100 text-indigo-500'};
   const ico={success:'check-circle',error:'alert-circle',info:'info'};
   const icon=document.getElementById('modal-icon');
