@@ -197,16 +197,12 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
         <i data-lucide="download" class="w-4 h-4"></i> Export CSV
       </button>
     </div>
-
-    <!-- STATS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
       <div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Total</p><p id="stat-total" class="text-3xl font-black text-slate-800">0</p></div>
       <div class="bg-amber-50 p-5 rounded-3xl border border-amber-100"><p class="text-amber-500 text-[10px] font-bold uppercase mb-1">Pending</p><p id="stat-pending" class="text-3xl font-black text-amber-700">0</p></div>
       <div class="bg-green-50 p-5 rounded-3xl border border-green-100"><p class="text-green-500 text-[10px] font-bold uppercase mb-1">Approved</p><p id="stat-approved" class="text-3xl font-black text-green-700">0</p></div>
       <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100"><p class="text-indigo-400 text-[10px] font-bold uppercase mb-1">Check-in</p><p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p></div>
     </div>
-
-    <!-- REVENUE -->
     <div class="bg-white p-6 rounded-3xl border shadow-sm mb-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-black text-slate-700 flex items-center gap-2 text-sm"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Revenue & Kuota (Approved)</h3>
@@ -291,17 +287,15 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       </div>
     </div>
 
-    <!-- ══ LOG AKTIVITAS ══ -->
+    <!-- LOG AKTIVITAS -->
     <div id="adm-log-content" class="hidden">
       <div class="bg-white p-6 rounded-3xl border shadow-sm mb-4">
-        <!-- Statistik log -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           <div class="bg-green-50 rounded-2xl p-4 border border-green-100 text-center"><p class="text-[10px] font-black text-green-500 uppercase mb-1">Valid</p><p id="log-stat-valid" class="text-2xl font-black text-green-700">0</p></div>
           <div class="bg-red-50 rounded-2xl p-4 border border-red-100 text-center"><p class="text-[10px] font-black text-red-400 uppercase mb-1">Ditolak</p><p id="log-stat-invalid" class="text-2xl font-black text-red-700">0</p></div>
           <div class="bg-amber-50 rounded-2xl p-4 border border-amber-100 text-center"><p class="text-[10px] font-black text-amber-500 uppercase mb-1">Warning</p><p id="log-stat-warn" class="text-2xl font-black text-amber-700">0</p></div>
           <div class="bg-slate-50 rounded-2xl p-4 border text-center"><p class="text-[10px] font-black text-slate-400 uppercase mb-1">Total Scan</p><p id="log-stat-total" class="text-2xl font-black text-slate-700">0</p></div>
         </div>
-        <!-- Filter log -->
         <div class="flex flex-wrap gap-2 items-center mb-4">
           <input type="text" id="log-search" placeholder="Cari nama petugas / tamu / order ID..." oninput="renderLogList()" class="flex-1 min-w-[200px] px-4 py-2.5 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-900">
           <button onclick="setLogFilter('all')"     id="lf-all"     class="filter-pill active">Semua</button>
@@ -311,14 +305,10 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
         </div>
         <div class="flex items-center justify-between mb-2">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Riwayat Scan (200 terbaru)</p>
-          <button onclick="exportLogCSV()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Log
-          </button>
+          <button onclick="exportLogCSV()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black hover:bg-slate-200 transition-all"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export Log</button>
         </div>
       </div>
-      <div id="log-list" class="space-y-2">
-        <div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Memuat log...</div>
-      </div>
+      <div id="log-list" class="space-y-2"><div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Memuat log...</div></div>
     </div>
 
     <!-- SETTINGS -->
@@ -359,7 +349,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       </div>
     </div>
 
-    <!-- SCAN (Admin) -->
+    <!-- SCAN ADMIN -->
     <div id="adm-scan-content" class="hidden max-w-md mx-auto">
       <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border text-center">
         <div id="reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
@@ -388,7 +378,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
         </div>
         <div id="petugas-reader" class="aspect-square bg-slate-900 rounded-3xl overflow-hidden mb-6 shadow-inner"></div>
         <div id="petugas-scan-feedback" class="hidden p-6 rounded-3xl font-black text-xl text-center mb-4 transition-all"></div>
-        <!-- Info tiket terakhir -->
         <div id="petugas-last-ticket" class="hidden bg-slate-50 rounded-2xl p-4 border mb-4 text-left">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tiket Terakhir Discan</p>
           <p id="plt-name" class="font-black text-slate-800 text-sm"></p>
@@ -417,11 +406,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-// KONFIGURASI — sesuaikan di sini
-// ══════════════════════════════════════════════
 const WA_NUMBER    = "6285158880014";
-const ADMIN_EMAILS = ["sobatambyar1990@gmail.com", "staycoustikmanagement@gmail.com"];
+const ADMIN_EMAILS = ["sobatambyar1990@gmail.com","staycoustikmanagement@gmail.com"];
 const MAX_PER_USER = 5;
 const QR_SECRET    = 'h0l1st1k_s3cr3t_2026_!xK9#mP7qRvZ';
 
@@ -435,20 +421,18 @@ async function signOrderId(orderId){
 async function verifyOrderId(orderId,sig){ return (await signOrderId(orderId))===sig; }
 async function makeQrData(orderId){ return `${orderId}|${await signOrderId(orderId)}`; }
 
-// ── KONSTANTA ──
-const TICKET_TYPES = {'VIP 1':{price:65000,quota:500},'VIP 2':{price:55000,quota:1000},'Reguler':{price:35000,quota:1500}};
-const TOTAL_QUOTA  = 3000;
+const TICKET_TYPES={'VIP 1':{price:65000,quota:500},'VIP 2':{price:55000,quota:1000},'Reguler':{price:35000,quota:1500}};
+const TOTAL_QUOTA=3000;
 
-// ── STATE ──
-let currentUser=null, selectedType=null;
-let html5QrScanner=null, petugasQrScanner=null;
-let allTicketsData=[], petugasData=[], allLogData=[];
-let unsubUser=null, unsubAdmin=null, unsubPetugas=null, unsubLog=null;
-let scanCooldown=false, activeFilter='all', activeLogFilter='all', selectedIds=new Set();
-let prevStatuses={}, countdownTimer=null;
-let currentUserRole='guest'; // 'guest'|'user'|'petugas'|'admin'
-let petugasSessionCheckin=0, petugasSessionReject=0;
-let currentPetugasData=null; // data petugas yang sedang login
+let currentUser=null,selectedType=null;
+let html5QrScanner=null,petugasQrScanner=null;
+let allTicketsData=[],petugasData=[],allLogData=[];
+let unsubUser=null,unsubAdmin=null,unsubPetugas=null,unsubLog=null;
+let scanCooldown=false,activeFilter='all',activeLogFilter='all',selectedIds=new Set();
+let prevStatuses={},countdownTimer=null;
+let currentUserRole='guest';
+let petugasSessionCheckin=0,petugasSessionReject=0;
+let currentPetugasData=null;
 let eventConfig={
   title:"Holistik Fest",
   bannerUrl:"https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
@@ -465,8 +449,12 @@ function isValidEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()); }
 function generateOrderId(){ const a=new Uint8Array(5);crypto.getRandomValues(a);return 'HOL-'+Array.from(a,b=>b.toString(36)).join('').toUpperCase().substr(0,6); }
 function fmtRupiah(n){ return 'Rp '+Number(n||0).toLocaleString('id-ID'); }
 function fmtDate(ts){ return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-'; }
-function fmtTime(ts){ return ts?new Date(ts).toLocaleString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'-'; }
 function isAdmin(u){ return !!(u&&u.email&&ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase())); }
+
+// FIX BUG 1: emailKey harus replace SEMUA titik dan @ (bukan hanya yang pertama)
+function emailToKey(email){
+  return email.toLowerCase().replace(/\./g,'_').replace(/@/g,'_');
+}
 
 // ── QUOTA UI ──
 function updateQuotaUI(soldCounts){
@@ -482,7 +470,7 @@ function updateQuotaUI(soldCounts){
     if(sisa<=0){
       if(card){card.classList.add('ticket-card-sold');card.onclick=null;}
       if(btn){btn.textContent='HABIS';btn.className='w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed';}
-    } else { if(card)card.classList.remove('ticket-card-sold'); }
+    } else {if(card)card.classList.remove('ticket-card-sold');}
   });
   const totalSisa=TOTAL_QUOTA-totalSold,totalPct=Math.max(0,totalSisa/TOTAL_QUOTA*100);
   const tb=document.getElementById('total-quota-bar'),tt=document.getElementById('total-quota-text');
@@ -516,7 +504,7 @@ function checkNotifSupport(){
 }
 window.requestNotifPermission=async()=>{
   const p=await Notification.requestPermission();
-  if(p==='granted'){document.getElementById('btn-notif').classList.add('hidden');showToast('Notifikasi aktif!','Anda akan diberitahu saat tiket disetujui','success');}
+  if(p==='granted'){document.getElementById('btn-notif').classList.add('hidden');showToast('Notifikasi aktif!','','success');}
 };
 function sendBrowserNotif(title,body){
   if(!('Notification' in window)||Notification.permission!=='granted')return;
@@ -554,7 +542,9 @@ window.addEventListener('load',async()=>{
         if(unsubUser){unsubUser();unsubUser=null;}
         listenToAllTickets();listenToPetugas();
       } else {
-        const petugasDoc=await checkIsPetugas(user.uid);
+        // FIX BUG 2: force refresh token SEBELUM cek petugas
+        try{ await user.getIdToken(true); }catch(e){}
+        const petugasDoc=await checkIsPetugas(user);
         if(petugasDoc){
           currentUserRole='petugas';currentPetugasData=petugasDoc;
           if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
@@ -577,34 +567,41 @@ window.addEventListener('load',async()=>{
   listenSoldCounts();
 });
 
-// ── CEK PETUGAS ──
-async function checkIsPetugas(uid){
-  // 1. Cek koleksi petugas (uid-based)
+// FIX BUG 3: checkIsPetugas menggunakan emailToKey() yang benar
+async function checkIsPetugas(user){
+  // 1. Cek koleksi petugas aktif (uid-based)
   try{
-    const rA=window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid);
-    const sA=await window.getDoc(rA);
-    if(sA.exists())return sA.data();
-  }catch(e){}
-  // 2. Cek petugas_pending (email-based, belum pernah login)
-  if(!currentUser?.email)return null;
+    const snap=await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid));
+    if(snap.exists())return snap.data();
+  }catch(e){console.warn('cek petugas aktif:',e.code);}
+
+  // 2. Cek petugas_pending (email-based)
+  if(!user.email)return null;
+  const emailKey=emailToKey(user.email);
   try{
-    const emailKey=currentUser.email.toLowerCase().replace(/[.@]/g,'_');
-    const rP=window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey);
-    const sP=await window.getDoc(rP);
-    if(sP.exists()){
-      const data=sP.data();
-      // Claim → pindah ke petugas/{uid}
+    const snap=await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey));
+    if(snap.exists()){
+      const data=snap.data();
+      // Claim: pindahkan ke petugas/{uid}
       try{
-        await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',uid),{...data,uid,claimed_at:Date.now()});
-        await window.deleteDoc(rP);
-      }catch(e){console.warn('Claim petugas error:',e);}
+        await window.setDoc(
+          window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid),
+          {...data,uid:user.uid,email:user.email,claimed_at:Date.now()}
+        );
+        await window.deleteDoc(
+          window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey)
+        );
+        // Setelah claim, baca ulang dari koleksi aktif
+        const snap2=await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid));
+        if(snap2.exists())return snap2.data();
+      }catch(e){console.warn('Claim petugas error:',e.code,' — lanjut dengan data pending');}
+      // Kembalikan data dari pending meskipun claim gagal
       return data;
     }
-  }catch(e){}
+  }catch(e){console.warn('cek petugas_pending:',e.code);}
   return null;
 }
 
-// ── ACTIVATE PETUGAS MODE ──
 function activatePetugasScanMode(data){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-petugas-scan').classList.add('active');
@@ -626,7 +623,7 @@ function listenSoldCounts(){
     snap=>{const sold={'VIP 1':0,'VIP 2':0,'Reguler':0};snap.forEach(d=>{const t=d.data();if(sold[t.type]!==undefined)sold[t.type]++;});updateQuotaUI(sold);},()=>{});
 }
 
-// ── LISTEN PETUGAS GABUNGAN ──
+// ── LISTEN PETUGAS ──
 function listenToPetugas(){
   if(unsubPetugas)unsubPetugas();
   let dataAktif=[],dataPending=[];
@@ -685,7 +682,8 @@ window.addPetugas=async()=>{
   if(sudahAda){errEl.textContent='Email ini sudah terdaftar sebagai petugas.';errEl.classList.remove('hidden');return;}
   btn.disabled=true;btn.textContent='Menyimpan...';
   try{
-    const safeEmailKey=emailRaw.replace(/[.@]/g,'_');
+    // FIX: gunakan emailToKey() yang benar
+    const safeEmailKey=emailToKey(emailRaw);
     await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',safeEmailKey),
       {name:sanitizeText(nameRaw).substring(0,100),email:emailRaw,role:sanitizeText(roleRaw).substring(0,100),created_at:Date.now(),added_by:currentUser.email});
     document.getElementById('petugas-name').value='';
@@ -698,7 +696,7 @@ window.addPetugas=async()=>{
 
 window.deletePetugas=async(id,encodedName,col)=>{
   const name=decodeURIComponent(encodedName);
-  if(!confirm(`Hapus petugas "${name}"?\n\nPetugas tidak akan bisa scan QR lagi.`))return;
+  if(!confirm(`Hapus petugas "${name}"?\nPetugas tidak akan bisa scan QR lagi.`))return;
   try{
     const collName=col==='petugas'?'petugas':'petugas_pending';
     await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data',collName,id));
@@ -706,76 +704,49 @@ window.deletePetugas=async(id,encodedName,col)=>{
   }catch(e){showAlert('Error','Gagal hapus petugas: '+e.message,'error');}
 };
 
-// ══════════════════════════════════════════════
-// LOG AKTIVITAS
-// ══════════════════════════════════════════════
-
-// Tulis log ke Firestore
+// ── LOG AKTIVITAS ──
 async function writeScanLog(logData){
   try{
     await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),{
-      ...logData,
-      created_at: Date.now()
+      ...logData,created_at:Date.now()
     });
-  }catch(e){console.warn('Log error:',e);}
+  }catch(e){console.warn('Log write error:',e.code);}
 }
 
-// Listen log (admin)
 function listenToLog(){
   if(unsubLog){unsubLog();unsubLog=null;}
   unsubLog=window.onSnapshot(
-    window.query(
-      window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),
-      window.orderBy('created_at','desc'),
-      window.limit(200)
-    ),
-    snap=>{
-      allLogData=[];
-      snap.forEach(d=>allLogData.push({id:d.id,...d.data()}));
-      updateLogStats();
-      renderLogList();
-    },
+    window.query(window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),window.orderBy('created_at','desc'),window.limit(200)),
+    snap=>{allLogData=[];snap.forEach(d=>allLogData.push({id:d.id,...d.data()}));updateLogStats();renderLogList();},
     ()=>{}
   );
 }
-
 function updateLogStats(){
   let valid=0,invalid=0,warn=0;
-  allLogData.forEach(l=>{
-    if(l.result==='valid')valid++;
-    else if(l.result==='invalid')invalid++;
-    else warn++;
-  });
+  allLogData.forEach(l=>{if(l.result==='valid')valid++;else if(l.result==='invalid')invalid++;else warn++;});
   const el=id=>document.getElementById(id);
   if(el('log-stat-valid'))el('log-stat-valid').textContent=valid;
   if(el('log-stat-invalid'))el('log-stat-invalid').textContent=invalid;
   if(el('log-stat-warn'))el('log-stat-warn').textContent=warn;
   if(el('log-stat-total'))el('log-stat-total').textContent=allLogData.length;
 }
-
 window.setLogFilter=f=>{
   activeLogFilter=f;
-  ['all','valid','invalid','warn'].forEach(k=>{
-    const e=document.getElementById('lf-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');
-  });
+  ['all','valid','invalid','warn'].forEach(k=>{const e=document.getElementById('lf-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');});
   renderLogList();
 };
-
 function renderLogList(){
   const list=document.getElementById('log-list');if(!list)return;
   const search=(document.getElementById('log-search')?.value||'').toLowerCase();
   let filtered=allLogData;
-  if(activeLogFilter!=='all') filtered=filtered.filter(l=>l.result===activeLogFilter);
-  if(search) filtered=filtered.filter(l=>
+  if(activeLogFilter!=='all')filtered=filtered.filter(l=>l.result===activeLogFilter);
+  if(search)filtered=filtered.filter(l=>
     (l.petugas_name||'').toLowerCase().includes(search)||
     (l.guest_name||'').toLowerCase().includes(search)||
     (l.order_id||'').toLowerCase().includes(search)||
     (l.petugas_email||'').toLowerCase().includes(search)
   );
-  if(!filtered.length){
-    list.innerHTML='<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada log</div>';
-    return;
-  }
+  if(!filtered.length){list.innerHTML='<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada log</div>';return;}
   list.innerHTML='';
   filtered.forEach(l=>{
     const isValid=l.result==='valid',isWarn=l.result==='warn';
@@ -790,7 +761,7 @@ function renderLogList(){
           <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${badgeCls}">${resultLabel}</span>
           ${l.ticket_type?`<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-100 text-indigo-600">${sanitizeForDisplay(l.ticket_type)}</span>`:''}
         </div>
-        <p class="font-black text-slate-800 text-sm truncate">${l.guest_name?sanitizeForDisplay(l.guest_name):'<span class="text-slate-300 font-bold">—</span>'}</p>
+        <p class="font-black text-slate-800 text-sm truncate">${l.guest_name?sanitizeForDisplay(l.guest_name):'—'}</p>
         <p class="text-[10px] text-slate-400 font-bold">${l.order_id?`#${sanitizeForDisplay(l.order_id)}`:''}</p>
       </div>
       <div class="flex-shrink-0 text-right">
@@ -801,7 +772,6 @@ function renderLogList(){
     list.appendChild(div);
   });
 }
-
 window.exportLogCSV=()=>{
   if(!allLogData.length){showAlert('Info','Belum ada log aktivitas','info');return;}
   const hdr=['Waktu','Petugas','Email Petugas','Posisi','Hasil','Alasan','Order ID','Nama Tamu','Tipe Tiket'];
@@ -811,7 +781,7 @@ window.exportLogCSV=()=>{
   a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
   a.download=`log-scan-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-  showToast('Log CSV diunduh!',`${allLogData.length} baris data`,'success');
+  showToast('Log CSV diunduh!',`${allLogData.length} baris`,'success');
 };
 
 // ── SETTINGS ──
@@ -947,50 +917,80 @@ window.submitOrder=async()=>{
   }finally{btn.disabled=false;btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';lucide.createIcons();}
 };
 
-// ── USER TICKETS ──
+// FIX BUG 4: loadUserTickets - pastikan listener berjalan benar dan re-render saat status berubah
 function loadUserTickets(){
   if(!currentUser||currentUser.isAnonymous)return;
   if(unsubUser)unsubUser();
   const container=document.getElementById('ticket-list');
   unsubUser=window.onSnapshot(
-    window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)),
+    window.query(
+      window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
+      window.where('user_id','==',currentUser.uid)
+    ),
     async snap=>{
-      snap.forEach(d=>{const t=d.data(),prev=prevStatuses[d.id];
-        if(prev&&prev!==t.status&&t.status==='approved'){sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif.`);showToast('Tiket Disetujui! 🎉',`${t.name} — ${t.type}`,'success');}
+      // Deteksi perubahan status untuk notifikasi
+      snap.forEach(d=>{
+        const t=d.data(),prev=prevStatuses[d.id];
+        if(prev&&prev!==t.status&&t.status==='approved'){
+          sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif.`);
+          showToast('Tiket Disetujui! 🎉',`${t.name} — ${t.type}`,'success');
+        }
         prevStatuses[d.id]=t.status;
       });
+
       container.innerHTML='';
-      if(snap.empty){container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';return;}
-      const renders=[];
-      snap.forEach(docu=>renders.push((async()=>{
-        const t=docu.data(),approved=t.status==='approved';
-        let qrUrl='';
-        if(approved){const qrData=await makeQrData(t.order_id);qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;}
-        const div=document.createElement('div');
-        div.className='bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
-        div.innerHTML=`
-          <div class="p-6 bg-white border-b border-dashed border-slate-100">
-            <div class="flex justify-between items-start">
-              <div class="flex-1"><p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest oid"></p><h3 class="text-2xl font-black text-slate-900 leading-tight uppercase nm"></h3><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 tp"></p></div>
-              <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved?'bg-green-100 text-green-600':'bg-amber-100 text-amber-600'}">${approved?'AKTIF':'PENDING'}</span>
+      if(snap.empty){
+        container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';
+        return;
+      }
+
+      // Render semua tiket secara paralel lalu append
+      const items=[];
+      const renderPromises=[];
+      snap.forEach(docu=>{
+        renderPromises.push((async()=>{
+          const t=docu.data(),approved=t.status==='approved';
+          let qrSrc='';
+          if(approved){
+            const qrData=await makeQrData(t.order_id);
+            qrSrc=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+          }
+          const div=document.createElement('div');
+          div.className='bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
+          div.innerHTML=`
+            <div class="p-6 bg-white border-b border-dashed border-slate-100">
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id||''}</p>
+                  <h3 class="text-2xl font-black text-slate-900 leading-tight uppercase">${sanitizeForDisplay(t.name||'')}</h3>
+                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">${t.type||''} PASS</p>
+                </div>
+                <span class="px-3 py-1 rounded-full text-[10px] font-black ${approved?'bg-green-100 text-green-600':'bg-amber-100 text-amber-600'}">${approved?'AKTIF':'PENDING'}</span>
+              </div>
             </div>
-          </div>
-          <div class="bg-slate-50 p-8 flex flex-col items-center gap-5">
-            <div id="tp-${docu.id}" class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
-              ${approved?`<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`:`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
-              ${t.check_in?`<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>`:''}
-            </div>
-            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center st"></p>
-            ${approved&&!t.check_in?`<button onclick="saveTicketImage('${docu.id}','${t.order_id}','${encodeURIComponent(t.name)}','${t.type}')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg"><i data-lucide="image" class="w-4 h-4"></i> Simpan Tiket</button>`:''}
-          </div>`;
-        div.querySelector('.oid').textContent=`#${t.order_id}`;
-        div.querySelector('.nm').textContent=t.name;
-        div.querySelector('.tp').textContent=`${t.type} PASS`;
-        div.querySelector('.st').textContent=approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin';
-        container.appendChild(div);
-      })()));
-      await Promise.all(renders);lucide.createIcons();
-    },err=>console.warn('user ticket err:',err.code)
+            <div class="bg-slate-50 p-8 flex flex-col items-center gap-5">
+              <div class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
+                ${approved
+                  ?`<img src="${qrSrc}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`
+                  :`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
+                ${t.check_in?`<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>`:''}
+              </div>
+              <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center">
+                ${approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin'}
+              </p>
+              ${approved&&!t.check_in?`<button onclick="saveTicketImage('${docu.id}','${t.order_id}','${encodeURIComponent(t.name)}','${t.type}')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg"><i data-lucide="image" class="w-4 h-4"></i> Simpan Tiket</button>`:''}
+            </div>`;
+          // Simpan dengan timestamp untuk sort
+          items.push({ts:t.created_at||0,el:div});
+        })())
+      );
+      await Promise.all(renderPromises);
+      // Sort by created_at desc
+      items.sort((a,b)=>b.ts-a.ts);
+      items.forEach(item=>container.appendChild(item.el));
+      lucide.createIcons();
+    },
+    err=>console.warn('user ticket err:',err.code)
   );
 }
 
@@ -1057,7 +1057,6 @@ function listenToAllTickets(){
     },err=>console.warn('admin err:',err.code)
   );
 }
-
 window.setFilter=f=>{
   activeFilter=f;
   ['all','pending','approved','checkin','VIP 1','VIP 2','Reguler'].forEach(k=>{const e=document.getElementById('fp-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');});
@@ -1092,10 +1091,10 @@ function loadAdminTickets(){
         ${isPending?`<input type="checkbox" class="ticket-checkbox" ${isChk?'checked':''} onchange="toggleSelect('${t.id}',this.checked)">`:'<div class="w-[18px] flex-shrink-0"></div>'}
         <div class="bg-slate-50 p-1 rounded-2xl border border-slate-100 shadow-inner flex-shrink-0"><img src="${qrUrl}" class="w-14 h-14 block rounded-lg" alt="QR"></div>
         <div class="flex-1 min-w-0">
-          <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest oid"></p>
-          <p class="font-black text-slate-800 text-base leading-none mb-0.5 uppercase nm truncate"></p>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest tp"></p>
-          <p class="text-[10px] text-slate-300 dt"></p>
+          <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">#${t.order_id||''}</p>
+          <p class="font-black text-slate-800 text-base leading-none mb-0.5 uppercase truncate">${sanitizeForDisplay(t.name||'-')}</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${t.type||''} · ${fmtRupiah(t.price)}</p>
+          <p class="text-[10px] text-slate-300">${fmtDate(t.created_at)}</p>
         </div>
       </div>
       <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
@@ -1107,15 +1106,10 @@ function loadAdminTickets(){
           :`<button onclick="updateStatus('${t.id}','pending',event)" class="text-slate-400 text-xs px-3 py-1.5 border rounded-xl hover:bg-slate-50 font-black">Reset</button>`}
         <button onclick="deleteTicket('${t.id}')" class="text-red-300 hover:text-red-600 p-1.5 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
       </div>`;
-    div.querySelector('.oid').textContent=`#${t.order_id}`;
-    div.querySelector('.nm').textContent=t.name||'-';
-    div.querySelector('.tp').textContent=`${t.type||''} · ${fmtRupiah(t.price)}`;
-    div.querySelector('.dt').textContent=fmtDate(t.created_at);
     list.appendChild(div);
   });
   lucide.createIcons();
 }
-
 window.toggleSelect=(id,checked)=>{
   checked?selectedIds.add(id):selectedIds.delete(id);
   const row=document.getElementById(`tr-${id}`);
@@ -1177,24 +1171,22 @@ window.switchAdminTab=tab=>{
   if(tab==='log'){if(!unsubLog)listenToLog();else{updateLogStats();renderLogList();}}
 };
 
-// ══════════════════════════════════════════════
-// SCANNER LOGIC (shared — admin & petugas)
-// ══════════════════════════════════════════════
-async function handleQrScan(text, feedbackEl, scannerName, onSuccess){
-  // Siapkan data identitas scanner
-  const petugasInfo = currentPetugasData || (currentUserRole==='admin'?{name:currentUser?.displayName||currentUser?.email||'Admin',email:currentUser?.email||'',role:'Admin'}:null);
+// ── SCANNER SHARED LOGIC ──
+async function handleQrScan(text,feedbackEl,onSuccess){
+  const petugasInfo=currentPetugasData||(currentUserRole==='admin'?{name:currentUser?.displayName||currentUser?.email||'Admin',email:currentUser?.email||'',role:'Admin'}:null);
+  const logBase={petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''};
 
   const parts=text.split('|');
   if(parts.length!==2){
     showScanFeedback(feedbackEl,'❌ FORMAT QR TIDAK VALID','invalid');
-    await writeScanLog({result:'invalid',reason:'FORMAT QR TIDAK VALID',order_id:'',guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+    await writeScanLog({...logBase,result:'invalid',reason:'FORMAT QR TIDAK VALID',order_id:'',guest_name:'',ticket_type:''});
     return false;
   }
   const [scannedOrderId,scannedSig]=parts;
   const isLegit=await verifyOrderId(scannedOrderId,scannedSig);
   if(!isLegit){
     showScanFeedback(feedbackEl,'🚨 QR PALSU TERDETEKSI!','invalid');
-    await writeScanLog({result:'invalid',reason:'QR PALSU',order_id:scannedOrderId,guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+    await writeScanLog({...logBase,result:'invalid',reason:'QR PALSU',order_id:scannedOrderId,guest_name:'',ticket_type:''});
     return false;
   }
   try{
@@ -1204,29 +1196,29 @@ async function handleQrScan(text, feedbackEl, scannerName, onSuccess){
     ));
     if(snap.empty){
       showScanFeedback(feedbackEl,'❌ TIKET TIDAK DITEMUKAN','invalid');
-      await writeScanLog({result:'invalid',reason:'TIKET TIDAK DITEMUKAN',order_id:scannedOrderId,guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+      await writeScanLog({...logBase,result:'invalid',reason:'TIKET TIDAK DITEMUKAN',order_id:scannedOrderId,guest_name:'',ticket_type:''});
       return false;
     }
     const d=snap.docs[0],data=d.data();
     if(data.status!=='approved'){
       showScanFeedback(feedbackEl,'⚠️ BELUM DIAPPROVE','warn');
-      await writeScanLog({result:'warn',reason:'BELUM DIAPPROVE',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+      await writeScanLog({...logBase,result:'warn',reason:'BELUM DIAPPROVE',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
       return false;
     }
     if(data.check_in){
       showScanFeedback(feedbackEl,'🔴 SUDAH DIGUNAKAN','invalid');
-      await writeScanLog({result:'invalid',reason:'SUDAH DIGUNAKAN',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+      await writeScanLog({...logBase,result:'invalid',reason:'SUDAH DIGUNAKAN',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
       return false;
     }
-    // ✅ VALID — lakukan check-in dan tulis log
     showScanFeedback(feedbackEl,`✅ VALID\n${data.name}\n${data.type}`,'valid');
     await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',d.id),{check_in:true});
-    await writeScanLog({result:'valid',reason:'CHECK-IN BERHASIL',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+    await writeScanLog({...logBase,result:'valid',reason:'CHECK-IN BERHASIL',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
     if(onSuccess)onSuccess(data);
     return true;
   }catch(e){
-    showScanFeedback(feedbackEl,'⚠️ ERROR KONEKSI','warn');
-    await writeScanLog({result:'warn',reason:'ERROR KONEKSI',order_id:scannedOrderId||'',guest_name:'',ticket_type:'',petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''});
+    console.error('scan error:',e);
+    showScanFeedback(feedbackEl,`⚠️ ERROR: ${e.code||e.message}`,'warn');
+    await writeScanLog({...logBase,result:'warn',reason:`ERROR: ${e.code||'koneksi'}`,order_id:scannedOrderId||'',guest_name:'',ticket_type:''});
     return false;
   }
 }
@@ -1240,19 +1232,19 @@ function showScanFeedback(el,text,type){
   el.textContent=text;el.classList.remove('hidden');
 }
 
-// ── ADMIN SCANNER ──
+// Admin scanner
 function startScanner(){
   if(html5QrScanner)return;
   html5QrScanner=new Html5Qrcode('reader');
   const fb=document.getElementById('scan-feedback');scanCooldown=false;
   html5QrScanner.start({facingMode:'environment'},{fps:5,qrbox:220},async text=>{
     if(scanCooldown)return;scanCooldown=true;setTimeout(()=>scanCooldown=false,3000);
-    await handleQrScan(text,fb,'admin',null);
+    await handleQrScan(text,fb,null);
   }).catch(()=>showAlert('Error','Izinkan akses kamera di browser','error'));
 }
 function stopScanner(){if(html5QrScanner)html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>html5QrScanner=null);}
 
-// ── PETUGAS SCANNER ──
+// Petugas scanner
 function startPetugasScanner(){
   if(petugasQrScanner)return;
   petugasQrScanner=new Html5Qrcode('petugas-reader');
@@ -1260,10 +1252,9 @@ function startPetugasScanner(){
   let petugasCooldown=false;
   petugasQrScanner.start({facingMode:'environment'},{fps:5,qrbox:250},async text=>{
     if(petugasCooldown)return;petugasCooldown=true;setTimeout(()=>petugasCooldown=false,3000);
-    const ok=await handleQrScan(text,fb,'petugas',data=>{
+    const ok=await handleQrScan(text,fb,data=>{
       petugasSessionCheckin++;updatePetugasStat();
       showToast('Check-in Berhasil! ✅',`${data.name} — ${data.type}`,'success');
-      // Tampil info tiket terakhir
       const lt=document.getElementById('petugas-last-ticket');
       if(lt){
         lt.classList.remove('hidden');
@@ -1276,7 +1267,7 @@ function startPetugasScanner(){
     if(!ok){petugasSessionReject++;updatePetugasStat();}
   }).catch(()=>{
     const fb=document.getElementById('petugas-scan-feedback');
-    showScanFeedback(fb,'❌ Tidak bisa akses kamera.\nIzinkan akses kamera di browser.','invalid');
+    showScanFeedback(fb,'❌ Tidak bisa akses kamera.\nIzinkan di browser.','invalid');
   });
 }
 function stopPetugasScanner(){if(petugasQrScanner)petugasQrScanner.stop().then(()=>petugasQrScanner=null).catch(()=>petugasQrScanner=null);}
