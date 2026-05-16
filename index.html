@@ -521,26 +521,58 @@ window.startOrder=type=>{
     document.getElementById('name-error').classList.add('hidden');
     showTab('payment');
 };
+
+// ── SUBMIT ORDER (FIXED) ──
 window.submitOrder=async()=>{
     const name=sanitizeText(document.getElementById('order-name').value);
     const err=document.getElementById('name-error');
     if(!isValidName(name)){ err.classList.remove('hidden'); return; }
     err.classList.add('hidden');
-    if(!currentUser||currentUser.isAnonymous){ showAlert('Error','Silakan login','error'); return; }
+    if(!currentUser||currentUser.isAnonymous){ showAlert('Error','Silakan login terlebih dahulu','error'); return; }
     const btn=document.getElementById('btn-submit-order'); btn.disabled=true; btn.textContent='MEMPROSES...';
     try{
-        const ex=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)));
+        // Force refresh token agar sign_in_provider terbaca benar oleh Firestore Rules
+        await currentUser.getIdToken(true);
+
+        const ex=await window.getDocs(window.query(
+            window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
+            window.where('user_id','==',currentUser.uid)
+        ));
         if(ex.size>=MAX_PER_USER){ showAlert('Batas',`Maks ${MAX_PER_USER} tiket per akun`,'error'); return; }
-        const price=selectedType==='VIP'?eventConfig.vipPrice:eventConfig.regPrice;
+
+        // parseInt memastikan tipe data int, bukan float
+        const price=parseInt(selectedType==='VIP'?eventConfig.vipPrice:eventConfig.regPrice);
         const orderId=generateOrderId();
+
         await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),{
-            order_id:orderId,user_id:currentUser.uid,name,email:currentUser.email,
-            type:selectedType,price,status:'pending',check_in:false,created_at:Date.now()
+            order_id:orderId,
+            user_id:currentUser.uid,
+            name,
+            email:currentUser.email,
+            type:selectedType,
+            price,
+            status:'pending',
+            check_in:false,
+            created_at:Date.now()
         });
+
         window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Halo Admin, Konfirmasi Pembayaran ${eventConfig.title}.\nOrder ID: ${orderId}\nNama: ${name}`)}`,'_blank');
         showTab('my-tickets');
-    }catch(e){ showAlert('Error',e.code==='permission-denied'?'Login Google terlebih dahulu':'Gagal pesan, coba lagi','error'); }
-    finally{ btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)'; lucide.createIcons(); }
+
+    }catch(e){
+        console.error('submitOrder error:', e);
+        let msg = 'Gagal pesan, coba lagi';
+        if(e.code==='permission-denied'){
+            msg = 'Akses ditolak Firestore. Coba logout lalu login ulang.';
+        } else if(e.message){
+            msg = e.message;
+        }
+        showAlert('Error', msg, 'error');
+    }finally{
+        btn.disabled=false;
+        btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';
+        lucide.createIcons();
+    }
 };
 
 // ── TIKET USER ──
@@ -551,7 +583,6 @@ function loadUserTickets(){
     unsubUser=window.onSnapshot(
         window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)),
         snap=>{
-            // Deteksi perubahan status → notifikasi
             snap.forEach(d=>{ const t=d.data(),prev=prevStatuses[d.id];
                 if(prev&&prev!==t.status&&t.status==='approved'){
                     sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif. Tunjukkan QR di gerbang.`);
@@ -617,7 +648,7 @@ window.saveTicketImage=async(docId,orderId,encodedName,type)=>{
     wrap.appendChild(card); document.body.appendChild(wrap);
     showToast('Menyiapkan gambar...','Tunggu sebentar','info');
     try{
-        await new Promise(r=>setTimeout(r,800)); // tunggu gambar QR load
+        await new Promise(r=>setTimeout(r,800));
         const canvas=await html2canvas(card,{scale:2,useCORS:true,logging:false,backgroundColor:null});
         const a=document.createElement('a'); a.download=`tiket-${orderId}.png`; a.href=canvas.toDataURL('image/png'); a.click();
         showToast('Tiket tersimpan! 🎉','Cek folder Downloads','success');
@@ -732,7 +763,7 @@ window.bulkApprove=async()=>{
 };
 window.clearSelection=()=>{ selectedIds.clear(); updateBulkBar(); loadAdminTickets(); };
 
-// ── UPDATE STATUS + WA semi-otomatis ──
+// ── UPDATE STATUS ──
 window.updateStatus=async(id,status,evt)=>{
     if(evt) evt.stopPropagation();
     try{
