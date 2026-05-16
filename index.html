@@ -12,18 +12,29 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc, writeBatch, getDoc, limit } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+import {
+  getAuth, signInWithPopup, GoogleAuthProvider,
+  onAuthStateChanged, signOut, signInWithCustomToken
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, query, where, onSnapshot,
+  doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc,
+  writeBatch, getDoc, limit, runTransaction, increment, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-  apiKey: "AIzaSyB4YSxte_dvyQzdl5Cg1_eJJ3namhGhN4U",
-  authDomain: "holistik-event-tiket.firebaseapp.com",
-  projectId: "holistik-event-tiket",
-  storageBucket: "holistik-event-tiket.firebasestorage.app",
-  messagingSenderId: "736565916238",
-  appId: "1:736565916238:web:d6a3378a57a849557ac91f"
-};
+const firebaseConfig = typeof __firebase_config !== 'undefined'
+  ? JSON.parse(__firebase_config)
+  : {
+      apiKey: "AIzaSyB4YSxte_dvyQzdl5Cg1_eJJ3namhGhN4U",
+      authDomain: "holistik-event-tiket.firebaseapp.com",
+      projectId: "holistik-event-tiket",
+      storageBucket: "holistik-event-tiket.firebasestorage.app",
+      messagingSenderId: "736565916238",
+      appId: "1:736565916238:web:d6a3378a57a849557ac91f"
+    };
 
 const app = initializeApp(firebaseConfig);
 window.auth      = getAuth(app);
@@ -31,15 +42,21 @@ window.db        = getFirestore(app);
 window.storage   = getStorage(app);
 window.provider  = new GoogleAuthProvider();
 window.appId     = typeof __app_id !== 'undefined' ? __app_id : 'holistik-fest-2026';
-window.signInWithPopup   = signInWithPopup;
+
+// Expose Firestore methods
+window.signInWithPopup    = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
-window.signOut   = signOut;
-window.collection = collection; window.addDoc = addDoc; window.query = query;
-window.where = where; window.onSnapshot = onSnapshot; window.doc = doc;
-window.updateDoc = updateDoc; window.getDocs = getDocs; window.deleteDoc = deleteDoc;
-window.setDoc = setDoc; window.orderBy = orderBy; window.ref = ref;
-window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
-window.writeBatch = writeBatch; window.getDoc = getDoc; window.limit = limit;
+window.signOut            = signOut;
+window.collection  = collection; window.addDoc      = addDoc;
+window.query       = query;      window.where       = where;
+window.onSnapshot  = onSnapshot; window.doc         = doc;
+window.updateDoc   = updateDoc;  window.getDocs     = getDocs;
+window.deleteDoc   = deleteDoc;  window.setDoc      = setDoc;
+window.orderBy     = orderBy;    window.ref         = ref;
+window.uploadBytes = uploadBytes;window.getDownloadURL = getDownloadURL;
+window.writeBatch  = writeBatch; window.getDoc      = getDoc;
+window.limit       = limit;      window.runTransaction = runTransaction;
+window.increment   = increment;  window.serverTimestamp = serverTimestamp;
 </script>
 
 <style>
@@ -87,7 +104,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     <div class="font-black text-xl text-indigo-600 flex items-center gap-2 cursor-pointer" onclick="showTab('hero')">
       <i data-lucide="ticket"></i><span id="nav-title">Holistik Fest</span>
     </div>
-    <!-- FIX: Tombol login langsung ada di HTML, tidak menunggu JS -->
     <div id="nav-user" class="flex items-center gap-3">
       <button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black text-xs shadow-lg uppercase tracking-widest">Login Google</button>
     </div>
@@ -165,7 +181,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       <div class="mb-8">
         <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Nama Di Tiket</label>
         <input type="text" id="order-name" maxlength="100" placeholder="Nama lengkap pemegang tiket..." class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold transition-all text-slate-900" />
-        <p id="name-error" class="text-red-500 text-xs font-bold mt-2 hidden">Nama tidak valid. Gunakan huruf dan spasi saja.</p>
+        <p id="name-error" class="text-red-500 text-xs font-bold mt-2 hidden">Nama tidak valid. Gunakan huruf dan spasi saja (min 2 karakter).</p>
       </div>
       <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
         <p class="text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
@@ -409,235 +425,308 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 </div>
 
 <script>
+// ════════════════════════════════════════════════════════════
+// KONSTANTA
+// ════════════════════════════════════════════════════════════
 const WA_NUMBER    = "6285158880014";
 const ADMIN_EMAILS = ["sobatambyar1990@gmail.com","staycoustikmanagement@gmail.com"];
 const MAX_PER_USER = 5;
-const QR_SECRET    = 'h0l1st1k_s3cr3t_2026_!xK9#mP7qRvZ';
+const TOTAL_QUOTA  = 3000;
 
-async function signOrderId(orderId){
-  const enc=new TextEncoder();
-  const key=await crypto.subtle.importKey('raw',enc.encode(QR_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-  const sig=await crypto.subtle.sign('HMAC',key,enc.encode(orderId));
-  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
+// ════════════════════════════════════════════════════════════
+// FIX #1 — QR SIGNING PAKAI SERVER-SIDE TOKEN
+// QR tidak lagi berisi HMAC yang bisa direplikasi attacker.
+// QR = orderId saja. Validitas dicek ke Firestore (status
+// approved + check_in false). Proteksi replay = field check_in
+// yang diset atomik lewat Firestore transaction.
+// Tidak ada secret di client sama sekali.
+// ════════════════════════════════════════════════════════════
+async function makeQrData(orderId) {
+  // QR hanya berisi orderId — validasi dilakukan realtime ke DB
+  return String(orderId);
 }
-async function verifyOrderId(orderId,sig){ return (await signOrderId(orderId))===sig; }
-async function makeQrData(orderId){ return `${orderId}|${await signOrderId(orderId)}`; }
 
-const TICKET_TYPES={'VIP 1':{price:65000,quota:500},'VIP 2':{price:55000,quota:1000},'Reguler':{price:35000,quota:1500}};
-const TOTAL_QUOTA=3000;
-
-let currentUser=null,selectedType=null;
-let html5QrScanner=null,petugasQrScanner=null;
-let allTicketsData=[],petugasData=[],allLogData=[];
-let unsubUser=null,unsubAdmin=null,unsubPetugas=null,unsubLog=null;
-let scanCooldown=false,activeFilter='all',activeLogFilter='all',selectedIds=new Set();
-let prevStatuses={},countdownTimer=null;
-let currentUserRole='guest';
-let petugasSessionCheckin=0,petugasSessionReject=0;
-let currentPetugasData=null;
-let eventConfig={
-  title:"Holistik Fest",
-  bannerUrl:"https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
-  date:"15 Mei 2026",location:"Stadion Utama",time:"16:00 - Selesai",
-  eventDatetime:"2026-05-15T16:00",
-  tickets:{'VIP 1':{price:65000,quota:500},'VIP 2':{price:55000,quota:1000},'Reguler':{price:35000,quota:1500}}
+// ════════════════════════════════════════════════════════════
+// KONFIGURASI
+// ════════════════════════════════════════════════════════════
+const TICKET_TYPES = {
+  'VIP 1':   { price: 65000,  quota: 500  },
+  'VIP 2':   { price: 55000,  quota: 1000 },
+  'Reguler': { price: 35000,  quota: 1500 }
 };
 
-function sanitizeText(s){ return typeof s==='string'?s.replace(/[<>&"'/\\]/g,'').trim():''; }
-function sanitizeForDisplay(s){ return String(s).replace(/[<>&"]/g,''); }
-function isValidName(n){ return /^[\p{L}\s'\-\.]{2,100}$/u.test(n.trim()); }
-function isValidEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()); }
-function generateOrderId(){ const a=new Uint8Array(5);crypto.getRandomValues(a);return 'HOL-'+Array.from(a,b=>b.toString(36)).join('').toUpperCase().substr(0,6); }
-function fmtRupiah(n){ return 'Rp '+Number(n||0).toLocaleString('id-ID'); }
-function fmtDate(ts){ return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-'; }
-function isAdmin(u){ return !!(u&&u.email&&ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase())); }
-function emailToKey(email){ return email.toLowerCase().replace(/\./g,'_').replace(/@/g,'_'); }
+let currentUser = null, selectedType = null;
+let html5QrScanner = null, petugasQrScanner = null;
+let allTicketsData = [], petugasData = [], allLogData = [];
+let unsubUser = null, unsubAdmin = null, unsubPetugas = null, unsubLog = null;
+let scanCooldown = false, activeFilter = 'all', activeLogFilter = 'all', selectedIds = new Set();
+let prevStatuses = {}, countdownTimer = null;
+let currentUserRole = 'guest';
+let petugasSessionCheckin = 0, petugasSessionReject = 0;
+let currentPetugasData = null;
+let eventConfig = {
+  title: "Holistik Fest",
+  bannerUrl: "https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
+  date: "15 Mei 2026", location: "Stadion Utama", time: "16:00 - Selesai",
+  eventDatetime: "2026-05-15T16:00",
+  tickets: { 'VIP 1': {price:65000,quota:500}, 'VIP 2': {price:55000,quota:1000}, 'Reguler': {price:35000,quota:1500} }
+};
 
-function updateQuotaUI(soldCounts){
-  const cfg=eventConfig.tickets||TICKET_TYPES;
-  let totalSold=0;
-  Object.entries(cfg).forEach(([type,info])=>{
-    const sold=soldCounts[type]||0,quota=info.quota||0,sisa=Math.max(0,quota-sold),pct=quota>0?(sisa/quota*100):0;
-    totalSold+=sold;
-    const lbl=document.getElementById('quota-label-'+type),bar=document.getElementById('quota-bar-'+type);
-    const card=document.getElementById('card-'+type),btn=document.getElementById('btn-'+type);
-    if(lbl)lbl.textContent=sisa>0?`${sisa} tersisa`:'HABIS';
-    if(bar)bar.style.width=pct+'%';
-    if(sisa<=0){
-      if(card){card.classList.add('ticket-card-sold');card.onclick=null;}
-      if(btn){btn.textContent='HABIS';btn.className='w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed';}
-    } else {if(card)card.classList.remove('ticket-card-sold');}
+// ════════════════════════════════════════════════════════════
+// UTILITY
+// ════════════════════════════════════════════════════════════
+function sanitizeText(s) { return typeof s === 'string' ? s.replace(/[<>&"'/\\]/g,'').trim() : ''; }
+function sanitizeForDisplay(s) { return String(s).replace(/[<>&"]/g,''); }
+function isValidName(n) { return /^[\p{L}\s'\-\.]{2,100}$/u.test(n.trim()); }
+function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()); }
+function generateOrderId() {
+  // FIX #6 — 10 karakter random (lebih besar entropy)
+  const a = new Uint8Array(8);
+  crypto.getRandomValues(a);
+  return 'HOL-' + Array.from(a, b => b.toString(36)).join('').toUpperCase().substr(0, 10);
+}
+function fmtRupiah(n)  { return 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
+function fmtDate(ts)   { return ts ? new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-'; }
+function isAdmin(u)    { return !!(u && u.email && ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase())); }
+function emailToKey(e) { return e.toLowerCase().replace(/\./g,'_').replace(/@/g,'_'); }
+
+// ════════════════════════════════════════════════════════════
+// QUOTA UI
+// ════════════════════════════════════════════════════════════
+function updateQuotaUI(soldCounts) {
+  const cfg = eventConfig.tickets || TICKET_TYPES;
+  let totalSold = 0;
+  Object.entries(cfg).forEach(([type, info]) => {
+    const sold = soldCounts[type] || 0, quota = info.quota || 0;
+    const sisa = Math.max(0, quota - sold), pct = quota > 0 ? (sisa / quota * 100) : 0;
+    totalSold += sold;
+    const lbl = document.getElementById('quota-label-' + type);
+    const bar = document.getElementById('quota-bar-' + type);
+    const card = document.getElementById('card-' + type);
+    const btn = document.getElementById('btn-' + type);
+    if (lbl) lbl.textContent = sisa > 0 ? `${sisa} tersisa` : 'HABIS';
+    if (bar) bar.style.width = pct + '%';
+    if (sisa <= 0) {
+      if (card) { card.classList.add('ticket-card-sold'); card.onclick = null; }
+      if (btn)  { btn.textContent = 'HABIS'; btn.className = 'w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed'; }
+    } else {
+      if (card) card.classList.remove('ticket-card-sold');
+    }
   });
-  const totalSisa=TOTAL_QUOTA-totalSold,totalPct=Math.max(0,totalSisa/TOTAL_QUOTA*100);
-  const tb=document.getElementById('total-quota-bar'),tt=document.getElementById('total-quota-text');
-  if(tb)tb.style.width=totalPct+'%';
-  if(tt)tt.textContent=`${Math.max(0,totalSisa)} / ${TOTAL_QUOTA} tersisa`;
+  const totalSisa = TOTAL_QUOTA - totalSold, totalPct = Math.max(0, totalSisa / TOTAL_QUOTA * 100);
+  const tb = document.getElementById('total-quota-bar'), tt = document.getElementById('total-quota-text');
+  if (tb) tb.style.width = totalPct + '%';
+  if (tt) tt.textContent = `${Math.max(0, totalSisa)} / ${TOTAL_QUOTA} tersisa`;
 }
 
-function startCountdown(dt){
-  if(countdownTimer)clearInterval(countdownTimer);
-  if(!dt)return;
-  const target=new Date(dt).getTime();
-  function tick(){
-    const diff=target-Date.now(),wrap=document.getElementById('countdown-wrap');
-    if(diff<=0){if(wrap)wrap.innerHTML='<div class="countdown-box"><div class="countdown-num" style="font-size:1rem;padding:4px">🎉 EVENT DIMULAI!</div></div>';clearInterval(countdownTimer);return;}
-    const pad=n=>String(n).padStart(2,'0'),el=id=>document.getElementById(id);
-    if(el('cd-d'))el('cd-d').textContent=pad(Math.floor(diff/86400000));
-    if(el('cd-h'))el('cd-h').textContent=pad(Math.floor(diff%86400000/3600000));
-    if(el('cd-m'))el('cd-m').textContent=pad(Math.floor(diff%3600000/60000));
-    if(el('cd-s'))el('cd-s').textContent=pad(Math.floor(diff%60000/1000));
+// ════════════════════════════════════════════════════════════
+// COUNTDOWN
+// ════════════════════════════════════════════════════════════
+function startCountdown(dt) {
+  if (countdownTimer) clearInterval(countdownTimer);
+  if (!dt) return;
+  const target = new Date(dt).getTime();
+  function tick() {
+    const diff = target - Date.now(), wrap = document.getElementById('countdown-wrap');
+    if (diff <= 0) {
+      if (wrap) wrap.innerHTML = '<div class="countdown-box"><div class="countdown-num" style="font-size:1rem;padding:4px">🎉 EVENT DIMULAI!</div></div>';
+      clearInterval(countdownTimer); return;
+    }
+    const pad = n => String(n).padStart(2,'0'), el = id => document.getElementById(id);
+    if (el('cd-d')) el('cd-d').textContent = pad(Math.floor(diff / 86400000));
+    if (el('cd-h')) el('cd-h').textContent = pad(Math.floor(diff % 86400000 / 3600000));
+    if (el('cd-m')) el('cd-m').textContent = pad(Math.floor(diff % 3600000 / 60000));
+    if (el('cd-s')) el('cd-s').textContent = pad(Math.floor(diff % 60000 / 1000));
   }
-  tick();countdownTimer=setInterval(tick,1000);
+  tick(); countdownTimer = setInterval(tick, 1000);
 }
 
-function checkNotifSupport(){
-  const btn=document.getElementById('btn-notif');if(!btn)return;
-  if(!('Notification' in window))return;
-  if(Notification.permission==='granted')btn.classList.add('hidden');
-  else if(Notification.permission!=='denied')btn.classList.remove('hidden');
+// ════════════════════════════════════════════════════════════
+// NOTIFIKASI
+// ════════════════════════════════════════════════════════════
+function checkNotifSupport() {
+  const btn = document.getElementById('btn-notif'); if (!btn) return;
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') btn.classList.add('hidden');
+  else if (Notification.permission !== 'denied') btn.classList.remove('hidden');
 }
-window.requestNotifPermission=async()=>{
-  const p=await Notification.requestPermission();
-  if(p==='granted'){document.getElementById('btn-notif').classList.add('hidden');showToast('Notifikasi aktif!','','success');}
+window.requestNotifPermission = async () => {
+  const p = await Notification.requestPermission();
+  if (p === 'granted') { document.getElementById('btn-notif').classList.add('hidden'); showToast('Notifikasi aktif!','','success'); }
 };
-function sendBrowserNotif(title,body){
-  if(!('Notification' in window)||Notification.permission!=='granted')return;
-  try{new Notification(title,{body});}catch(e){}
+function sendBrowserNotif(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body }); } catch(e) {}
 }
 
-let toastTimer=null;
-function showToast(title,msg,type='info'){
-  const toast=document.getElementById('toast');
-  document.getElementById('toast-title').textContent=title;
-  document.getElementById('toast-msg').textContent=msg||'';
-  const cls={success:'bg-green-100 text-green-600',error:'bg-red-100 text-red-600',info:'bg-indigo-100 text-indigo-600'};
-  const ico={success:'check-circle',error:'alert-circle',info:'bell'};
-  const icon=document.getElementById('toast-icon');
-  icon.className=`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${cls[type]||cls.info}`;
-  icon.innerHTML=`<i data-lucide="${ico[type]||'bell'}" class="w-5 h-5"></i>`;
+// ════════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(title, msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-msg').textContent   = msg || '';
+  const cls = { success:'bg-green-100 text-green-600', error:'bg-red-100 text-red-600', info:'bg-indigo-100 text-indigo-600' };
+  const ico = { success:'check-circle', error:'alert-circle', info:'bell' };
+  const icon = document.getElementById('toast-icon');
+  icon.className = `w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${cls[type]||cls.info}`;
+  icon.innerHTML = `<i data-lucide="${ico[type]||'bell'}" class="w-5 h-5"></i>`;
   lucide.createIcons();
   toast.classList.add('show');
-  if(toastTimer)clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>toast.classList.remove('show'),4500);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 4500);
 }
 
-// ── INIT ──
-window.addEventListener('load',async()=>{
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+window.addEventListener('load', async () => {
   lucide.createIcons();
-  // Tombol login sudah ada di HTML sejak awal, tidak perlu updateNav() di sini
-  try{if(typeof __initial_auth_token!=='undefined'&&__initial_auth_token)await window.signInWithCustomToken(window.auth,__initial_auth_token);}
-  catch(e){console.warn('Auth:',e.message);}
-  window.onAuthStateChanged(window.auth,async user=>{
-    currentUser=user;
-    if(user&&!user.isAnonymous){
-      listenToSettings();checkNotifSupport();
-      if(isAdmin(user)){
-        currentUserRole='admin';
-        if(unsubUser){unsubUser();unsubUser=null;}
-        listenToAllTickets();listenToPetugas();
+  try {
+    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token)
+      await window.signInWithCustomToken(window.auth, __initial_auth_token);
+  } catch(e) { console.warn('Auth:', e.message); }
+
+  window.onAuthStateChanged(window.auth, async user => {
+    currentUser = user;
+    if (user && !user.isAnonymous) {
+      listenToSettings(); checkNotifSupport();
+      if (isAdmin(user)) {
+        currentUserRole = 'admin';
+        if (unsubUser) { unsubUser(); unsubUser = null; }
+        listenToAllTickets(); listenToPetugas();
       } else {
-        try{ await user.getIdToken(true); }catch(e){}
-        const petugasDoc=await checkIsPetugas(user);
-        if(petugasDoc){
-          currentUserRole='petugas';currentPetugasData=petugasDoc;
-          if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
+        try { await user.getIdToken(true); } catch(e) {}
+        const petugasDoc = await checkIsPetugas(user);
+        if (petugasDoc) {
+          currentUserRole = 'petugas'; currentPetugasData = petugasDoc;
+          if (unsubAdmin) { unsubAdmin(); unsubAdmin = null; }
           activatePetugasScanMode(petugasDoc);
         } else {
-          currentUserRole='user';
-          if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
+          currentUserRole = 'user';
+          if (unsubAdmin) { unsubAdmin(); unsubAdmin = null; }
           loadUserTickets();
         }
       }
     } else {
-      currentUserRole='guest';currentPetugasData=null;
-      if(unsubUser){unsubUser();unsubUser=null;}
-      if(unsubAdmin){unsubAdmin();unsubAdmin=null;}
-      if(unsubLog){unsubLog();unsubLog=null;}
-      listenToSettings();stopPetugasScanner();
+      currentUserRole = 'guest'; currentPetugasData = null;
+      if (unsubUser)  { unsubUser();  unsubUser  = null; }
+      if (unsubAdmin) { unsubAdmin(); unsubAdmin = null; }
+      if (unsubLog)   { unsubLog();   unsubLog   = null; }
+      listenToSettings(); stopPetugasScanner();
     }
     updateNav();
   });
   listenSoldCounts();
 });
 
-async function checkIsPetugas(user){
-  try{
-    const snap=await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid));
-    if(snap.exists())return snap.data();
-  }catch(e){console.warn('cek petugas aktif:',e.code);}
-  if(!user.email)return null;
-  const emailKey=emailToKey(user.email);
-  try{
-    const snap=await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey));
-    if(snap.exists()){
-      const data=snap.data();
-      try{
+// ════════════════════════════════════════════════════════════
+// CEK PETUGAS
+// ════════════════════════════════════════════════════════════
+async function checkIsPetugas(user) {
+  try {
+    const snap = await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid));
+    if (snap.exists()) return snap.data();
+  } catch(e) { console.warn('cek petugas aktif:', e.code); }
+  if (!user.email) return null;
+  const emailKey = emailToKey(user.email);
+  try {
+    const snap = await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey));
+    if (snap.exists()) {
+      const data = snap.data();
+      try {
         await window.setDoc(
           window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid),
-          {...data,uid:user.uid,email:user.email,claimed_at:Date.now()}
+          { ...data, uid: user.uid, email: user.email, claimed_at: Date.now() }
         );
         await window.deleteDoc(
           window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',emailKey)
         );
-        const snap2=await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid));
-        if(snap2.exists())return snap2.data();
-      }catch(e){console.warn('Claim petugas error:',e.code);}
+        const snap2 = await window.getDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas',user.uid));
+        if (snap2.exists()) return snap2.data();
+      } catch(e) { console.warn('Claim petugas error:', e.code); }
       return data;
     }
-  }catch(e){console.warn('cek petugas_pending:',e.code);}
+  } catch(e) { console.warn('cek petugas_pending:', e.code); }
   return null;
 }
 
-function activatePetugasScanMode(data){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+function activatePetugasScanMode(data) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-petugas-scan').classList.add('active');
-  const nameEl=document.getElementById('petugas-scan-name'),roleEl=document.getElementById('petugas-scan-role');
-  if(nameEl)nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas';
-  if(roleEl)roleEl.textContent=data.role||'Petugas Scan';
-  petugasSessionCheckin=0;petugasSessionReject=0;updatePetugasStat();
+  const nameEl = document.getElementById('petugas-scan-name');
+  const roleEl = document.getElementById('petugas-scan-role');
+  if (nameEl) nameEl.textContent = data.name || currentUser?.displayName || currentUser?.email || 'Petugas';
+  if (roleEl) roleEl.textContent = data.role || 'Petugas Scan';
+  petugasSessionCheckin = 0; petugasSessionReject = 0; updatePetugasStat();
   startPetugasScanner();
 }
-function updatePetugasStat(){
-  const ci=document.getElementById('petugas-stat-checkin'),rj=document.getElementById('petugas-stat-reject');
-  if(ci)ci.textContent=petugasSessionCheckin;
-  if(rj)rj.textContent=petugasSessionReject;
+function updatePetugasStat() {
+  const ci = document.getElementById('petugas-stat-checkin'), rj = document.getElementById('petugas-stat-reject');
+  if (ci) ci.textContent = petugasSessionCheckin;
+  if (rj) rj.textContent = petugasSessionReject;
 }
 
-function listenSoldCounts(){
-  window.onSnapshot(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
-    snap=>{const sold={'VIP 1':0,'VIP 2':0,'Reguler':0};snap.forEach(d=>{const t=d.data();if(sold[t.type]!==undefined)sold[t.type]++;});updateQuotaUI(sold);},()=>{});
+// ════════════════════════════════════════════════════════════
+// LISTEN SOLD COUNTS — hanya baca counter agregat, bukan data tiket
+// FIX #4 — user biasa tidak bisa baca koleksi tickets lengkap
+// ════════════════════════════════════════════════════════════
+function listenSoldCounts() {
+  // Baca dari counter dokumen agregat (lihat rules & instruksi di bawah)
+  // Counter ini di-update oleh admin/petugas lewat Cloud Function atau
+  // manual increment. Fallback: baca koleksi (butuh rules allow read admin)
+  window.onSnapshot(
+    window.doc(window.db,'artifacts',window.appId,'public','data','settings','quota_counter'),
+    snap => {
+      if (snap.exists()) {
+        updateQuotaUI(snap.data());
+      }
+    },
+    () => {} // silent fail — counter belum ada
+  );
 }
 
-function listenToPetugas(){
-  if(unsubPetugas)unsubPetugas();
-  let dataAktif=[],dataPending=[];
-  let unsubA,unsubP;
-  function merge(){
-    petugasData=[
-      ...dataAktif.map(d=>({...d,_collection:'petugas'})),
-      ...dataPending.map(d=>({...d,_collection:'petugas_pending'}))
+// ════════════════════════════════════════════════════════════
+// LISTEN PETUGAS
+// ════════════════════════════════════════════════════════════
+function listenToPetugas() {
+  if (unsubPetugas) unsubPetugas();
+  let dataAktif = [], dataPending = [];
+  let unsubA, unsubP;
+  function merge() {
+    petugasData = [
+      ...dataAktif.map(d => ({...d, _collection:'petugas'})),
+      ...dataPending.map(d => ({...d, _collection:'petugas_pending'}))
     ];
-    petugasData.sort((a,b)=>(b.created_at||0)-(a.created_at||0));
+    petugasData.sort((a,b) => (b.created_at||0) - (a.created_at||0));
     renderPetugasList();
   }
-  unsubA=window.onSnapshot(window.collection(window.db,'artifacts',window.appId,'public','data','petugas'),
-    snap=>{dataAktif=[];snap.forEach(d=>dataAktif.push({id:d.id,...d.data()}));merge();},()=>{});
-  unsubP=window.onSnapshot(window.collection(window.db,'artifacts',window.appId,'public','data','petugas_pending'),
-    snap=>{dataPending=[];snap.forEach(d=>dataPending.push({id:d.id,...d.data()}));merge();},()=>{});
-  unsubPetugas=()=>{unsubA&&unsubA();unsubP&&unsubP();};
+  unsubA = window.onSnapshot(
+    window.collection(window.db,'artifacts',window.appId,'public','data','petugas'),
+    snap => { dataAktif = []; snap.forEach(d => dataAktif.push({id:d.id,...d.data()})); merge(); }, () => {}
+  );
+  unsubP = window.onSnapshot(
+    window.collection(window.db,'artifacts',window.appId,'public','data','petugas_pending'),
+    snap => { dataPending = []; snap.forEach(d => dataPending.push({id:d.id,...d.data()})); merge(); }, () => {}
+  );
+  unsubPetugas = () => { unsubA && unsubA(); unsubP && unsubP(); };
 }
 
-function renderPetugasList(){
-  const list=document.getElementById('petugas-list'),badge=document.getElementById('petugas-count-badge');
-  if(!list)return;
-  if(badge)badge.textContent=`${petugasData.length} petugas`;
-  if(!petugasData.length){list.innerHTML='<div class="py-8 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">Belum ada petugas terdaftar</div>';return;}
-  list.innerHTML='';
-  petugasData.forEach(p=>{
-    const isPending=p._collection==='petugas_pending';
-    const div=document.createElement('div');
-    div.className='bg-slate-50 rounded-2xl p-4 border flex items-center gap-3 hover:border-indigo-200 transition-all';
-    div.innerHTML=`
+function renderPetugasList() {
+  const list = document.getElementById('petugas-list');
+  const badge = document.getElementById('petugas-count-badge');
+  if (!list) return;
+  if (badge) badge.textContent = `${petugasData.length} petugas`;
+  if (!petugasData.length) {
+    list.innerHTML = '<div class="py-8 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">Belum ada petugas terdaftar</div>'; return;
+  }
+  list.innerHTML = '';
+  petugasData.forEach(p => {
+    const isPending = p._collection === 'petugas_pending';
+    const div = document.createElement('div');
+    div.className = 'bg-slate-50 rounded-2xl p-4 border flex items-center gap-3 hover:border-indigo-200 transition-all';
+    div.innerHTML = `
       <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 font-black text-indigo-600 text-sm">${(p.name||'P')[0].toUpperCase()}</div>
       <div class="flex-1 min-w-0">
         <p class="font-black text-slate-800 text-sm truncate">${sanitizeForDisplay(p.name||'')}</p>
@@ -653,91 +742,99 @@ function renderPetugasList(){
   lucide.createIcons();
 }
 
-window.addPetugas=async()=>{
-  const nameRaw=document.getElementById('petugas-name').value.trim();
-  const emailRaw=document.getElementById('petugas-email').value.trim().toLowerCase();
-  const roleRaw=document.getElementById('petugas-role').value.trim();
-  const errEl=document.getElementById('petugas-add-error'),btn=document.getElementById('btn-add-petugas');
+window.addPetugas = async () => {
+  const nameRaw  = document.getElementById('petugas-name').value.trim();
+  const emailRaw = document.getElementById('petugas-email').value.trim().toLowerCase();
+  const roleRaw  = document.getElementById('petugas-role').value.trim();
+  const errEl = document.getElementById('petugas-add-error'), btn = document.getElementById('btn-add-petugas');
   errEl.classList.add('hidden');
-  if(!nameRaw||nameRaw.length<2){errEl.textContent='Nama petugas minimal 2 karakter.';errEl.classList.remove('hidden');return;}
-  if(!isValidEmail(emailRaw)){errEl.textContent='Format email tidak valid.';errEl.classList.remove('hidden');return;}
-  if(ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(emailRaw)){errEl.textContent='Email tersebut adalah email admin.';errEl.classList.remove('hidden');return;}
-  const sudahAda=petugasData.some(p=>(p.email||'').toLowerCase()===emailRaw);
-  if(sudahAda){errEl.textContent='Email ini sudah terdaftar sebagai petugas.';errEl.classList.remove('hidden');return;}
-  btn.disabled=true;btn.textContent='Menyimpan...';
-  try{
-    const safeEmailKey=emailToKey(emailRaw);
-    await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',safeEmailKey),
-      {name:sanitizeText(nameRaw).substring(0,100),email:emailRaw,role:sanitizeText(roleRaw).substring(0,100),created_at:Date.now(),added_by:currentUser.email});
-    document.getElementById('petugas-name').value='';
-    document.getElementById('petugas-email').value='';
-    document.getElementById('petugas-role').value='';
-    showToast('Petugas ditambahkan!',`${sanitizeText(nameRaw)} (${emailRaw})`,'success');
-  }catch(e){errEl.textContent='Gagal menyimpan: '+e.message;errEl.classList.remove('hidden');}
-  finally{btn.disabled=false;btn.innerHTML='<i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Petugas';lucide.createIcons();}
+  if (!nameRaw || nameRaw.length < 2)      { errEl.textContent = 'Nama petugas minimal 2 karakter.'; errEl.classList.remove('hidden'); return; }
+  if (!isValidEmail(emailRaw))             { errEl.textContent = 'Format email tidak valid.';         errEl.classList.remove('hidden'); return; }
+  if (ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(emailRaw)) { errEl.textContent = 'Email tersebut adalah email admin.'; errEl.classList.remove('hidden'); return; }
+  const sudahAda = petugasData.some(p => (p.email||'').toLowerCase() === emailRaw);
+  if (sudahAda) { errEl.textContent = 'Email ini sudah terdaftar sebagai petugas.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  try {
+    const safeEmailKey = emailToKey(emailRaw);
+    await window.setDoc(
+      window.doc(window.db,'artifacts',window.appId,'public','data','petugas_pending',safeEmailKey),
+      { name: sanitizeText(nameRaw).substring(0,100), email: emailRaw, role: sanitizeText(roleRaw).substring(0,100), created_at: Date.now(), added_by: currentUser.email }
+    );
+    document.getElementById('petugas-name').value = '';
+    document.getElementById('petugas-email').value = '';
+    document.getElementById('petugas-role').value = '';
+    showToast('Petugas ditambahkan!', `${sanitizeText(nameRaw)} (${emailRaw})`, 'success');
+  } catch(e) { errEl.textContent = 'Gagal menyimpan: ' + e.message; errEl.classList.remove('hidden'); }
+  finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Petugas'; lucide.createIcons(); }
 };
 
-window.deletePetugas=async(id,encodedName,col)=>{
-  const name=decodeURIComponent(encodedName);
-  if(!confirm(`Hapus petugas "${name}"?\nPetugas tidak akan bisa scan QR lagi.`))return;
-  try{
-    const collName=col==='petugas'?'petugas':'petugas_pending';
+window.deletePetugas = async (id, encodedName, col) => {
+  const name = decodeURIComponent(encodedName);
+  if (!confirm(`Hapus petugas "${name}"?\nPetugas tidak akan bisa scan QR lagi.`)) return;
+  try {
+    const collName = col === 'petugas' ? 'petugas' : 'petugas_pending';
     await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data',collName,id));
-    showToast('Petugas dihapus',name,'info');
-  }catch(e){showAlert('Error','Gagal hapus petugas: '+e.message,'error');}
+    showToast('Petugas dihapus', name, 'info');
+  } catch(e) { showAlert('Error','Gagal hapus petugas: '+e.message,'error'); }
 };
 
-async function writeScanLog(logData){
-  try{
-    await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),{
-      ...logData,created_at:Date.now()
+// ════════════════════════════════════════════════════════════
+// SCAN LOG
+// ════════════════════════════════════════════════════════════
+async function writeScanLog(logData) {
+  try {
+    await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'), {
+      ...logData, created_at: Date.now()
     });
-  }catch(e){console.warn('Log write error:',e.code);}
+  } catch(e) { console.warn('Log write error:', e.code); }
 }
 
-function listenToLog(){
-  if(unsubLog){unsubLog();unsubLog=null;}
-  unsubLog=window.onSnapshot(
-    window.query(window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),window.orderBy('created_at','desc'),window.limit(200)),
-    snap=>{allLogData=[];snap.forEach(d=>allLogData.push({id:d.id,...d.data()}));updateLogStats();renderLogList();},
-    ()=>{}
+function listenToLog() {
+  if (unsubLog) { unsubLog(); unsubLog = null; }
+  unsubLog = window.onSnapshot(
+    window.query(
+      window.collection(window.db,'artifacts',window.appId,'public','data','scan_logs'),
+      window.orderBy('created_at','desc'), window.limit(200)
+    ),
+    snap => { allLogData = []; snap.forEach(d => allLogData.push({id:d.id,...d.data()})); updateLogStats(); renderLogList(); },
+    () => {}
   );
 }
-function updateLogStats(){
-  let valid=0,invalid=0,warn=0;
-  allLogData.forEach(l=>{if(l.result==='valid')valid++;else if(l.result==='invalid')invalid++;else warn++;});
-  const el=id=>document.getElementById(id);
-  if(el('log-stat-valid'))el('log-stat-valid').textContent=valid;
-  if(el('log-stat-invalid'))el('log-stat-invalid').textContent=invalid;
-  if(el('log-stat-warn'))el('log-stat-warn').textContent=warn;
-  if(el('log-stat-total'))el('log-stat-total').textContent=allLogData.length;
+function updateLogStats() {
+  let valid = 0, invalid = 0, warn = 0;
+  allLogData.forEach(l => { if (l.result==='valid') valid++; else if (l.result==='invalid') invalid++; else warn++; });
+  const el = id => document.getElementById(id);
+  if (el('log-stat-valid'))   el('log-stat-valid').textContent   = valid;
+  if (el('log-stat-invalid')) el('log-stat-invalid').textContent = invalid;
+  if (el('log-stat-warn'))    el('log-stat-warn').textContent    = warn;
+  if (el('log-stat-total'))   el('log-stat-total').textContent   = allLogData.length;
 }
-window.setLogFilter=f=>{
-  activeLogFilter=f;
-  ['all','valid','invalid','warn'].forEach(k=>{const e=document.getElementById('lf-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');});
+window.setLogFilter = f => {
+  activeLogFilter = f;
+  ['all','valid','invalid','warn'].forEach(k => { const e = document.getElementById('lf-'+k); if(e) e.className = 'filter-pill'+(k===f?' active':''); });
   renderLogList();
 };
-function renderLogList(){
-  const list=document.getElementById('log-list');if(!list)return;
-  const search=(document.getElementById('log-search')?.value||'').toLowerCase();
-  let filtered=allLogData;
-  if(activeLogFilter!=='all')filtered=filtered.filter(l=>l.result===activeLogFilter);
-  if(search)filtered=filtered.filter(l=>
-    (l.petugas_name||'').toLowerCase().includes(search)||
-    (l.guest_name||'').toLowerCase().includes(search)||
-    (l.order_id||'').toLowerCase().includes(search)||
+function renderLogList() {
+  const list = document.getElementById('log-list'); if (!list) return;
+  const search = (document.getElementById('log-search')?.value||'').toLowerCase();
+  let filtered = allLogData;
+  if (activeLogFilter !== 'all') filtered = filtered.filter(l => l.result === activeLogFilter);
+  if (search) filtered = filtered.filter(l =>
+    (l.petugas_name||'').toLowerCase().includes(search) ||
+    (l.guest_name||'').toLowerCase().includes(search)   ||
+    (l.order_id||'').toLowerCase().includes(search)     ||
     (l.petugas_email||'').toLowerCase().includes(search)
   );
-  if(!filtered.length){list.innerHTML='<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada log</div>';return;}
-  list.innerHTML='';
-  filtered.forEach(l=>{
-    const isValid=l.result==='valid',isWarn=l.result==='warn';
-    const rowCls=isValid?'log-row-valid':isWarn?'log-row-warn':'log-row-invalid';
-    const badgeCls=isValid?'bg-green-100 text-green-700':isWarn?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700';
-    const resultLabel=isValid?'✅ VALID':isWarn?`⚠️ ${sanitizeForDisplay(l.reason||'WARN')}`:`❌ ${sanitizeForDisplay(l.reason||'DITOLAK')}`;
-    const div=document.createElement('div');
-    div.className=`bg-white rounded-2xl border p-4 ${rowCls} flex flex-col sm:flex-row sm:items-center gap-3`;
-    div.innerHTML=`
+  if (!filtered.length) { list.innerHTML = '<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada log</div>'; return; }
+  list.innerHTML = '';
+  filtered.forEach(l => {
+    const isValid = l.result==='valid', isWarn = l.result==='warn';
+    const rowCls   = isValid ? 'log-row-valid' : isWarn ? 'log-row-warn' : 'log-row-invalid';
+    const badgeCls = isValid ? 'bg-green-100 text-green-700' : isWarn ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+    const resultLabel = isValid ? '✅ VALID' : isWarn ? `⚠️ ${sanitizeForDisplay(l.reason||'WARN')}` : `❌ ${sanitizeForDisplay(l.reason||'DITOLAK')}`;
+    const div = document.createElement('div');
+    div.className = `bg-white rounded-2xl border p-4 ${rowCls} flex flex-col sm:flex-row sm:items-center gap-3`;
+    div.innerHTML = `
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap mb-1">
           <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${badgeCls}">${resultLabel}</span>
@@ -754,185 +851,245 @@ function renderLogList(){
     list.appendChild(div);
   });
 }
-window.exportLogCSV=()=>{
-  if(!allLogData.length){showAlert('Info','Belum ada log aktivitas','info');return;}
-  const hdr=['Waktu','Petugas','Email Petugas','Posisi','Hasil','Alasan','Order ID','Nama Tamu','Tipe Tiket'];
-  const rows=allLogData.map(l=>[fmtDate(l.created_at),l.petugas_name||'',l.petugas_email||'',l.petugas_role||'',l.result||'',l.reason||'',l.order_id||'',l.guest_name||'',l.ticket_type||'']);
-  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download=`log-scan-${new Date().toISOString().slice(0,10)}.csv`;
+window.exportLogCSV = () => {
+  if (!allLogData.length) { showAlert('Info','Belum ada log aktivitas','info'); return; }
+  const hdr = ['Waktu','Petugas','Email Petugas','Posisi','Hasil','Alasan','Order ID','Nama Tamu','Tipe Tiket'];
+  const rows = allLogData.map(l => [fmtDate(l.created_at),l.petugas_name||'',l.petugas_email||'',l.petugas_role||'',l.result||'',l.reason||'',l.order_id||'',l.guest_name||'',l.ticket_type||'']);
+  const csv = [hdr,...rows].map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download = `log-scan-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-  showToast('Log CSV diunduh!',`${allLogData.length} baris`,'success');
+  showToast('Log CSV diunduh!', `${allLogData.length} baris`, 'success');
 };
 
-function listenToSettings(){
-  window.onSnapshot(window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),
-    snap=>{if(snap.exists())eventConfig={...eventConfig,...snap.data()};applyUIConfig();startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00');},
-    ()=>{applyUIConfig();startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00');}
+// ════════════════════════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════════════════════════
+function listenToSettings() {
+  window.onSnapshot(
+    window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),
+    snap => { if (snap.exists()) eventConfig = {...eventConfig,...snap.data()}; applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); },
+    () => { applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); }
   );
 }
-function applyUIConfig(){
-  const st=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v||'');};
-  st('nav-title',eventConfig.title);st('banner-title',eventConfig.title);
-  st('banner-date',eventConfig.date);st('banner-loc',eventConfig.location);st('banner-time',eventConfig.time);
-  const b=document.getElementById('main-banner');
-  if(b&&eventConfig.bannerUrl&&eventConfig.bannerUrl.startsWith('http'))
-    b.style.backgroundImage=`linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.7)),url('${encodeURI(eventConfig.bannerUrl)}')`;
+function applyUIConfig() {
+  const st = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = String(v||''); };
+  st('nav-title', eventConfig.title); st('banner-title', eventConfig.title);
+  st('banner-date', eventConfig.date); st('banner-loc', eventConfig.location); st('banner-time', eventConfig.time);
+  const b = document.getElementById('main-banner');
+  if (b && eventConfig.bannerUrl && eventConfig.bannerUrl.startsWith('http'))
+    b.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.7)),url('${encodeURI(eventConfig.bannerUrl)}')`;
 }
-function initSettingsInputs(){
-  const s=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
-  s('set-title',eventConfig.title);s('set-banner',eventConfig.bannerUrl);s('set-date',eventConfig.date);
-  s('set-loc',eventConfig.location);s('set-time',eventConfig.time);s('set-eventdate',eventConfig.eventDatetime||'');
-  const tk=eventConfig.tickets||TICKET_TYPES;
-  s('set-vip1-price',tk['VIP 1']?.price||65000);s('set-vip1-quota',tk['VIP 1']?.quota||500);
-  s('set-vip2-price',tk['VIP 2']?.price||55000);s('set-vip2-quota',tk['VIP 2']?.quota||1000);
-  s('set-reg-price',tk['Reguler']?.price||35000);s('set-reg-quota',tk['Reguler']?.quota||1500);
+function initSettingsInputs() {
+  const s = (id, v) => { const e = document.getElementById(id); if(e) e.value = v||''; };
+  s('set-title', eventConfig.title); s('set-banner', eventConfig.bannerUrl);
+  s('set-date', eventConfig.date); s('set-loc', eventConfig.location);
+  s('set-time', eventConfig.time); s('set-eventdate', eventConfig.eventDatetime||'');
+  const tk = eventConfig.tickets || TICKET_TYPES;
+  s('set-vip1-price', tk['VIP 1']?.price||65000);  s('set-vip1-quota', tk['VIP 1']?.quota||500);
+  s('set-vip2-price', tk['VIP 2']?.price||55000);  s('set-vip2-quota', tk['VIP 2']?.quota||1000);
+  s('set-reg-price',  tk['Reguler']?.price||35000); s('set-reg-quota',  tk['Reguler']?.quota||1500);
 }
-window.uploadBannerFile=async input=>{
-  const file=input.files[0];if(!file)return;
-  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){showAlert('Error','Hanya JPG/PNG/WEBP','error');return;}
-  if(file.size>5*1024*1024){showAlert('Error','Maks 5MB','error');return;}
-  const st=document.getElementById('upload-status');st.textContent='MENGUNGGAH...';
-  try{
-    const sr=window.ref(window.storage,`artifacts/${window.appId}/banner_${Date.now()}.jpg`);
-    const sn=await window.uploadBytes(sr,file);
-    document.getElementById('set-banner').value=await window.getDownloadURL(sn.ref);
-    st.textContent='BERHASIL!';setTimeout(()=>st.textContent='',3000);
-  }catch(e){st.textContent='GAGAL';showAlert('Error','Storage belum aktif','error');}
+window.uploadBannerFile = async input => {
+  const file = input.files[0]; if (!file) return;
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { showAlert('Error','Hanya JPG/PNG/WEBP','error'); return; }
+  if (file.size > 5 * 1024 * 1024) { showAlert('Error','Maks 5MB','error'); return; }
+  const st = document.getElementById('upload-status'); st.textContent = 'MENGUNGGAH...';
+  try {
+    const sr = window.ref(window.storage, `artifacts/${window.appId}/banner_${Date.now()}.jpg`);
+    const sn = await window.uploadBytes(sr, file);
+    document.getElementById('set-banner').value = await window.getDownloadURL(sn.ref);
+    st.textContent = 'BERHASIL!'; setTimeout(() => st.textContent='', 3000);
+  } catch(e) { st.textContent = 'GAGAL'; showAlert('Error','Storage belum aktif','error'); }
 };
-window.saveEventSettings=async()=>{
-  const btn=document.getElementById('btn-save-settings');
-  const bannerUrl=document.getElementById('set-banner').value.trim();
-  if(bannerUrl&&!bannerUrl.startsWith('https://')){showAlert('Error','URL harus https://','error');return;}
-  const vip1p=parseInt(document.getElementById('set-vip1-price').value);
-  const vip1q=parseInt(document.getElementById('set-vip1-quota').value);
-  const vip2p=parseInt(document.getElementById('set-vip2-price').value);
-  const vip2q=parseInt(document.getElementById('set-vip2-quota').value);
-  const regp=parseInt(document.getElementById('set-reg-price').value);
-  const regq=parseInt(document.getElementById('set-reg-quota').value);
-  if([vip1p,vip1q,vip2p,vip2q,regp,regq].some(v=>isNaN(v)||v<0)){showAlert('Error','Nilai tidak valid','error');return;}
-  btn.disabled=true;btn.textContent='MENYIMPAN...';
-  try{
-    await window.setDoc(window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),{
-      title:sanitizeText(document.getElementById('set-title').value).substring(0,100),
-      bannerUrl,date:sanitizeText(document.getElementById('set-date').value).substring(0,50),
-      location:sanitizeText(document.getElementById('set-loc').value).substring(0,100),
-      time:sanitizeText(document.getElementById('set-time').value).substring(0,50),
-      eventDatetime:document.getElementById('set-eventdate').value,
-      tickets:{'VIP 1':{price:vip1p,quota:vip1q},'VIP 2':{price:vip2p,quota:vip2q},'Reguler':{price:regp,quota:regq}}
-    });
+window.saveEventSettings = async () => {
+  const btn = document.getElementById('btn-save-settings');
+  const bannerUrl = document.getElementById('set-banner').value.trim();
+  if (bannerUrl && !bannerUrl.startsWith('https://')) { showAlert('Error','URL harus https://','error'); return; }
+  const vip1p = parseInt(document.getElementById('set-vip1-price').value);
+  const vip1q = parseInt(document.getElementById('set-vip1-quota').value);
+  const vip2p = parseInt(document.getElementById('set-vip2-price').value);
+  const vip2q = parseInt(document.getElementById('set-vip2-quota').value);
+  const regp  = parseInt(document.getElementById('set-reg-price').value);
+  const regq  = parseInt(document.getElementById('set-reg-quota').value);
+  if ([vip1p,vip1q,vip2p,vip2q,regp,regq].some(v => isNaN(v)||v<0)) { showAlert('Error','Nilai tidak valid','error'); return; }
+  btn.disabled = true; btn.textContent = 'MENYIMPAN...';
+  try {
+    await window.setDoc(
+      window.doc(window.db,'artifacts',window.appId,'public','data','settings','event_config'),
+      {
+        title: sanitizeText(document.getElementById('set-title').value).substring(0,100),
+        bannerUrl, date: sanitizeText(document.getElementById('set-date').value).substring(0,50),
+        location: sanitizeText(document.getElementById('set-loc').value).substring(0,100),
+        time: sanitizeText(document.getElementById('set-time').value).substring(0,50),
+        eventDatetime: document.getElementById('set-eventdate').value,
+        tickets: { 'VIP 1':{price:vip1p,quota:vip1q}, 'VIP 2':{price:vip2p,quota:vip2q}, 'Reguler':{price:regp,quota:regq} }
+      }
+    );
     showAlert('Berhasil','Pengaturan disimpan!','success');
-  }catch(e){showAlert('Error','Gagal simpan','error');}
-  finally{btn.disabled=false;btn.textContent='SIMPAN PERUBAHAN';}
+  } catch(e) { showAlert('Error','Gagal simpan','error'); }
+  finally { btn.disabled = false; btn.textContent = 'SIMPAN PERUBAHAN'; }
 };
 
-function showTab(id){
-  if(currentUserRole==='petugas'&&id!=='petugas-scan')return;
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  const target=document.getElementById(`tab-${id}`);
-  if(target)target.classList.add('active');
-  if(html5QrScanner&&id!=='admin-dashboard')stopScanner();
-  window.scrollTo(0,0);
+// ════════════════════════════════════════════════════════════
+// NAVIGASI TAB
+// ════════════════════════════════════════════════════════════
+function showTab(id) {
+  if (currentUserRole === 'petugas' && id !== 'petugas-scan') return;
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const target = document.getElementById(`tab-${id}`);
+  if (target) target.classList.add('active');
+  if (html5QrScanner && id !== 'admin-dashboard') stopScanner();
+  window.scrollTo(0, 0);
 }
 
-function updateNav(){
-  const nav=document.getElementById('nav-user');if(!nav)return;
-  if(currentUser&&!currentUser.isAnonymous){
-    const photo=currentUser.photoURL
-      ?`<img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm" alt="">`
-      :`<div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-black text-indigo-600 text-sm">${(currentUser.email||'U')[0].toUpperCase()}</div>`;
-    if(currentUserRole==='petugas'){
-      nav.innerHTML=`<div class="flex items-center gap-3"><span class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>PETUGAS</span>${photo}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
-    } else if(currentUserRole==='admin'){
-      nav.innerHTML=`<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}<button onclick="switchAdminTab('list');showTab('admin-dashboard')" class="flex items-center gap-1 p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all"><i data-lucide="shield-check" class="w-5 h-5"></i><span class="text-[10px] font-black uppercase pr-1 hidden sm:inline">Admin</span></button><button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
+function updateNav() {
+  const nav = document.getElementById('nav-user'); if (!nav) return;
+  if (currentUser && !currentUser.isAnonymous) {
+    const photo = currentUser.photoURL
+      ? `<img src="${currentUser.photoURL}" class="w-9 h-9 rounded-full border-2 border-white shadow-sm" alt="">`
+      : `<div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-black text-indigo-600 text-sm">${(currentUser.email||'U')[0].toUpperCase()}</div>`;
+    if (currentUserRole === 'petugas') {
+      nav.innerHTML = `<div class="flex items-center gap-3"><span class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>PETUGAS</span>${photo}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
+    } else if (currentUserRole === 'admin') {
+      nav.innerHTML = `<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}<button onclick="switchAdminTab('list');showTab('admin-dashboard')" class="flex items-center gap-1 p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-all"><i data-lucide="shield-check" class="w-5 h-5"></i><span class="text-[10px] font-black uppercase pr-1 hidden sm:inline">Admin</span></button><button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
     } else {
-      nav.innerHTML=`<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
+      nav.innerHTML = `<div class="flex items-center gap-3"><button onclick="showTab('my-tickets')" class="text-xs font-black text-slate-500 hover:text-indigo-600 uppercase tracking-tight">Tiket Saya</button>${photo}<button onclick="window.signOut(window.auth)" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-all"><i data-lucide="log-out"></i></button></div>`;
     }
   } else {
-    nav.innerHTML=`<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black text-xs shadow-lg uppercase tracking-widest">Login Google</button>`;
+    nav.innerHTML = `<button onclick="handleGoogleLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black text-xs shadow-lg uppercase tracking-widest">Login Google</button>`;
   }
   lucide.createIcons();
 }
-window.handleGoogleLogin=async()=>{try{await window.signInWithPopup(window.auth,window.provider);}catch(e){showAlert('Error','Login gagal','error');}};
+window.handleGoogleLogin = async () => {
+  try { await window.signInWithPopup(window.auth, window.provider); }
+  catch(e) { showAlert('Error','Login gagal','error'); }
+};
 
-window.startOrder=type=>{
-  if(!currentUser||currentUser.isAnonymous){handleGoogleLogin();return;}
-  selectedType=type;
-  const cfg=eventConfig.tickets||TICKET_TYPES,price=cfg[type]?.price||0;
-  const s=document.getElementById('order-summary');s.textContent='';
-  const l1=document.createElement('div');l1.textContent=type;s.appendChild(l1);
-  const l2=document.createElement('div');l2.textContent=fmtRupiah(price);s.appendChild(l2);
-  document.getElementById('order-name').value=currentUser.displayName||'';
+// ════════════════════════════════════════════════════════════
+// ORDER — FIX #2 & #3: Atomic transaction untuk kuota + limit per user
+// ════════════════════════════════════════════════════════════
+window.startOrder = type => {
+  if (!currentUser || currentUser.isAnonymous) { handleGoogleLogin(); return; }
+  selectedType = type;
+  const cfg = eventConfig.tickets || TICKET_TYPES, price = cfg[type]?.price || 0;
+  const s = document.getElementById('order-summary'); s.textContent = '';
+  const l1 = document.createElement('div'); l1.textContent = type; s.appendChild(l1);
+  const l2 = document.createElement('div'); l2.textContent = fmtRupiah(price); s.appendChild(l2);
+  document.getElementById('order-name').value = currentUser.displayName || '';
   document.getElementById('name-error').classList.add('hidden');
   showTab('payment');
 };
 
-window.submitOrder=async()=>{
-  const name=sanitizeText(document.getElementById('order-name').value);
-  const err=document.getElementById('name-error');
-  if(!isValidName(name)){err.classList.remove('hidden');return;}
+window.submitOrder = async () => {
+  const name = sanitizeText(document.getElementById('order-name').value);
+  const err = document.getElementById('name-error');
+  if (!isValidName(name)) { err.classList.remove('hidden'); return; }
   err.classList.add('hidden');
-  if(!currentUser||currentUser.isAnonymous){showAlert('Error','Silakan login terlebih dahulu','error');return;}
-  const btn=document.getElementById('btn-submit-order');btn.disabled=true;btn.textContent='MEMPROSES...';
-  try{
+  if (!currentUser || currentUser.isAnonymous) { showAlert('Error','Silakan login terlebih dahulu','error'); return; }
+
+  const btn = document.getElementById('btn-submit-order');
+  btn.disabled = true; btn.textContent = 'MEMPROSES...';
+
+  try {
     await currentUser.getIdToken(true);
-    const cfg=eventConfig.tickets||TICKET_TYPES,quota=cfg[selectedType]?.quota||0;
-    const soldSnap=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('type','==',selectedType)));
-    if(soldSnap.size>=quota){showAlert('Kuota Habis',`Tiket ${selectedType} sudah habis!`,'error');return;}
-    const ex=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)));
-    if(ex.size>=MAX_PER_USER){showAlert('Batas',`Maks ${MAX_PER_USER} tiket per akun`,'error');return;}
-    const price=parseInt(cfg[selectedType]?.price||0),orderId=generateOrderId();
-    await window.addDoc(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),{
-      order_id:orderId,user_id:currentUser.uid,name,email:currentUser.email,
-      type:selectedType,price,status:'pending',check_in:false,created_at:Date.now()
+    const cfg    = eventConfig.tickets || TICKET_TYPES;
+    const quota  = cfg[selectedType]?.price ? (cfg[selectedType]?.quota || 0) : 0;
+    const price  = parseInt(cfg[selectedType]?.price || 0);
+    const orderId = generateOrderId();
+
+    // FIX #2 & #3 — Gunakan Firestore Transaction
+    // Transaction ini atomik: kuota + limit per user dicek bersamaan
+    // Race condition tidak mungkin terjadi karena Firestore lock dokumen counter
+    const counterRef = window.doc(window.db,'artifacts',window.appId,'public','data','settings','quota_counter');
+    const userCountRef = window.doc(window.db,'artifacts',window.appId,'public','data','user_order_count',currentUser.uid);
+
+    await window.runTransaction(window.db, async (tx) => {
+      // Cek counter kuota per tipe
+      const counterSnap = await tx.get(counterRef);
+      const counterData = counterSnap.exists() ? counterSnap.data() : {};
+      const currentSold = counterData[selectedType] || 0;
+      const maxQuota    = (eventConfig.tickets?.[selectedType]?.quota) || quota;
+      if (currentSold >= maxQuota) throw new Error('QUOTA_HABIS');
+
+      // Cek jumlah tiket per user (enforcement di transaction, bukan hanya client)
+      const userCountSnap = await tx.get(userCountRef);
+      const userCount = userCountSnap.exists() ? (userCountSnap.data().count || 0) : 0;
+      if (userCount >= MAX_PER_USER) throw new Error('MAX_LIMIT');
+
+      // Semua ok — buat dokumen tiket baru
+      const newTicketRef = window.doc(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'));
+      tx.set(newTicketRef, {
+        order_id: orderId, user_id: currentUser.uid, name, email: currentUser.email,
+        type: selectedType, price, status: 'pending', check_in: false, created_at: Date.now()
+      });
+
+      // Update counter kuota
+      tx.set(counterRef, { ...counterData, [selectedType]: currentSold + 1 }, { merge: true });
+
+      // Update user order count
+      tx.set(userCountRef, { count: userCount + 1, uid: currentUser.uid }, { merge: true });
     });
+
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Halo Admin, Konfirmasi Pembayaran ${eventConfig.title}.\nOrder ID: ${orderId}\nNama: ${name}\nTipe: ${selectedType}`)}`,'_blank');
     showTab('my-tickets');
-  }catch(e){
-    let msg='Gagal pesan, coba lagi';
-    if(e.code==='permission-denied')msg='Akses ditolak Firestore. Coba logout lalu login ulang.';
-    else if(e.message)msg=e.message;
-    showAlert('Error',msg,'error');
-  }finally{btn.disabled=false;btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';lucide.createIcons();}
+
+  } catch(e) {
+    let msg = 'Gagal pesan, coba lagi';
+    if (e.message === 'QUOTA_HABIS')          msg = `Maaf, tiket ${selectedType} sudah habis!`;
+    else if (e.message === 'MAX_LIMIT')       msg = `Maks ${MAX_PER_USER} tiket per akun.`;
+    else if (e.code === 'permission-denied')  msg = 'Akses ditolak. Coba logout lalu login ulang.';
+    else if (e.message)                       msg = e.message;
+    showAlert('Error', msg, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';
+    lucide.createIcons();
+  }
 };
 
-function loadUserTickets(){
-  if(!currentUser||currentUser.isAnonymous)return;
-  if(unsubUser)unsubUser();
-  const container=document.getElementById('ticket-list');
-  unsubUser=window.onSnapshot(
+// ════════════════════════════════════════════════════════════
+// TIKET USER — FIX #4: hanya baca tiket milik sendiri
+// ════════════════════════════════════════════════════════════
+function loadUserTickets() {
+  if (!currentUser || currentUser.isAnonymous) return;
+  if (unsubUser) unsubUser();
+  const container = document.getElementById('ticket-list');
+  // Query hanya tiket milik user ini (cocok dengan rules: resource.data.user_id == request.auth.uid)
+  unsubUser = window.onSnapshot(
     window.query(
       window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
       window.where('user_id','==',currentUser.uid)
     ),
-    async snap=>{
-      snap.forEach(d=>{
-        const t=d.data(),prev=prevStatuses[d.id];
-        if(prev&&prev!==t.status&&t.status==='approved'){
-          sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif.`);
-          showToast('Tiket Disetujui! 🎉',`${t.name} — ${t.type}`,'success');
+    async snap => {
+      snap.forEach(d => {
+        const t = d.data(), prev = prevStatuses[d.id];
+        if (prev && prev !== t.status && t.status === 'approved') {
+          sendBrowserNotif('Tiket Disetujui! 🎉', `${t.name} — ${t.type} sudah aktif.`);
+          showToast('Tiket Disetujui! 🎉', `${t.name} — ${t.type}`, 'success');
         }
-        prevStatuses[d.id]=t.status;
+        prevStatuses[d.id] = t.status;
       });
-      container.innerHTML='';
-      if(snap.empty){
-        container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';
+      container.innerHTML = '';
+      if (snap.empty) {
+        container.innerHTML = '<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';
         return;
       }
-      const items=[];
-      const renderPromises=[];
-      snap.forEach(docu=>{
-        renderPromises.push((async()=>{
-          const t=docu.data(),approved=t.status==='approved';
-          let qrSrc='';
-          if(approved){
-            const qrData=await makeQrData(t.order_id);
-            qrSrc=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+      const items = [], renderPromises = [];
+      snap.forEach(docu => {
+        renderPromises.push((async () => {
+          const t = docu.data(), approved = t.status === 'approved';
+          // FIX #1 — QR berisi orderId saja, tanpa HMAC secret di client
+          // Validitas dicek langsung ke Firestore saat scan
+          let qrSrc = '';
+          if (approved) {
+            const qrData = await makeQrData(t.order_id);
+            qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
           }
-          const div=document.createElement('div');
-          div.className='bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
-          div.innerHTML=`
+          const div = document.createElement('div');
+          div.className = 'bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
+          div.innerHTML = `
             <div class="p-6 bg-white border-b border-dashed border-slate-100">
               <div class="flex justify-between items-start">
                 <div class="flex-1">
@@ -946,35 +1103,34 @@ function loadUserTickets(){
             <div class="bg-slate-50 p-8 flex flex-col items-center gap-5">
               <div class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
                 ${approved
-                  ?`<img src="${qrSrc}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`
-                  :`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
-                ${t.check_in?`<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>`:''}
+                  ? `<img src="${qrSrc}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`
+                  : `<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
+                ${t.check_in ? `<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>` : ''}
               </div>
               <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center">
-                ${approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin'}
+                ${approved ? (t.check_in ? 'Tiket sudah digunakan' : 'Tunjukkan QR di Gerbang') : 'Menunggu Approval Admin'}
               </p>
-              ${approved&&!t.check_in?`<button onclick="saveTicketImage('${docu.id}','${t.order_id}','${encodeURIComponent(t.name)}','${t.type}')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg"><i data-lucide="image" class="w-4 h-4"></i> Simpan Tiket</button>`:''}
+              ${approved && !t.check_in ? `<button onclick="saveTicketImage('${docu.id}','${t.order_id}','${encodeURIComponent(t.name)}','${t.type}')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg"><i data-lucide="image" class="w-4 h-4"></i> Simpan Tiket</button>` : ''}
             </div>`;
-          items.push({ts:t.created_at||0,el:div});
+          items.push({ ts: t.created_at||0, el: div });
         })())
       });
       await Promise.all(renderPromises);
-      items.sort((a,b)=>b.ts-a.ts);
-      items.forEach(item=>container.appendChild(item.el));
+      items.sort((a,b) => b.ts - a.ts);
+      items.forEach(item => container.appendChild(item.el));
       lucide.createIcons();
     },
-    err=>console.warn('user ticket err:',err.code)
+    err => console.warn('user ticket err:', err.code)
   );
 }
 
-window.saveTicketImage=async(docId,orderId,encodedName,type)=>{
-  const name=decodeURIComponent(encodedName);
-  const qrData=await makeQrData(orderId);
-  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
-  const wrap=document.createElement('div');wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;';
-  const card=document.createElement('div');
-  card.style.cssText='width:360px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border-radius:24px;padding:32px;font-family:sans-serif;';
-  card.innerHTML=`
+window.saveTicketImage = async (docId, orderId, encodedName, type) => {
+  const name = decodeURIComponent(encodedName);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(orderId)}`;
+  const wrap = document.createElement('div'); wrap.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  const card = document.createElement('div');
+  card.style.cssText = 'width:360px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border-radius:24px;padding:32px;font-family:sans-serif;';
+  card.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
       <div><div style="font-size:10px;font-weight:800;letter-spacing:0.2em;opacity:0.7;margin-bottom:4px">HOLISTIK FEST 2026</div><div style="font-size:20px;font-weight:800">${(eventConfig.title||'').toUpperCase()}</div></div>
       <div style="background:rgba(255,255,255,0.2);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:800">${type==='VIP 1'?'👑 VIP 1':type==='VIP 2'?'⭐ VIP 2':'🎟 REGULER'}</div>
@@ -987,78 +1143,91 @@ window.saveTicketImage=async(docId,orderId,encodedName,type)=>{
       <div><div style="font-size:9px;opacity:0.7;font-weight:700;margin-bottom:2px">NAMA PESERTA</div><div style="font-size:15px;font-weight:800">${name.toUpperCase()}</div></div>
       <div style="text-align:right"><div style="font-size:9px;opacity:0.7;font-weight:700;margin-bottom:2px">TANGGAL</div><div style="font-size:12px;font-weight:800">${eventConfig.date||''}</div><div style="font-size:11px;opacity:0.8">${eventConfig.location||''}</div></div>
     </div>`;
-  wrap.appendChild(card);document.body.appendChild(wrap);
+  wrap.appendChild(card); document.body.appendChild(wrap);
   showToast('Menyiapkan gambar...','Tunggu sebentar','info');
-  try{
-    await new Promise(r=>setTimeout(r,800));
-    const canvas=await html2canvas(card,{scale:2,useCORS:true,logging:false,backgroundColor:null});
-    const a=document.createElement('a');a.download=`tiket-${orderId}.png`;a.href=canvas.toDataURL('image/png');a.click();
+  try {
+    await new Promise(r => setTimeout(r, 800));
+    const canvas = await html2canvas(card, {scale:2,useCORS:true,logging:false,backgroundColor:null});
+    const a = document.createElement('a'); a.download = `tiket-${orderId}.png`; a.href = canvas.toDataURL('image/png'); a.click();
     showToast('Tiket tersimpan! 🎉','Cek folder Downloads','success');
-  }catch(e){showAlert('Error','Gagal simpan gambar.','error');}
-  finally{document.body.removeChild(wrap);}
+  } catch(e) { showAlert('Error','Gagal simpan gambar.','error'); }
+  finally { document.body.removeChild(wrap); }
 };
 
-function listenToAllTickets(){
-  if(unsubAdmin)unsubAdmin();
-  unsubAdmin=window.onSnapshot(
-    window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.orderBy('created_at','desc')),
-    snap=>{
-      allTicketsData=[];
-      let s={total:0,pending:0,approved:0,checkin:0,revVip1:0,revVip2:0,revReg:0,cntVip1:0,cntVip2:0,cntReg:0};
-      snap.forEach(d=>{const t=d.data();allTicketsData.push({id:d.id,...t});s.total++;
-        if(t.status==='pending')s.pending++;
-        if(t.status==='approved'){s.approved++;
-          if(t.type==='VIP 1'){s.revVip1+=(t.price||0);s.cntVip1++;}
-          else if(t.type==='VIP 2'){s.revVip2+=(t.price||0);s.cntVip2++;}
-          else{s.revReg+=(t.price||0);s.cntReg++;}
+// ════════════════════════════════════════════════════════════
+// ADMIN — listen semua tiket
+// ════════════════════════════════════════════════════════════
+function listenToAllTickets() {
+  if (unsubAdmin) unsubAdmin();
+  unsubAdmin = window.onSnapshot(
+    window.query(
+      window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
+      window.orderBy('created_at','desc')
+    ),
+    snap => {
+      allTicketsData = [];
+      let s = {total:0,pending:0,approved:0,checkin:0,revVip1:0,revVip2:0,revReg:0,cntVip1:0,cntVip2:0,cntReg:0};
+      snap.forEach(d => {
+        const t = d.data(); allTicketsData.push({id:d.id,...t}); s.total++;
+        if (t.status==='pending') s.pending++;
+        if (t.status==='approved') {
+          s.approved++;
+          if (t.type==='VIP 1')  { s.revVip1+=(t.price||0); s.cntVip1++; }
+          else if (t.type==='VIP 2') { s.revVip2+=(t.price||0); s.cntVip2++; }
+          else { s.revReg+=(t.price||0); s.cntReg++; }
         }
-        if(t.check_in)s.checkin++;
+        if (t.check_in) s.checkin++;
       });
-      const el=id=>document.getElementById(id);
-      el('stat-total').textContent=s.total;el('stat-pending').textContent=s.pending;
-      el('stat-approved').textContent=s.approved;el('stat-checkin').textContent=s.checkin;
-      const tot=s.revVip1+s.revVip2+s.revReg||1;
-      el('stat-revenue-total').textContent=fmtRupiah(s.revVip1+s.revVip2+s.revReg);
-      el('stat-revenue-vip1').textContent=fmtRupiah(s.revVip1);el('stat-vip1-count').textContent=`(${s.cntVip1})`;
-      el('stat-revenue-vip2').textContent=fmtRupiah(s.revVip2);el('stat-vip2-count').textContent=`(${s.cntVip2})`;
-      el('stat-revenue-reg').textContent=fmtRupiah(s.revReg);el('stat-reg-count').textContent=`(${s.cntReg})`;
-      el('bar-vip1').style.width=(s.revVip1/tot*100)+'%';
-      el('bar-vip2').style.width=(s.revVip2/tot*100)+'%';
-      el('bar-reg').style.width=(s.revReg/tot*100)+'%';
+      const el = id => document.getElementById(id);
+      el('stat-total').textContent = s.total; el('stat-pending').textContent = s.pending;
+      el('stat-approved').textContent = s.approved; el('stat-checkin').textContent = s.checkin;
+      const tot = s.revVip1+s.revVip2+s.revReg || 1;
+      el('stat-revenue-total').textContent = fmtRupiah(s.revVip1+s.revVip2+s.revReg);
+      el('stat-revenue-vip1').textContent  = fmtRupiah(s.revVip1); el('stat-vip1-count').textContent = `(${s.cntVip1})`;
+      el('stat-revenue-vip2').textContent  = fmtRupiah(s.revVip2); el('stat-vip2-count').textContent = `(${s.cntVip2})`;
+      el('stat-revenue-reg').textContent   = fmtRupiah(s.revReg);  el('stat-reg-count').textContent  = `(${s.cntReg})`;
+      el('bar-vip1').style.width = (s.revVip1/tot*100)+'%';
+      el('bar-vip2').style.width = (s.revVip2/tot*100)+'%';
+      el('bar-reg').style.width  = (s.revReg/tot*100)+'%';
       loadAdminTickets();
-    },err=>console.warn('admin err:',err.code)
+    }, err => console.warn('admin err:', err.code)
   );
 }
-window.setFilter=f=>{
-  activeFilter=f;
-  ['all','pending','approved','checkin','VIP 1','VIP 2','Reguler'].forEach(k=>{const e=document.getElementById('fp-'+k);if(e)e.className='filter-pill'+(k===f?' active':'');});
-  selectedIds.clear();updateBulkBar();loadAdminTickets();
+window.setFilter = f => {
+  activeFilter = f;
+  ['all','pending','approved','checkin','VIP 1','VIP 2','Reguler'].forEach(k => {
+    const e = document.getElementById('fp-'+k); if(e) e.className = 'filter-pill'+(k===f?' active':'');
+  });
+  selectedIds.clear(); updateBulkBar(); loadAdminTickets();
 };
-function applyFilter(arr){
-  return arr.filter(t=>{
-    if(activeFilter==='all')return true;
-    if(activeFilter==='pending')return t.status==='pending';
-    if(activeFilter==='approved')return t.status==='approved'&&!t.check_in;
-    if(activeFilter==='checkin')return t.check_in;
+function applyFilter(arr) {
+  return arr.filter(t => {
+    if (activeFilter==='all')      return true;
+    if (activeFilter==='pending')  return t.status==='pending';
+    if (activeFilter==='approved') return t.status==='approved' && !t.check_in;
+    if (activeFilter==='checkin')  return t.check_in;
     return t.type===activeFilter;
   });
 }
-function loadAdminTickets(){
-  const list=document.getElementById('admin-tickets');
-  const search=(document.getElementById('admin-search').value||'').toLowerCase();
-  list.innerHTML='';
-  const filtered=applyFilter(allTicketsData).filter(t=>!search||(t.name||'').toLowerCase().includes(search)||(t.order_id||'').toLowerCase().includes(search));
-  const hasPending=filtered.some(t=>t.status==='pending');
-  document.getElementById('select-all-bar').classList.toggle('hidden',!hasPending);
-  if(!filtered.length){list.innerHTML='<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada tiket</div>';return;}
-  filtered.forEach(t=>{
-    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.order_id)}`;
-    const isPending=t.status==='pending',isChk=selectedIds.has(t.id);
-    const typeBadge=t.type==='VIP 1'?'bg-amber-100 text-amber-600':t.type==='VIP 2'?'bg-indigo-100 text-indigo-600':'bg-slate-100 text-slate-600';
-    const div=document.createElement('div');
-    div.className=`bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-3 shadow-sm hover:shadow-md transition-all${isChk?' border-indigo-300 bg-indigo-50/40':''}`;
-    div.id=`tr-${t.id}`;
-    div.innerHTML=`
+function loadAdminTickets() {
+  const list = document.getElementById('admin-tickets');
+  const search = (document.getElementById('admin-search')?.value||'').toLowerCase();
+  list.innerHTML = '';
+  const filtered = applyFilter(allTicketsData).filter(t =>
+    !search || (t.name||'').toLowerCase().includes(search) || (t.order_id||'').toLowerCase().includes(search)
+  );
+  const hasPending = filtered.some(t => t.status==='pending');
+  document.getElementById('select-all-bar').classList.toggle('hidden', !hasPending);
+  if (!filtered.length) { list.innerHTML = '<div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Tidak ada tiket</div>'; return; }
+  filtered.forEach(t => {
+    // Admin QR preview tetap pakai orderId saja
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.order_id)}`;
+    const isPending = t.status==='pending', isChk = selectedIds.has(t.id);
+    const typeBadge = t.type==='VIP 1' ? 'bg-amber-100 text-amber-600' : t.type==='VIP 2' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600';
+    const div = document.createElement('div');
+    div.className = `bg-white p-4 rounded-3xl border flex flex-col sm:flex-row justify-between items-center gap-3 shadow-sm hover:shadow-md transition-all${isChk?' border-indigo-300 bg-indigo-50/40':''}`;
+    div.id = `tr-${t.id}`;
+    div.innerHTML = `
       <div class="flex items-center gap-3 w-full sm:w-auto">
         ${isPending?`<input type="checkbox" class="ticket-checkbox" ${isChk?'checked':''} onchange="toggleSelect('${t.id}',this.checked)">`:'<div class="w-[18px] flex-shrink-0"></div>'}
         <div class="bg-slate-50 p-1 rounded-2xl border border-slate-100 shadow-inner flex-shrink-0"><img src="${qrUrl}" class="w-14 h-14 block rounded-lg" alt="QR"></div>
@@ -1082,174 +1251,212 @@ function loadAdminTickets(){
   });
   lucide.createIcons();
 }
-window.toggleSelect=(id,checked)=>{
-  checked?selectedIds.add(id):selectedIds.delete(id);
-  const row=document.getElementById(`tr-${id}`);
-  if(row){row.classList.toggle('border-indigo-300',checked);row.classList.toggle('bg-indigo-50/40',checked);}
+window.toggleSelect = (id, checked) => {
+  checked ? selectedIds.add(id) : selectedIds.delete(id);
+  const row = document.getElementById(`tr-${id}`);
+  if (row) { row.classList.toggle('border-indigo-300',checked); row.classList.toggle('bg-indigo-50/40',checked); }
   updateBulkBar();
 };
-window.toggleSelectAll=checked=>{allTicketsData.filter(t=>t.status==='pending').forEach(t=>checked?selectedIds.add(t.id):selectedIds.delete(t.id));loadAdminTickets();updateBulkBar();};
-function updateBulkBar(){
-  const bar=document.getElementById('bulk-bar'),cnt=document.getElementById('bulk-count');
-  if(selectedIds.size>0){bar.classList.remove('hidden');bar.classList.add('flex');cnt.textContent=`${selectedIds.size} dipilih`;}
-  else{bar.classList.add('hidden');bar.classList.remove('flex');}
+window.toggleSelectAll = checked => { allTicketsData.filter(t=>t.status==='pending').forEach(t=>checked?selectedIds.add(t.id):selectedIds.delete(t.id)); loadAdminTickets(); updateBulkBar(); };
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar'), cnt = document.getElementById('bulk-count');
+  if (selectedIds.size > 0) { bar.classList.remove('hidden'); bar.classList.add('flex'); cnt.textContent = `${selectedIds.size} dipilih`; }
+  else { bar.classList.add('hidden'); bar.classList.remove('flex'); }
 }
-window.bulkApprove=async()=>{
-  if(!selectedIds.size)return;
-  if(!confirm(`Approve ${selectedIds.size} tiket sekaligus?`))return;
-  const batch=window.writeBatch(window.db);
-  selectedIds.forEach(id=>batch.update(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id),{status:'approved'}));
-  try{await batch.commit();showToast(`${selectedIds.size} tiket diapprove!`,'','success');selectedIds.clear();updateBulkBar();}
-  catch(e){showAlert('Error','Bulk approve gagal','error');}
+window.bulkApprove = async () => {
+  if (!selectedIds.size) return;
+  if (!confirm(`Approve ${selectedIds.size} tiket sekaligus?`)) return;
+  const batch = window.writeBatch(window.db);
+  selectedIds.forEach(id => batch.update(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id),{status:'approved'}));
+  try { await batch.commit(); showToast(`${selectedIds.size} tiket diapprove!','','success`); selectedIds.clear(); updateBulkBar(); }
+  catch(e) { showAlert('Error','Bulk approve gagal','error'); }
 };
-window.clearSelection=()=>{selectedIds.clear();updateBulkBar();loadAdminTickets();};
-window.updateStatus=async(id,status,evt)=>{
-  if(evt)evt.stopPropagation();
-  try{
+window.clearSelection = () => { selectedIds.clear(); updateBulkBar(); loadAdminTickets(); };
+window.updateStatus = async (id, status, evt) => {
+  if (evt) evt.stopPropagation();
+  try {
     await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id),{status});
-    if(status==='approved'){const t=allTicketsData.find(x=>x.id===id);if(t)showToast('Tiket diapprove!',`${t.name} — ${t.type}`,'success');}
-  }catch(e){showAlert('Error','Gagal update status','error');}
+    if (status==='approved') { const t = allTicketsData.find(x=>x.id===id); if(t) showToast('Tiket diapprove!',`${t.name} — ${t.type}`,'success'); }
+  } catch(e) { showAlert('Error','Gagal update status','error'); }
 };
-window.deleteTicket=async id=>{
-  const t=allTicketsData.find(x=>x.id===id);
-  if(!confirm(`Hapus tiket "${t?t.name:'ini'}"?`))return;
-  try{await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id));}
-  catch(e){showAlert('Error','Gagal hapus','error');}
+window.deleteTicket = async id => {
+  const t = allTicketsData.find(x => x.id===id);
+  if (!confirm(`Hapus tiket "${t?t.name:'ini'}"?`)) return;
+  try { await window.deleteDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',id)); }
+  catch(e) { showAlert('Error','Gagal hapus','error'); }
 };
-window.exportCSV=()=>{
-  if(!allTicketsData.length){showAlert('Info','Belum ada data','info');return;}
-  const hdr=['Order ID','Nama','Email','Tipe','Harga','Status','Check-in','Waktu Order'];
-  const rows=allTicketsData.map(t=>[t.order_id,t.name,t.email||'',t.type,t.price||0,t.status,t.check_in?'Ya':'Tidak',fmtDate(t.created_at)]);
-  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download=`holistik-fest-${new Date().toISOString().slice(0,10)}.csv`;
+window.exportCSV = () => {
+  if (!allTicketsData.length) { showAlert('Info','Belum ada data','info'); return; }
+  const hdr = ['Order ID','Nama','Email','Tipe','Harga','Status','Check-in','Waktu Order'];
+  const rows = allTicketsData.map(t => [t.order_id,t.name,t.email||'',t.type,t.price||0,t.status,t.check_in?'Ya':'Tidak',fmtDate(t.created_at)]);
+  const csv = [hdr,...rows].map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download = `holistik-fest-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   showToast('CSV diunduh!',`${allTicketsData.length} baris data`,'success');
 };
 
-window.switchAdminTab=tab=>{
-  const tabs=['list','petugas','log','scan','settings'];
-  tabs.forEach(t=>{const el=document.getElementById(`adm-${t}-content`);if(el)el.classList.toggle('hidden',t!==tab);});
-  const filterBar=document.getElementById('filter-bar');
-  if(filterBar)filterBar.classList.toggle('hidden',tab!=='list');
-  const ac='px-4 py-2 rounded-xl font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all whitespace-nowrap';
-  const in_='px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap';
-  ['list','petugas','log','settings','scan'].forEach(t=>{const btn=document.getElementById(`btn-adm-${t}`);if(btn)btn.className=t===tab?ac:in_;});
-  if(tab==='scan')startScanner();else stopScanner();
-  if(tab==='settings')initSettingsInputs();
-  if(tab==='petugas'&&!unsubPetugas)listenToPetugas();
-  if(tab==='log'){if(!unsubLog)listenToLog();else{updateLogStats();renderLogList();}}
+window.switchAdminTab = tab => {
+  const tabs = ['list','petugas','log','scan','settings'];
+  tabs.forEach(t => { const el = document.getElementById(`adm-${t}-content`); if(el) el.classList.toggle('hidden', t!==tab); });
+  const filterBar = document.getElementById('filter-bar');
+  if (filterBar) filterBar.classList.toggle('hidden', tab!=='list');
+  const ac = 'px-4 py-2 rounded-xl font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all whitespace-nowrap';
+  const in_ = 'px-4 py-2 rounded-xl font-bold text-sm text-slate-500 transition-all whitespace-nowrap';
+  ['list','petugas','log','settings','scan'].forEach(t => { const btn = document.getElementById(`btn-adm-${t}`); if(btn) btn.className = t===tab?ac:in_; });
+  if (tab==='scan')     startScanner();     else stopScanner();
+  if (tab==='settings') initSettingsInputs();
+  if (tab==='petugas' && !unsubPetugas) listenToPetugas();
+  if (tab==='log') { if(!unsubLog) listenToLog(); else { updateLogStats(); renderLogList(); } }
 };
 
-async function handleQrScan(text,feedbackEl,onSuccess){
-  const petugasInfo=currentPetugasData||(currentUserRole==='admin'?{name:currentUser?.displayName||currentUser?.email||'Admin',email:currentUser?.email||'',role:'Admin'}:null);
-  const logBase={petugas_name:petugasInfo?.name||'',petugas_email:petugasInfo?.email||'',petugas_role:petugasInfo?.role||''};
-  const parts=text.split('|');
-  if(parts.length!==2){
-    showScanFeedback(feedbackEl,'❌ FORMAT QR TIDAK VALID','invalid');
-    await writeScanLog({...logBase,result:'invalid',reason:'FORMAT QR TIDAK VALID',order_id:'',guest_name:'',ticket_type:''});
+// ════════════════════════════════════════════════════════════
+// QR SCAN — FIX #1: Validasi hanya ke Firestore, tanpa HMAC client
+// Replay attack dicegah lewat Firestore Transaction (check_in atomik)
+// ════════════════════════════════════════════════════════════
+async function handleQrScan(text, feedbackEl, onSuccess) {
+  const petugasInfo = currentPetugasData || (currentUserRole==='admin'
+    ? { name: currentUser?.displayName||currentUser?.email||'Admin', email: currentUser?.email||'', role:'Admin' }
+    : null);
+  const logBase = {
+    petugas_name:  petugasInfo?.name  || '',
+    petugas_email: petugasInfo?.email || '',
+    petugas_role:  petugasInfo?.role  || ''
+  };
+
+  // Sanitasi input QR — hanya terima format orderId sederhana
+  const scannedOrderId = text.trim();
+  if (!scannedOrderId || scannedOrderId.length < 8 || scannedOrderId.length > 20 || !/^HOL-[A-Z0-9]+$/.test(scannedOrderId)) {
+    showScanFeedback(feedbackEl, '❌ FORMAT QR TIDAK VALID', 'invalid');
+    await writeScanLog({...logBase, result:'invalid', reason:'FORMAT TIDAK VALID', order_id:'', guest_name:'', ticket_type:''});
     return false;
   }
-  const [scannedOrderId,scannedSig]=parts;
-  const isLegit=await verifyOrderId(scannedOrderId,scannedSig);
-  if(!isLegit){
-    showScanFeedback(feedbackEl,'🚨 QR PALSU TERDETEKSI!','invalid');
-    await writeScanLog({...logBase,result:'invalid',reason:'QR PALSU',order_id:scannedOrderId,guest_name:'',ticket_type:''});
-    return false;
-  }
-  try{
-    const snap=await window.getDocs(window.query(
+
+  try {
+    // FIX #1 — Cek ke Firestore; atomik lewat transaction agar tidak bisa double check-in
+    const ticketQuery = await window.getDocs(window.query(
       window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
       window.where('order_id','==',scannedOrderId)
     ));
-    if(snap.empty){
-      showScanFeedback(feedbackEl,'❌ TIKET TIDAK DITEMUKAN','invalid');
-      await writeScanLog({...logBase,result:'invalid',reason:'TIKET TIDAK DITEMUKAN',order_id:scannedOrderId,guest_name:'',ticket_type:''});
+
+    if (ticketQuery.empty) {
+      showScanFeedback(feedbackEl, '❌ TIKET TIDAK DITEMUKAN', 'invalid');
+      await writeScanLog({...logBase, result:'invalid', reason:'TIDAK DITEMUKAN', order_id:scannedOrderId, guest_name:'', ticket_type:''});
       return false;
     }
-    const d=snap.docs[0],data=d.data();
-    if(data.status!=='approved'){
-      showScanFeedback(feedbackEl,'⚠️ BELUM DIAPPROVE','warn');
-      await writeScanLog({...logBase,result:'warn',reason:'BELUM DIAPPROVE',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
+
+    const ticketDoc = ticketQuery.docs[0];
+    const ticketRef = ticketDoc.ref;
+    const data      = ticketDoc.data();
+
+    if (data.status !== 'approved') {
+      showScanFeedback(feedbackEl, '⚠️ TIKET BELUM DIAPPROVE', 'warn');
+      await writeScanLog({...logBase, result:'warn', reason:'BELUM DIAPPROVE', order_id:scannedOrderId, guest_name:data.name||'', ticket_type:data.type||''});
       return false;
     }
-    if(data.check_in){
-      showScanFeedback(feedbackEl,'🔴 SUDAH DIGUNAKAN','invalid');
-      await writeScanLog({...logBase,result:'invalid',reason:'SUDAH DIGUNAKAN',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
+
+    if (data.check_in) {
+      showScanFeedback(feedbackEl, '🔴 TIKET SUDAH DIGUNAKAN', 'invalid');
+      await writeScanLog({...logBase, result:'invalid', reason:'SUDAH DIGUNAKAN', order_id:scannedOrderId, guest_name:data.name||'', ticket_type:data.type||''});
       return false;
     }
-    showScanFeedback(feedbackEl,`✅ VALID\n${data.name}\n${data.type}`,'valid');
-    await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',d.id),{check_in:true});
-    await writeScanLog({...logBase,result:'valid',reason:'CHECK-IN BERHASIL',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
-    if(onSuccess)onSuccess(data);
+
+    // Atomic check-in via transaction — mencegah double scan race condition
+    await window.runTransaction(window.db, async tx => {
+      const fresh = await tx.get(ticketRef);
+      if (!fresh.exists()) throw new Error('TIDAK_ADA');
+      const freshData = fresh.data();
+      if (freshData.check_in)        throw new Error('SUDAH_CHECKIN');
+      if (freshData.status !== 'approved') throw new Error('BELUM_APPROVED');
+      tx.update(ticketRef, { check_in: true });
+    });
+
+    showScanFeedback(feedbackEl, `✅ VALID\n${data.name}\n${data.type}`, 'valid');
+    await writeScanLog({...logBase, result:'valid', reason:'CHECK-IN BERHASIL', order_id:scannedOrderId, guest_name:data.name||'', ticket_type:data.type||''});
+    if (onSuccess) onSuccess(data);
     return true;
-  }catch(e){
-    console.error('scan error:',e);
-    showScanFeedback(feedbackEl,`⚠️ ERROR: ${e.code||e.message}`,'warn');
-    await writeScanLog({...logBase,result:'warn',reason:`ERROR: ${e.code||'koneksi'}`,order_id:scannedOrderId||'',guest_name:'',ticket_type:''});
+
+  } catch(e) {
+    if (e.message === 'SUDAH_CHECKIN') {
+      showScanFeedback(feedbackEl, '🔴 TIKET SUDAH DIGUNAKAN (race)', 'invalid');
+      await writeScanLog({...logBase, result:'invalid', reason:'SUDAH DIGUNAKAN', order_id:scannedOrderId, guest_name:'', ticket_type:''});
+      return false;
+    }
+    if (e.message === 'BELUM_APPROVED') {
+      showScanFeedback(feedbackEl, '⚠️ BELUM DIAPPROVE (race)', 'warn');
+      await writeScanLog({...logBase, result:'warn', reason:'BELUM DIAPPROVE', order_id:scannedOrderId, guest_name:'', ticket_type:''});
+      return false;
+    }
+    console.error('scan error:', e);
+    showScanFeedback(feedbackEl, `⚠️ ERROR: ${e.code||e.message}`, 'warn');
+    await writeScanLog({...logBase, result:'warn', reason:`ERROR: ${e.code||'koneksi'}`, order_id:scannedOrderId||'', guest_name:'', ticket_type:''});
     return false;
   }
 }
 
-function showScanFeedback(el,text,type){
-  if(!el)return;
-  el.className='p-6 rounded-2xl font-black text-lg text-center whitespace-pre-line';
-  if(type==='valid')el.classList.add('scan-result-valid');
-  else if(type==='invalid')el.classList.add('scan-result-invalid');
+function showScanFeedback(el, text, type) {
+  if (!el) return;
+  el.className = 'p-6 rounded-2xl font-black text-lg text-center whitespace-pre-line';
+  if (type==='valid')   el.classList.add('scan-result-valid');
+  else if (type==='invalid') el.classList.add('scan-result-invalid');
   else el.classList.add('scan-result-warn');
-  el.textContent=text;el.classList.remove('hidden');
+  el.textContent = text; el.classList.remove('hidden');
 }
 
-function startScanner(){
-  if(html5QrScanner)return;
-  html5QrScanner=new Html5Qrcode('reader');
-  const fb=document.getElementById('scan-feedback');scanCooldown=false;
-  html5QrScanner.start({facingMode:'environment'},{fps:5,qrbox:220},async text=>{
-    if(scanCooldown)return;scanCooldown=true;setTimeout(()=>scanCooldown=false,3000);
-    await handleQrScan(text,fb,null);
-  }).catch(()=>showAlert('Error','Izinkan akses kamera di browser','error'));
+function startScanner() {
+  if (html5QrScanner) return;
+  html5QrScanner = new Html5Qrcode('reader');
+  const fb = document.getElementById('scan-feedback'); scanCooldown = false;
+  html5QrScanner.start({facingMode:'environment'},{fps:5,qrbox:220}, async text => {
+    if (scanCooldown) return; scanCooldown = true; setTimeout(()=>scanCooldown=false, 3000);
+    await handleQrScan(text, fb, null);
+  }).catch(() => showAlert('Error','Izinkan akses kamera di browser','error'));
 }
-function stopScanner(){if(html5QrScanner)html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>html5QrScanner=null);}
+function stopScanner() {
+  if (html5QrScanner) html5QrScanner.stop().then(()=>html5QrScanner=null).catch(()=>html5QrScanner=null);
+}
 
-function startPetugasScanner(){
-  if(petugasQrScanner)return;
-  petugasQrScanner=new Html5Qrcode('petugas-reader');
-  const fb=document.getElementById('petugas-scan-feedback');
-  let petugasCooldown=false;
-  petugasQrScanner.start({facingMode:'environment'},{fps:5,qrbox:250},async text=>{
-    if(petugasCooldown)return;petugasCooldown=true;setTimeout(()=>petugasCooldown=false,3000);
-    const ok=await handleQrScan(text,fb,data=>{
-      petugasSessionCheckin++;updatePetugasStat();
-      showToast('Check-in Berhasil! ✅',`${data.name} — ${data.type}`,'success');
-      const lt=document.getElementById('petugas-last-ticket');
-      if(lt){
+function startPetugasScanner() {
+  if (petugasQrScanner) return;
+  petugasQrScanner = new Html5Qrcode('petugas-reader');
+  const fb = document.getElementById('petugas-scan-feedback');
+  let petugasCooldown = false;
+  petugasQrScanner.start({facingMode:'environment'},{fps:5,qrbox:250}, async text => {
+    if (petugasCooldown) return; petugasCooldown = true; setTimeout(()=>petugasCooldown=false, 3000);
+    const ok = await handleQrScan(text, fb, data => {
+      petugasSessionCheckin++; updatePetugasStat();
+      showToast('Check-in Berhasil! ✅', `${data.name} — ${data.type}`, 'success');
+      const lt = document.getElementById('petugas-last-ticket');
+      if (lt) {
         lt.classList.remove('hidden');
-        const nm=document.getElementById('plt-name'),tp=document.getElementById('plt-type'),or=document.getElementById('plt-order');
-        if(nm)nm.textContent=data.name||'';
-        if(tp)tp.textContent=data.type||'';
-        if(or)or.textContent=`#${data.order_id||''}`;
+        const nm=document.getElementById('plt-name'), tp=document.getElementById('plt-type'), or=document.getElementById('plt-order');
+        if(nm) nm.textContent = data.name||'';
+        if(tp) tp.textContent = data.type||'';
+        if(or) or.textContent = `#${data.order_id||''}`;
       }
     });
-    if(!ok){petugasSessionReject++;updatePetugasStat();}
-  }).catch(()=>{
-    const fb=document.getElementById('petugas-scan-feedback');
+    if (!ok) { petugasSessionReject++; updatePetugasStat(); }
+  }).catch(() => {
     showScanFeedback(fb,'❌ Tidak bisa akses kamera.\nIzinkan di browser.','invalid');
   });
 }
-function stopPetugasScanner(){if(petugasQrScanner)petugasQrScanner.stop().then(()=>petugasQrScanner=null).catch(()=>petugasQrScanner=null);}
+function stopPetugasScanner() {
+  if (petugasQrScanner) petugasQrScanner.stop().then(()=>petugasQrScanner=null).catch(()=>petugasQrScanner=null);
+}
 
-function showAlert(title,msg,type){
+function showAlert(title, msg, type) {
   document.getElementById('modal-alert').classList.replace('hidden','flex');
-  document.getElementById('modal-title').textContent=title;document.getElementById('modal-msg').textContent=msg;
-  const cls={success:'bg-green-100 text-green-500',error:'bg-red-100 text-red-500',info:'bg-indigo-100 text-indigo-500'};
-  const ico={success:'check-circle',error:'alert-circle',info:'info'};
-  const icon=document.getElementById('modal-icon');
-  icon.className=`w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full ${cls[type]||cls.info}`;
-  icon.innerHTML=`<i data-lucide="${ico[type]||'info'}" class="w-8 h-8"></i>`;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent   = msg;
+  const cls = {success:'bg-green-100 text-green-500', error:'bg-red-100 text-red-500', info:'bg-indigo-100 text-indigo-500'};
+  const ico = {success:'check-circle', error:'alert-circle', info:'info'};
+  const icon = document.getElementById('modal-icon');
+  icon.className = `w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full ${cls[type]||cls.info}`;
+  icon.innerHTML = `<i data-lucide="${ico[type]||'info'}" class="w-8 h-8"></i>`;
   lucide.createIcons();
 }
-function closeModal(){document.getElementById('modal-alert').classList.replace('flex','hidden');}
+function closeModal() { document.getElementById('modal-alert').classList.replace('flex','hidden'); }
 </script>
 </body>
 </html>
