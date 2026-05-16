@@ -407,6 +407,36 @@ const WA_NUMBER    = "6285158880014";
 const ADMIN_EMAILS = ["sobatambyar1990@gmail.com"];
 const MAX_PER_USER = 5;
 
+// ── HMAC QR SECURITY ──
+// Ganti string ini dengan string acak panjang milikmu sendiri
+const QR_SECRET = 'h0l1st1k_s3cr3t_2026_!xK9#mP7qRvZ';
+
+async function signOrderId(orderId) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(QR_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(orderId));
+  return Array.from(new Uint8Array(sig))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 16);
+}
+
+async function verifyOrderId(orderId, sig) {
+  const expected = await signOrderId(orderId);
+  return expected === sig;
+}
+
+async function makeQrData(orderId) {
+  const sig = await signOrderId(orderId);
+  return `${orderId}|${sig}`;
+}
+
 // Konfigurasi tiket: tipe → { price, quota }
 const TICKET_TYPES = {
   'VIP 1':   { price: 65000, quota: 500  },
@@ -464,7 +494,6 @@ function updateQuotaUI(soldCounts){
     }
   });
 
-  // total bar
   const totalSisa = TOTAL_QUOTA - totalSold;
   const totalPct = Math.max(0, totalSisa/TOTAL_QUOTA*100);
   const tb = document.getElementById('total-quota-bar');
@@ -541,7 +570,6 @@ window.addEventListener('load',async()=>{
             listenToSettings();
         }
     });
-    // Listen sold counts untuk kuota (publik)
     listenSoldCounts();
 });
 
@@ -553,7 +581,6 @@ function listenSoldCounts(){
       const sold={'VIP 1':0,'VIP 2':0,'Reguler':0};
       snap.forEach(d=>{
         const t=d.data();
-        // hitung semua tiket (pending + approved) sebagai "terpakai"
         if(sold[t.type]!==undefined) sold[t.type]++;
       });
       updateQuotaUI(sold);
@@ -678,7 +705,6 @@ window.submitOrder=async()=>{
     try{
         await currentUser.getIdToken(true);
 
-        // Cek kuota realtime sebelum beli
         const cfg = eventConfig.tickets || TICKET_TYPES;
         const quota = cfg[selectedType]?.quota || 0;
         const soldSnap = await window.getDocs(window.query(
@@ -734,7 +760,7 @@ function loadUserTickets(){
     const container=document.getElementById('ticket-list');
     unsubUser=window.onSnapshot(
         window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('user_id','==',currentUser.uid)),
-        snap=>{
+        async snap=>{
             snap.forEach(d=>{ const t=d.data(),prev=prevStatuses[d.id];
                 if(prev&&prev!==t.status&&t.status==='approved'){
                     sendBrowserNotif('Tiket Disetujui! 🎉',`${t.name} — ${t.type} sudah aktif.`);
@@ -743,10 +769,24 @@ function loadUserTickets(){
                 prevStatuses[d.id]=t.status;
             });
             container.innerHTML='';
-            if(snap.empty){ container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>'; return; }
-            snap.forEach(docu=>{
-                const t=docu.data(), approved=t.status==='approved';
-                const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(t.order_id)}`;
+            if(snap.empty){
+                container.innerHTML='<div class="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed text-slate-300 font-bold uppercase tracking-widest text-xs">Belum ada tiket</div>';
+                return;
+            }
+
+            // Render semua tiket dengan QR HMAC (async)
+            const renders = [];
+            snap.forEach(docu => renders.push((async () => {
+                const t = docu.data();
+                const approved = t.status === 'approved';
+
+                // Buat QR data dengan HMAC signature
+                let qrUrl = '';
+                if(approved){
+                    const qrData = await makeQrData(t.order_id);
+                    qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+                }
+
                 const div=document.createElement('div');
                 div.className='bg-white rounded-[2.5rem] border overflow-hidden shadow-sm transition-all';
                 div.innerHTML=`
@@ -758,7 +798,10 @@ function loadUserTickets(){
                     </div>
                     <div class="bg-slate-50 p-8 flex flex-col items-center gap-5">
                         <div id="tp-${docu.id}" class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">
-                            ${approved?`<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`:`<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`}
+                            ${approved
+                                ? `<img src="${qrUrl}" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">`
+                                : `<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>`
+                            }
                             ${t.check_in?`<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>`:''}
                         </div>
                         <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center st"></p>
@@ -769,17 +812,21 @@ function loadUserTickets(){
                 div.querySelector('.tp').textContent=`${t.type} PASS`;
                 div.querySelector('.st').textContent=approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin';
                 container.appendChild(div);
-            });
+            })()));
+
+            await Promise.all(renders);
             lucide.createIcons();
         },
         err=>console.warn('user ticket err:',err.code)
     );
 }
 
-// ── SIMPAN TIKET GAMBAR ──
+// ── SIMPAN TIKET GAMBAR (dengan HMAC QR) ──
 window.saveTicketImage=async(docId,orderId,encodedName,type)=>{
     const name=decodeURIComponent(encodedName);
-    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(orderId)}`;
+    // QR gambar juga pakai HMAC
+    const qrData = await makeQrData(orderId);
+    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
     const wrap=document.createElement('div');
     wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;';
     const card=document.createElement('div');
@@ -968,7 +1015,7 @@ window.switchAdminTab=tab=>{
     if(tab==='settings') initSettingsInputs();
 };
 
-// ── SCANNER ──
+// ── SCANNER (dengan verifikasi HMAC) ──
 function startScanner(){
     if(html5QrScanner) return;
     html5QrScanner=new Html5Qrcode('reader');
@@ -977,16 +1024,54 @@ function startScanner(){
         if(scanCooldown) return; scanCooldown=true; setTimeout(()=>scanCooldown=false,3000);
         fb.className='p-6 rounded-2xl font-black text-xl text-center';
         try{
-            const snap=await window.getDocs(window.query(window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),window.where('order_id','==',text)));
-            if(snap.empty){ fb.textContent='❌ TIDAK VALID'; fb.classList.add('bg-red-100','text-red-700'); }
-            else{
-                const d=snap.docs[0]; const data=d.data();
-                if(data.status!=='approved'){ fb.textContent='⚠️ BELUM DIAPPROVE'; fb.classList.add('bg-red-100','text-red-700'); }
-                else if(data.check_in){ fb.textContent='🔴 SUDAH DIGUNAKAN'; fb.classList.add('bg-red-100','text-red-700'); }
-                else{ fb.textContent=`✅ VALID: ${data.name} (${data.type})`; fb.classList.add('bg-green-100','text-green-700');
-                    await window.updateDoc(window.doc(window.db,'artifacts',window.appId,'public','data','tickets',d.id),{check_in:true}); }
+            // Parse format baru: "HOL-XXXXXX|signature"
+            const parts = text.split('|');
+            if(parts.length !== 2){
+                fb.textContent='❌ FORMAT QR TIDAK VALID';
+                fb.classList.add('bg-red-100','text-red-700');
+                fb.classList.remove('hidden');
+                return;
             }
-        }catch(e){ fb.textContent='⚠️ ERROR KONEKSI'; fb.classList.add('bg-red-100','text-red-700'); }
+            const [scannedOrderId, scannedSig] = parts;
+
+            // Verifikasi HMAC sebelum query ke Firestore
+            const isLegit = await verifyOrderId(scannedOrderId, scannedSig);
+            if(!isLegit){
+                fb.textContent='🚨 QR PALSU TERDETEKSI!';
+                fb.classList.add('bg-red-100','text-red-700');
+                fb.classList.remove('hidden');
+                return;
+            }
+
+            // HMAC valid, baru query Firestore
+            const snap=await window.getDocs(window.query(
+                window.collection(window.db,'artifacts',window.appId,'public','data','tickets'),
+                window.where('order_id','==',scannedOrderId)
+            ));
+            if(snap.empty){
+                fb.textContent='❌ TIKET TIDAK DITEMUKAN';
+                fb.classList.add('bg-red-100','text-red-700');
+            } else {
+                const d=snap.docs[0]; const data=d.data();
+                if(data.status!=='approved'){
+                    fb.textContent='⚠️ BELUM DIAPPROVE';
+                    fb.classList.add('bg-red-100','text-red-700');
+                } else if(data.check_in){
+                    fb.textContent='🔴 SUDAH DIGUNAKAN';
+                    fb.classList.add('bg-red-100','text-red-700');
+                } else {
+                    fb.textContent=`✅ VALID: ${data.name} (${data.type})`;
+                    fb.classList.add('bg-green-100','text-green-700');
+                    await window.updateDoc(
+                        window.doc(window.db,'artifacts',window.appId,'public','data','tickets',d.id),
+                        {check_in:true}
+                    );
+                }
+            }
+        }catch(e){
+            fb.textContent='⚠️ ERROR KONEKSI';
+            fb.classList.add('bg-red-100','text-red-700');
+        }
         fb.classList.remove('hidden');
     }).catch(()=>showAlert('Error','Izinkan akses kamera di browser','error'));
 }
