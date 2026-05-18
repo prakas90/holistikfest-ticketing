@@ -171,21 +171,43 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
   <!-- ══════════════ PAYMENT ══════════════ -->
   <section id="tab-payment" class="tab-content max-w-md mx-auto text-slate-900">
     <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
-      <button onclick="showTab('hero')" class="absolute top-8 left-8 text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="arrow-left"></i></button>
-      <h2 class="text-3xl font-black text-center mb-6 mt-4">Checkout</h2>
-      <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl uppercase"></div>
+      
+      <!-- Tombol Kembali yang lebih jelas -->
+      <div class="mb-6">
+        <button onclick="showTab('hero')" class="text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-2 text-sm font-black">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i> KEMBALI KE BERANDA
+        </button>
+      </div>
+
+      <h2 class="text-3xl font-black text-center mb-6 mt-2">Selesaikan Pembayaran</h2>
+      
+      <div class="text-center mb-2 text-xs font-black text-slate-400 uppercase tracking-widest">Rincian Pesanan</div>
+      <div id="order-summary" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-8 border border-indigo-100 text-xl uppercase flex flex-col gap-1"></div>
+      
       <div class="mb-8">
         <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Nama Di Tiket</label>
         <input type="text" id="order-name" maxlength="100" placeholder="Nama lengkap pemegang tiket..." class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold transition-all text-slate-900" />
         <p id="name-error" class="text-red-500 text-xs font-bold mt-2 hidden">Nama tidak valid. Gunakan huruf dan spasi saja (min 2 karakter).</p>
       </div>
+      
       <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
         <p class="text-3xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
         <p class="font-bold text-slate-500 mb-6 text-sm uppercase tracking-wide">BCA - A/N HOLISTIK FEST</p>
-        <div class="bg-white/60 border border-dashed border-red-200 text-red-600 rounded-2xl p-4 text-[10px] font-black uppercase leading-relaxed">WAJIB KIRIM SCREENSHOT BUKTI TRANSFER KE WHATSAPP!</div>
+        
+        <!-- Instruksi Step-by-Step yang Jelas -->
+        <div class="bg-white rounded-2xl p-4 text-left border border-amber-200 shadow-sm">
+          <p class="text-xs font-black text-amber-700 uppercase mb-2">Cara Pembayaran:</p>
+          <ol class="text-xs text-amber-800 font-bold space-y-2 list-decimal ml-4">
+            <li>Transfer ke rekening BCA di atas sesuai nominal tiket.</li>
+            <li>Simpan / Screenshot bukti transfer m-banking Anda.</li>
+            <li>Klik tombol hijau di bawah untuk mengirim bukti ke WhatsApp Admin.</li>
+          </ol>
+        </div>
       </div>
-      <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-        <i data-lucide="message-circle"></i> KIRIM BUKTI (WA)
+      
+      <!-- Tombol WA yang lebih deskriptif -->
+      <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+        <i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM BUKTI VIA WA
       </button>
     </div>
   </section>
@@ -460,7 +482,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     </div>
   </section>
 
-  <!-- ══════════════ PETUGAS APPROVE VIEW (NEW) ══════════════ -->
+  <!-- ══════════════ PETUGAS APPROVE VIEW ══════════════ -->
   <section id="tab-petugas-approve" class="tab-content">
     <div class="max-w-2xl mx-auto">
       <!-- Header -->
@@ -535,7 +557,20 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
 
 </main>
 
-<!-- MODAL -->
+<!-- MODAL LOGIN (BARU) -->
+<div id="modal-login" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
+  <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
+    <div class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+      <i data-lucide="shield-check" class="w-8 h-8"></i>
+    </div>
+    <h3 class="text-2xl font-black mb-2 text-slate-800">Masuk Dulu Yuk!</h3>
+    <p class="text-slate-500 mb-8 text-sm leading-relaxed">Untuk mengamankan tiketmu agar tidak hilang, kita masuk pakai akun Google dulu ya.</p>
+    <button onclick="handleGoogleLogin(); document.getElementById('modal-login').classList.replace('flex','hidden');" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold mb-3">Lanjutkan pakai Google</button>
+    <button onclick="document.getElementById('modal-login').classList.replace('flex','hidden');" class="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold">Nanti Saja</button>
+  </div>
+</div>
+
+<!-- MODAL ALERT -->
 <div id="modal-alert" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[100] backdrop-blur-sm px-6">
   <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
     <div id="modal-icon" class="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-full"></div>
@@ -1170,7 +1205,11 @@ window.handleGoogleLogin = async () => {
 // ORDER
 // ═══════════════════════════════════════════════════
 window.startOrder = type => {
-  if (!currentUser||currentUser.isAnonymous) { handleGoogleLogin(); return; }
+  if (!currentUser||currentUser.isAnonymous) { 
+    document.getElementById('modal-login').classList.replace('hidden','flex');
+    lucide.createIcons();
+    return; 
+  }
   selectedType=type;
   const cfg=eventConfig.tickets||{}, price=cfg[type]?.price||0;
   const s=document.getElementById('order-summary'); s.innerHTML='';
@@ -1206,8 +1245,11 @@ window.submitOrder = async () => {
       tx.set(counterRef,{...counterData,[selectedType]:currentSold+1},{merge:true});
       tx.set(userCountRef,{count:userCount+1,uid:currentUser.uid},{merge:true});
     });
-    const waMsg=encodeURIComponent('Halo Admin, Konfirmasi Pembayaran '+eventConfig.title+'.\nOrder ID: '+orderId+'\nNama: '+name+'\nTipe: '+selectedType);
+    
+    // Draft pesan WA yang lebih lengkap
+    const waMsg=encodeURIComponent('Halo Admin, saya sudah transfer untuk tiket '+eventConfig.title+'.\n\n*Rincian Pesanan:*\nOrder ID: '+orderId+'\nNama: '+name+'\nTipe Tiket: '+selectedType+'\n\nBerikut saya lampirkan bukti transfernya.');
     window.open('https://wa.me/'+WA_NUMBER+'?text='+waMsg,'_blank');
+    
     showTab('my-tickets');
   } catch(e) {
     let msg='Gagal pesan, coba lagi';
@@ -1219,7 +1261,7 @@ window.submitOrder = async () => {
     showAlert('Error',msg,'error');
   } finally {
     btn.disabled=false;
-    btn.innerHTML='<i data-lucide="message-circle"></i> KIRIM BUKTI (WA)';
+    btn.innerHTML='<i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM BUKTI VIA WA';
     lucide.createIcons();
   }
 };
@@ -1256,15 +1298,15 @@ function loadUserTickets() {
                   '<h3 class="text-2xl font-black text-slate-900 leading-tight uppercase">'+sanitizeForDisplay(t.name||'')+'</h3>'+
                   '<p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">'+sanitizeForDisplay(t.type||'')+' PASS</p>'+
                 '</div>'+
-                '<span class="px-3 py-1 rounded-full text-[10px] font-black '+(approved?'bg-green-100 text-green-600':'bg-amber-100 text-amber-600')+'">'+(approved?'AKTIF':'PENDING')+'</span>'+
+                '<span class="px-3 py-1 rounded-full text-[10px] font-black '+(approved?'bg-green-100 text-green-600':'bg-amber-100 text-amber-600')+'">'+(approved?'TIKET AKTIF':'MENUNGGU KONFIRMASI')+'</span>'+
               '</div>'+
             '</div>'+
             '<div class="bg-slate-50 p-8 flex flex-col items-center gap-5">'+
               '<div class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 relative">'+
-                (approved?'<img src="'+qrSrc+'" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">':'<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-200 gap-3"><i data-lucide="lock" class="w-12 h-12"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Terkunci</p></div>')+
+                (approved?'<img src="'+qrSrc+'" class="w-52 h-52 block rounded-xl" alt="QR" crossorigin="anonymous">':'<div class="w-52 h-52 flex flex-col items-center justify-center text-slate-400 gap-3 text-center px-4"><i data-lucide="clock" class="w-12 h-12 text-amber-400"></i><p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">Menunggu Konfirmasi</p><p class="text-[9px] font-bold text-slate-400 mt-2 leading-relaxed">Tenang, pesananmu sudah tercatat.<br>Admin sedang mengecek transfermu (Maks. 1x24 jam).</p></div>')+
                 (t.check_in?'<div class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem]"><span class="bg-red-600 text-white px-5 py-2 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest -rotate-6">Sudah Masuk</span></div>':'')+
               '</div>'+
-              '<p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center">'+(approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Menunggu Approval Admin')+'</p>'+
+              '<p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center">'+(approved?(t.check_in?'Tiket sudah digunakan':'Tunjukkan QR di Gerbang'):'Mohon tunggu sebentar ya!')+'</p>'+
               (approved&&!t.check_in?'<button onclick="saveTicketImage(\''+docu.id+'\',\''+sanitizeForDisplay(t.order_id)+'\',\''+encodeURIComponent(t.name)+'\',\''+sanitizeForDisplay(t.type)+'\')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg"><i data-lucide="image" class="w-4 h-4"></i> Simpan Tiket</button>':'')+
             '</div>';
           items.push({ts:t.created_at||0,el:div});
