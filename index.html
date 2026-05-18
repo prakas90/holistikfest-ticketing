@@ -488,7 +488,6 @@ function updateQuotaUI(soldCounts) {
     const priceEl=document.getElementById('price-'+type);
     if (priceEl) priceEl.textContent = fmtRupiah(info.price);
     
-    // HANYA UPDATE TOMBOL (KUOTA DISEMBUNYIKAN DARI PUBLIK)
     if (sisa<=0) {
       if (card) { card.classList.add('ticket-card-sold'); card.onclick=null; }
       if (btn)  { btn.textContent='TIKET HABIS'; btn.className='w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed'; }
@@ -789,7 +788,7 @@ function renderPaymentNames() {
     container.innerHTML += `
       <div class="bg-white border rounded-2xl p-4 shadow-sm">
         <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Nama Pemegang Tiket ${i}</label>
-        <input type="text" id="order-name-${i}" value="${defaultName}" maxlength="100" placeholder="Nama sesuai KTP..." class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-xl outline-none font-bold transition-all text-slate-900" />
+        <input type="text" id="order-name-${i}" value="${defaultName}" autocomplete="off" maxlength="100" placeholder="Nama sesuai KTP..." class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-xl outline-none font-bold transition-all text-slate-900" />
       </div>
     `;
   }
@@ -923,7 +922,6 @@ function listenToAllTickets() {
     if(el('stat-total')) el('stat-total').textContent=s.total; if(el('stat-pending')) el('stat-pending').textContent=s.pending;
     if(el('stat-approved')) el('stat-approved').textContent=s.approved; if(el('stat-checkin')) el('stat-checkin').textContent=s.checkin;
     
-    // UPDATE LOGIKA TOTAL KUOTA UNTUK ADMIN
     const maxVip = eventConfig.tickets['VIP']?.quota || 0;
     const maxReg = eventConfig.tickets['Reguler']?.quota || 0;
     
@@ -933,7 +931,6 @@ function listenToAllTickets() {
     if(el('stat-revenue-reg')) el('stat-revenue-reg').textContent=fmtRupiah(s.revReg); 
     if(el('stat-reg-count')) el('stat-reg-count').textContent=`(${s.cntReg} / ${maxReg} Terjual)`;
     
-    // UBAH BAR MENJADI PERSENTASE KAPASITAS
     if(el('bar-vip')) el('bar-vip').style.width=(maxVip > 0 ? (s.cntVip/maxVip*100) : 0)+'%'; 
     if(el('bar-reg')) el('bar-reg').style.width=(maxReg > 0 ? (s.cntReg/maxReg*100) : 0)+'%';
     
