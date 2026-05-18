@@ -235,28 +235,30 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       <div class="bg-green-50 p-5 rounded-3xl border border-green-100"><p class="text-green-500 text-[10px] font-bold uppercase mb-1">Approved</p><p id="stat-approved" class="text-3xl font-black text-green-700">0</p></div>
       <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100"><p class="text-indigo-400 text-[10px] font-bold uppercase mb-1">Check-in</p><p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p></div>
     </div>
+    
     <div class="bg-white p-6 rounded-3xl border shadow-sm mb-5">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-black text-slate-700 flex items-center gap-2 text-sm"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Revenue & Sisa Kuota</h3>
+        <h3 class="font-black text-slate-700 flex items-center gap-2 text-sm"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Kapasitas Tiket Terjual</h3>
         <span id="stat-revenue-total" class="text-2xl font-black text-emerald-600">Rp 0</span>
       </div>
       <div class="space-y-4">
         <div>
           <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>VIP <span id="stat-vip-count" class="text-amber-500 font-black"></span></span>
+            <span>VIP <span id="stat-vip-count" class="text-amber-500 font-black ml-1"></span></span>
             <span id="stat-revenue-vip" class="text-amber-600">Rp 0</span>
           </div>
           <div class="bg-slate-100 rounded-full h-2"><div id="bar-vip" class="rev-bar bg-amber-400" style="width:0%"></div></div>
         </div>
         <div>
           <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>Reguler <span id="stat-reg-count" class="text-slate-500 font-black"></span></span>
+            <span>Reguler <span id="stat-reg-count" class="text-slate-500 font-black ml-1"></span></span>
             <span id="stat-revenue-reg" class="text-slate-600">Rp 0</span>
           </div>
           <div class="bg-slate-100 rounded-full h-2"><div id="bar-reg" class="rev-bar bg-slate-500" style="width:0%"></div></div>
         </div>
       </div>
     </div>
+
     <div class="bg-white p-4 rounded-3xl border mb-5 space-y-3">
       <div class="flex flex-wrap gap-3 items-center justify-between">
         <div class="flex p-1 bg-slate-100 rounded-2xl gap-0.5 overflow-x-auto flex-wrap">
@@ -755,7 +757,8 @@ window.startOrder = type => {
   
   const cfg=eventConfig.tickets||{};
   let price = parseInt(cfg[type]?.price);
-  // Jaring pengaman: Jika database belum diupdate dari "VIP 1" ke "VIP"
+  
+  // FIX: Jaring pengaman harga untuk memastikan tidak 0
   if (!price || isNaN(price)) {
       price = type === 'VIP' ? 65000 : 35000;
   }
@@ -781,7 +784,7 @@ function renderPaymentNames() {
   
   // Render name input based on Qty
   for(let i=1; i<=currentOrder.qty; i++) {
-    // Nama akan selalu kosong
+    // FIX: Nama selalu dikosongkan setiap kali membuka form tiket
     let defaultName = '';
     container.innerHTML += `
       <div class="bg-white border rounded-2xl p-4 shadow-sm">
@@ -826,7 +829,6 @@ window.submitOrder = async () => {
     await currentUser.getIdToken(true);
     const cfg=eventConfig.tickets||{}, maxQuota=cfg[currentOrder.type]?.quota||0;
     
-    // Fallback error jika harga gagal diload
     if (!currentOrder.price) throw new Error('TIPE_TIDAK_VALID');
 
     const totalBayar = (currentOrder.price * currentOrder.qty) + currentOrder.uniqueCode;
@@ -872,7 +874,7 @@ window.submitOrder = async () => {
     if (e.message==='QUOTA_HABIS')           msg='Maaf, sisa kuota tiket tidak mencukupi untuk jumlah tersebut!';
     else if (e.message==='MAX_LIMIT')        msg=`Maksimal total ${MAX_PER_USER} tiket per akun.`;
     else if (e.message==='TIPE_TIDAK_VALID') msg='Tipe tiket tidak valid.';
-    else if (e.code==='permission-denied')   msg='Akses ditolak. Coba logout lalu login ulang.';
+    else if (e.code==='permission-denied')   msg='Akses ditolak. Pastikan Rules Firestore sudah yang terbaru.';
     else if (e.message)                      msg=e.message;
     showAlert('Error',msg,'error');
   } finally { btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA'; lucide.createIcons(); }
@@ -920,11 +922,21 @@ function listenToAllTickets() {
     const el=id=>document.getElementById(id);
     if(el('stat-total')) el('stat-total').textContent=s.total; if(el('stat-pending')) el('stat-pending').textContent=s.pending;
     if(el('stat-approved')) el('stat-approved').textContent=s.approved; if(el('stat-checkin')) el('stat-checkin').textContent=s.checkin;
-    const tot=s.revVip+s.revReg||1;
+    
+    // UPDATE LOGIKA TOTAL KUOTA UNTUK ADMIN
+    const maxVip = eventConfig.tickets['VIP']?.quota || 0;
+    const maxReg = eventConfig.tickets['Reguler']?.quota || 0;
+    
     if(el('stat-revenue-total')) el('stat-revenue-total').textContent=fmtRupiah(s.revVip+s.revReg);
-    if(el('stat-revenue-vip')) el('stat-revenue-vip').textContent=fmtRupiah(s.revVip); if(el('stat-vip-count')) el('stat-vip-count').textContent='('+s.cntVip+')';
-    if(el('stat-revenue-reg')) el('stat-revenue-reg').textContent=fmtRupiah(s.revReg); if(el('stat-reg-count')) el('stat-reg-count').textContent='('+s.cntReg+')';
-    if(el('bar-vip')) el('bar-vip').style.width=(s.revVip/tot*100)+'%'; if(el('bar-reg')) el('bar-reg').style.width=(s.revReg/tot*100)+'%';
+    if(el('stat-revenue-vip')) el('stat-revenue-vip').textContent=fmtRupiah(s.revVip); 
+    if(el('stat-vip-count')) el('stat-vip-count').textContent=`(${s.cntVip} / ${maxVip} Terjual)`;
+    if(el('stat-revenue-reg')) el('stat-revenue-reg').textContent=fmtRupiah(s.revReg); 
+    if(el('stat-reg-count')) el('stat-reg-count').textContent=`(${s.cntReg} / ${maxReg} Terjual)`;
+    
+    // UBAH BAR MENJADI PERSENTASE KAPASITAS
+    if(el('bar-vip')) el('bar-vip').style.width=(maxVip > 0 ? (s.cntVip/maxVip*100) : 0)+'%'; 
+    if(el('bar-reg')) el('bar-reg').style.width=(maxReg > 0 ? (s.cntReg/maxReg*100) : 0)+'%';
+    
     loadAdminTickets();
   });
 }
