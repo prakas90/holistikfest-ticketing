@@ -227,8 +227,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
     </div>
   </section>
 
-
-
   <section id="tab-hero" class="tab-content active">
     <div id="main-banner" class="event-banner w-full h-[340px] md:h-[480px] mb-12 flex flex-col items-center justify-center text-center p-8 text-white shadow-2xl overflow-hidden relative group">
       <div class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all"></div>
@@ -249,44 +247,30 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
       </div>
     </div>
     
-    <!-- CARA PEMESANAN - Info Cards (Non-clickable) -->
     <div class="mb-12 max-w-4xl mx-auto">
       <p class="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">📖 Cara Pemesanan Tiket</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <!-- Step 1 -->
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-sm">1</div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Pilih Tiket</p>
           </div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">
-            Klik tombol <b class="text-indigo-600">"Pilih VIP"</b> atau <b class="text-slate-700">"Pilih Reguler"</b> di bawah, isi nama, lalu transfer sesuai total yang muncul.
-          </p>
+          <p class="text-[11px] text-slate-400 leading-relaxed">Klik tombol <b class="text-indigo-600">"Pilih VIP"</b> atau <b class="text-slate-700">"Pilih Reguler"</b> di bawah, isi nama, lalu transfer sesuai total yang muncul.</p>
         </div>
-
-        <!-- Step 2 -->
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-black text-sm">2</div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Transfer & WA</p>
           </div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">
-            Transfer ke rekening yang tertera, lalu klik tombol hijau <b class="text-green-600">"Sudah Transfer? Kirim WA"</b> untuk kirim bukti ke admin.
-          </p>
+          <p class="text-[11px] text-slate-400 leading-relaxed">Transfer ke rekening yang tertera, lalu klik tombol hijau <b class="text-green-600">"Sudah Transfer? Kirim WA"</b> untuk kirim bukti ke admin.</p>
         </div>
-
-        <!-- Step 3 -->
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-sm">3</div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Tiket Aktif</p>
           </div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">
-            Tunggu admin approve (max 24 jam). Tiket aktif akan muncul di menu <b class="text-indigo-600">"Tiket Saya"</b> dengan QR code untuk scan di gerbang.
-          </p>
+          <p class="text-[11px] text-slate-400 leading-relaxed">Tunggu admin approve (max 24 jam). Tiket aktif akan muncul di menu <b class="text-indigo-600">"Tiket Saya"</b> dengan QR code untuk scan di gerbang.</p>
         </div>
-
       </div>
     </div>
     
@@ -320,11 +304,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
           <i data-lucide="arrow-left" class="w-5 h-5"></i> KEMBALI
         </button>
       </div>
-
       <h2 class="text-3xl font-black text-center mb-6 mt-2">Selesaikan Pembayaran</h2>
-      
       <div id="order-summary-block" class="bg-indigo-50 text-indigo-700 p-6 rounded-2xl text-center font-black mb-6 border border-indigo-100 flex flex-col gap-1"></div>
-      
       <div class="mb-6">
         <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest ml-1">Jumlah Tiket (Max 5)</label>
         <select id="order-qty" onchange="changeQty()" class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none font-bold transition-all text-slate-900 appearance-none cursor-pointer">
@@ -335,17 +316,12 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
           <option value="5">5 Tiket</option>
         </select>
       </div>
-
-      <div id="names-container" class="space-y-4 mb-8">
-        </div>
-      
+      <div id="names-container" class="space-y-4 mb-8"></div>
       <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
         <p class="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Total Harus Ditransfer</p>
         <p id="transfer-amount-display" class="text-4xl font-black mb-4 tracking-tighter text-slate-800"></p>
-        
         <p class="text-2xl font-black mb-1 tracking-tighter text-slate-800">1234567890</p>
         <p class="font-bold text-slate-500 mb-6 text-sm uppercase tracking-wide">BCA - A/N HOLISTIK FEST</p>
-        
         <div class="bg-white rounded-2xl p-4 text-left border border-amber-200 shadow-sm">
           <p class="text-xs font-black text-amber-700 uppercase mb-2">Cara Pembayaran:</p>
           <ol class="text-xs text-amber-800 font-bold space-y-2 list-decimal ml-4">
@@ -355,7 +331,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; scroll
           </ol>
         </div>
       </div>
-      
       <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
         <i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA
       </button>
@@ -640,20 +615,16 @@ function updateQuotaUI(soldCounts) {
     const card=document.getElementById('card-'+type), btn=document.getElementById('btn-'+type);
     const priceEl=document.getElementById('price-'+type);
     if (priceEl) priceEl.textContent = fmtRupiah(info.price);
-    
     if (sisa<=0) {
       if (card) { card.classList.add('ticket-card-sold'); card.onclick=null; }
       if (btn)  { btn.textContent='TIKET HABIS'; btn.className='w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed'; }
     } else { 
-      if (card) { 
-         card.classList.remove('ticket-card-sold'); 
-         card.onclick = () => startOrder(type); 
-      }
+      if (card) { card.classList.remove('ticket-card-sold'); card.onclick = () => startOrder(type); }
       if (btn) {
-         btn.textContent = `Pilih ${type}`;
-         btn.className = type === 'VIP' 
-            ? 'w-full py-3.5 rounded-2xl bg-amber-500 text-white font-bold group-hover:bg-amber-600 shadow-lg transition-all text-sm' 
-            : 'w-full py-3.5 rounded-2xl bg-slate-900 text-white font-bold group-hover:bg-black shadow-lg transition-all text-sm';
+        btn.textContent = `Pilih ${type}`;
+        btn.className = type === 'VIP' 
+          ? 'w-full py-3.5 rounded-2xl bg-amber-500 text-white font-bold group-hover:bg-amber-600 shadow-lg transition-all text-sm' 
+          : 'w-full py-3.5 rounded-2xl bg-slate-900 text-white font-bold group-hover:bg-black shadow-lg transition-all text-sm';
       }
     }
   });
@@ -665,7 +636,7 @@ function startCountdown(dt) {
   const target = new Date(dt).getTime();
   function tick() {
     const diff = target - Date.now();
-    const wrap  = document.getElementById('countdown-wrap');
+    const wrap = document.getElementById('countdown-wrap');
     if (diff <= 0) { if(wrap) wrap.innerHTML='<div class="countdown-box"><div class="countdown-num" style="font-size:1rem;padding:4px">🎉 EVENT DIMULAI!</div></div>'; clearInterval(countdownTimer); return; }
     const pad=n=>String(n).padStart(2,'0'), el=id=>document.getElementById(id);
     if(el('cd-d')) el('cd-d').textContent=pad(Math.floor(diff/86400000));
@@ -736,14 +707,44 @@ async function checkIsPetugasApprove(user) {
   try { const snap = await window.getDoc(docRef('petugas_approve_pending', emailKey)); if (snap.exists()) { const data=snap.data(); try { await window.setDoc(docRef('petugas_approve',user.uid), {...data,uid:user.uid,email:user.email,claimed_at:Date.now()}); await window.deleteDoc(docRef('petugas_approve_pending',emailKey)); const snap2=await window.getDoc(docRef('petugas_approve',user.uid)); if (snap2.exists()) return snap2.data(); } catch(e) {} return data; } } catch(e) {} return null;
 }
 
-function activatePetugasScanMode(data) {
+// ==================== FIX: activatePetugasScanMode - baca statistik dari Firestore ====================
+async function activatePetugasScanMode(data) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); 
   const tab = document.getElementById('tab-petugas-scan');
   if (tab) tab.classList.add('active');
   else { console.error('tab-petugas-scan NOT FOUND'); return; }
+
   const nameEl=document.getElementById('petugas-scan-name'), roleEl=document.getElementById('petugas-scan-role');
-  if (nameEl) nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas'; if (roleEl) roleEl.textContent=data.role||'Petugas Scan';
-  petugasSessionCheckin=0; petugasSessionReject=0; updatePetugasStat(); 
+  if (nameEl) nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas'; 
+  if (roleEl) roleEl.textContent=data.role||'Petugas Scan';
+
+  // Reset dulu tampilkan loading
+  petugasSessionCheckin = 0;
+  petugasSessionReject  = 0;
+  updatePetugasStat();
+
+  // Ambil statistik hari ini dari Firestore berdasarkan email petugas
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const snap = await window.getDocs(
+      window.query(
+        colRef('scan_logs'),
+        window.where('petugas_email', '==', currentUser.email),
+        window.where('created_at', '>=', todayStart.getTime())
+      )
+    );
+    snap.forEach(d => {
+      const log = d.data();
+      if (log.result === 'valid') petugasSessionCheckin++;
+      else petugasSessionReject++;
+    });
+  } catch(e) {
+    // Jika gagal (misal index belum dibuat), tetap lanjut dengan nilai 0
+    console.warn('Gagal load statistik scan:', e.message);
+  }
+
+  updatePetugasStat();
   setTimeout(() => startPetugasScanner(), 500);
 }
 
@@ -797,36 +798,19 @@ window.paClearSelection = () => { paSelectedIds.clear(); updatePaBulkBar(); rend
 window.paUpdateStatus = async (id, status) => { 
   try { 
     const t = paAllTickets.find(x=>x.id===id);
-
-    // Konfirmasi jika reset ke pending
     if (status === 'pending' && t && t.status === 'approved') {
       if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.\n\nHanya admin yang seharusnya melakukan reset.')) return;
     }
-
     await window.runTransaction(window.db, async tx => {
       const ref = docRef('tickets', id);
       const snap = await tx.get(ref);
       if (!snap.exists()) throw new Error('TIKET_HILANG');
-
       const current = snap.data();
-
-      // Cek race condition: sudah diapprove petugas lain?
-      if (status === 'approved' && current.status === 'approved') {
-        throw new Error('SUDAH_DIAPPROVE');
-      }
-
+      if (status === 'approved' && current.status === 'approved') throw new Error('SUDAH_DIAPPROVE');
       const updateData = { status };
-
-      // Tracking siapa yang approve
-      if (status === 'approved') {
-        updateData.approved_by = currentUser.email;
-        updateData.approved_by_name = currentPetugasApproveData?.name || currentUser.displayName || currentUser.email;
-        updateData.approved_at = Date.now();
-      }
-
+      if (status === 'approved') { updateData.approved_by = currentUser.email; updateData.approved_by_name = currentPetugasApproveData?.name || currentUser.displayName || currentUser.email; updateData.approved_at = Date.now(); }
       tx.update(ref, updateData);
     });
-
     if (status==='approved'&&t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); 
     if (status==='pending'&&t) showToast('Tiket di-reset ke pending',t.name,'info'); 
   } catch(e) { 
@@ -951,24 +935,16 @@ function updateNav() {
 
 window.handleGoogleLogin = async () => { try { await window.signInWithPopup(window.auth, window.provider); } catch(e) { showAlert('Error','Login gagal: '+(e.code||e.message),'error'); } };
 
-// ===== NEW ORDER LOGIC (MAX 5) =====
 window.startOrder = type => {
   if (!currentUser||currentUser.isAnonymous) { document.getElementById('modal-login').classList.replace('hidden','flex'); lucide.createIcons(); return; }
-  
   const cfg=eventConfig.tickets||{};
   let price = parseInt(cfg[type]?.price);
-  
-  // FIX: Jaring pengaman harga untuk memastikan tidak 0
-  if (!price || isNaN(price)) {
-      price = type === 'VIP' ? 65000 : 35000;
-  }
-
+  if (!price || isNaN(price)) { price = type === 'VIP' ? 65000 : 35000; }
   currentOrder.type = type;
   currentOrder.price = price;
   currentOrder.qty = 1;
-  currentOrder.uniqueCode = Math.floor(Math.random() * 900) + 100; // Generate 3 digit random code
+  currentOrder.uniqueCode = Math.floor(Math.random() * 900) + 100;
   document.getElementById('order-qty').value = "1";
-  
   renderPaymentNames();
   showTab('payment');
 };
@@ -981,92 +957,58 @@ window.changeQty = () => {
 function renderPaymentNames() {
   const container = document.getElementById('names-container');
   container.innerHTML = '';
-  
-  // Render name input based on Qty
   for(let i=1; i<=currentOrder.qty; i++) {
-    // FIX: Nama selalu dikosongkan setiap kali membuka form tiket
-    let defaultName = '';
     container.innerHTML += `
       <div class="bg-white border rounded-2xl p-4 shadow-sm">
         <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Nama Pemegang Tiket ${i}</label>
-        <input type="text" id="order-name-${i}" value="${defaultName}" autocomplete="off" maxlength="100" placeholder="Nama sesuai KTP..." class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-xl outline-none font-bold transition-all text-slate-900" />
+        <input type="text" id="order-name-${i}" value="" autocomplete="off" maxlength="100" placeholder="Nama sesuai KTP..." class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-xl outline-none font-bold transition-all text-slate-900" />
       </div>
     `;
   }
-
-  // Update Summary and Total
   const s = document.getElementById('order-summary-block');
   const totalRaw = currentOrder.price * currentOrder.qty;
   const totalBayar = totalRaw + currentOrder.uniqueCode;
-  
   s.innerHTML = `
     <div class="text-sm font-bold text-slate-500">${currentOrder.qty}x Tiket ${currentOrder.type}</div>
     <div class="text-[10px] text-amber-600 bg-amber-100 py-1 px-3 rounded-lg mt-2 inline-block mx-auto">+ Kode unik: Rp ${currentOrder.uniqueCode}</div>
   `;
-  
   document.getElementById('transfer-amount-display').textContent = fmtRupiah(totalBayar);
 }
 
 window.submitOrder = async () => {
   const names = [];
   let hasError = false;
-  
   for(let i=1; i<=currentOrder.qty; i++) {
     const val = sanitizeText(document.getElementById(`order-name-${i}`).value);
     if (!isValidName(val)) hasError = true;
     names.push(val);
   }
-
-  if (hasError) {
-    showAlert('Perhatian', 'Silakan isi nama pemegang tiket terlebih dahulu (minimal 2 huruf, tanpa simbol).', 'error');
-    return;
-  }
-
+  if (hasError) { showAlert('Perhatian', 'Silakan isi nama pemegang tiket terlebih dahulu (minimal 2 huruf, tanpa simbol).', 'error'); return; }
   if (!currentUser||currentUser.isAnonymous) { showAlert('Error','Silakan login terlebih dahulu','error'); return; }
   const btn=document.getElementById('btn-submit-order'); btn.disabled=true; btn.textContent='MEMPROSES...';
-  
   try {
     await currentUser.getIdToken(true);
     const cfg=eventConfig.tickets||{}, maxQuota=cfg[currentOrder.type]?.quota||0;
-    
     if (!currentOrder.price) throw new Error('TIPE_TIDAK_VALID');
-
     const totalBayar = (currentOrder.price * currentOrder.qty) + currentOrder.uniqueCode;
     const orderIds = names.map(() => generateOrderId());
     const counterRef=docRef('settings','quota_counter'), userCountRef=docRef('user_order_count',currentUser.uid);
-    
     await window.runTransaction(window.db, async tx => {
       const counterSnap=await tx.get(counterRef), userCountSnap=await tx.get(userCountRef);
       const counterData=counterSnap.exists()?counterSnap.data():{};
       const currentSold=counterData[currentOrder.type]||0;
-      
       if (currentSold + currentOrder.qty > maxQuota) throw new Error('QUOTA_HABIS');
-      
       const userCount=userCountSnap.exists()?(userCountSnap.data().count||0):0;
       if (userCount + currentOrder.qty > MAX_PER_USER) throw new Error('MAX_LIMIT');
-      
       for(let i=0; i<currentOrder.qty; i++) {
-         const newTicketRef=window.doc(colRef('tickets'));
-         tx.set(newTicketRef, {
-            order_id: orderIds[i],
-            user_id: currentUser.uid,
-            name: names[i],
-            email: currentUser.email,
-            type: currentOrder.type,
-            price: currentOrder.price, // Save base price per ticket
-            status: 'pending',
-            check_in: false,
-            created_at: Date.now() + i
-         });
+        const newTicketRef=window.doc(colRef('tickets'));
+        tx.set(newTicketRef, { order_id: orderIds[i], user_id: currentUser.uid, name: names[i], email: currentUser.email, type: currentOrder.type, price: currentOrder.price, status: 'pending', check_in: false, created_at: Date.now() + i });
       }
-
       tx.set(counterRef,{...counterData,[currentOrder.type]:currentSold+currentOrder.qty},{merge:true});
       tx.set(userCountRef,{count:userCount+currentOrder.qty,uid:currentUser.uid},{merge:true});
     });
-    
     const listNama = names.map((n, i) => `${i+1}. ${n} (${orderIds[i]})`).join('\n');
     const waMsg=encodeURIComponent(`Halo Admin, saya sudah transfer untuk tiket ${eventConfig.title}.\n\n*Rincian Pesanan:*\nTipe Tiket: ${currentOrder.type}\nJumlah: ${currentOrder.qty} Tiket\nTotal Transfer: *${fmtRupiah(totalBayar)}*\n\n*Daftar Nama Pemegang Tiket:*\n${listNama}\n\nBerikut saya lampirkan bukti transfernya.`);
-    
     window.open('https://wa.me/'+WA_NUMBER+'?text='+waMsg,'_blank'); 
     showTab('my-tickets');
   } catch(e) {
@@ -1122,19 +1064,15 @@ function listenToAllTickets() {
     const el=id=>document.getElementById(id);
     if(el('stat-total')) el('stat-total').textContent=s.total; if(el('stat-pending')) el('stat-pending').textContent=s.pending;
     if(el('stat-approved')) el('stat-approved').textContent=s.approved; if(el('stat-checkin')) el('stat-checkin').textContent=s.checkin;
-    
     const maxVip = eventConfig.tickets['VIP']?.quota || 0;
     const maxReg = eventConfig.tickets['Reguler']?.quota || 0;
-    
     if(el('stat-revenue-total')) el('stat-revenue-total').textContent=fmtRupiah(s.revVip+s.revReg);
     if(el('stat-revenue-vip')) el('stat-revenue-vip').textContent=fmtRupiah(s.revVip); 
     if(el('stat-vip-count')) el('stat-vip-count').textContent=`(${s.cntVip} / ${maxVip} Terjual)`;
     if(el('stat-revenue-reg')) el('stat-revenue-reg').textContent=fmtRupiah(s.revReg); 
     if(el('stat-reg-count')) el('stat-reg-count').textContent=`(${s.cntReg} / ${maxReg} Terjual)`;
-    
     if(el('bar-vip')) el('bar-vip').style.width=(maxVip > 0 ? (s.cntVip/maxVip*100) : 0)+'%'; 
     if(el('bar-reg')) el('bar-reg').style.width=(maxReg > 0 ? (s.cntReg/maxReg*100) : 0)+'%';
-    
     loadAdminTickets();
   });
 }
@@ -1175,32 +1113,19 @@ window.updateStatus = async (id, status, evt) => {
   if (evt) evt.stopPropagation();
   try { 
     const t = allTicketsData.find(x=>x.id===id);
-
-    // Konfirmasi jika reset ke pending
     if (status === 'pending' && t && t.status === 'approved') {
       if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.')) return;
     }
-
     await window.runTransaction(window.db, async tx => {
       const ref = docRef('tickets', id);
       const snap = await tx.get(ref);
       if (!snap.exists()) throw new Error('TIKET_HILANG');
-
       const current = snap.data();
-      if (status === 'approved' && current.status === 'approved') {
-        throw new Error('SUDAH_DIAPPROVE');
-      }
-
+      if (status === 'approved' && current.status === 'approved') throw new Error('SUDAH_DIAPPROVE');
       const updateData = { status };
-      if (status === 'approved') {
-        updateData.approved_by = currentUser.email;
-        updateData.approved_by_name = currentUser.displayName || currentUser.email;
-        updateData.approved_at = Date.now();
-      }
-
+      if (status === 'approved') { updateData.approved_by = currentUser.email; updateData.approved_by_name = currentUser.displayName || currentUser.email; updateData.approved_at = Date.now(); }
       tx.update(ref, updateData);
     });
-
     if (status==='approved' && t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); 
   } catch(e) { 
     let msg = 'Gagal update status: ' + (e.code || e.message);
@@ -1212,30 +1137,17 @@ window.updateStatus = async (id, status, evt) => {
 window.deleteTicket = async id => {
   const t = allTicketsData.find(x => x.id === id);
   if (!confirm('Hapus tiket "' + (t ? t.name : 'ini') + '"?\nKuota tiket ini akan dikembalikan secara otomatis.')) return;
-  
   try {
     await window.runTransaction(window.db, async tx => {
       const ticketRef = docRef('tickets', id);
       const counterRef = docRef('settings', 'quota_counter');
       const userCountRef = docRef('user_order_count', t.user_id);
-
       const counterSnap = await tx.get(counterRef);
       const userCountSnap = await tx.get(userCountRef);
-
-      if (counterSnap.exists()) {
-        let currentTotal = counterSnap.data()[t.type] || 0;
-        let newTotal = Math.max(0, currentTotal - 1);
-        tx.set(counterRef, { [t.type]: newTotal }, { merge: true });
-      }
-
-      if (userCountSnap.exists()) {
-        let currentUserCount = userCountSnap.data().count || 0;
-        let newUserCount = Math.max(0, currentUserCount - 1);
-        tx.set(userCountRef, { count: newUserCount }, { merge: true });
-      }
+      if (counterSnap.exists()) { let currentTotal = counterSnap.data()[t.type] || 0; tx.set(counterRef, { [t.type]: Math.max(0, currentTotal - 1) }, { merge: true }); }
+      if (userCountSnap.exists()) { let currentUserCount = userCountSnap.data().count || 0; tx.set(userCountRef, { count: Math.max(0, currentUserCount - 1) }, { merge: true }); }
       tx.delete(ticketRef);
     });
-
     showToast('Tiket Dihapus', 'Kuota berhasil dikembalikan.', 'info');
   } catch(e) { showAlert('Error', 'Gagal hapus: ' + (e.code || e.message), 'error'); }
 };
