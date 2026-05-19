@@ -794,7 +794,48 @@ window.paToggleSelectAll = checked => { paAllTickets.filter(t=>t.status==='pendi
 function updatePaBulkBar() { const bar=document.getElementById('pa-bulk-bar'), cnt=document.getElementById('pa-bulk-count'); if (!bar) return; if (paSelectedIds.size>0) { bar.classList.remove('hidden'); bar.classList.add('flex'); cnt.textContent=paSelectedIds.size+' dipilih'; } else { bar.classList.add('hidden'); bar.classList.remove('flex'); } }
 window.paBulkApprove = async () => { if (!paSelectedIds.size) return; if (!confirm('Approve '+paSelectedIds.size+' tiket sekaligus?')) return; const batch=window.writeBatch(window.db); paSelectedIds.forEach(id=>batch.update(docRef('tickets',id),{status:'approved'})); try { await batch.commit(); showToast(paSelectedIds.size+' tiket diapprove!','','success'); paSelectedIds.clear(); updatePaBulkBar(); } catch(e) { showAlert('Error','Bulk approve gagal: '+(e.code||e.message),'error'); } };
 window.paClearSelection = () => { paSelectedIds.clear(); updatePaBulkBar(); renderPetugasApproveTickets(); };
-window.paUpdateStatus = async (id, status) => { try { await window.updateDoc(docRef('tickets',id), {status}); const t=paAllTickets.find(x=>x.id===id); if (status==='approved'&&t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); if (status==='pending'&&t) showToast('Tiket di-reset ke pending',t.name,'info'); } catch(e) { showAlert('Error','Gagal update status: '+(e.code||e.message),'error'); } };
+window.paUpdateStatus = async (id, status) => { 
+  try { 
+    const t = paAllTickets.find(x=>x.id===id);
+
+    // Konfirmasi jika reset ke pending
+    if (status === 'pending' && t && t.status === 'approved') {
+      if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.\n\nHanya admin yang seharusnya melakukan reset.')) return;
+    }
+
+    await window.runTransaction(window.db, async tx => {
+      const ref = docRef('tickets', id);
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error('TIKET_HILANG');
+
+      const current = snap.data();
+
+      // Cek race condition: sudah diapprove petugas lain?
+      if (status === 'approved' && current.status === 'approved') {
+        throw new Error('SUDAH_DIAPPROVE');
+      }
+
+      const updateData = { status };
+
+      // Tracking siapa yang approve
+      if (status === 'approved') {
+        updateData.approved_by = currentUser.email;
+        updateData.approved_by_name = currentPetugasApproveData?.name || currentUser.displayName || currentUser.email;
+        updateData.approved_at = Date.now();
+      }
+
+      tx.update(ref, updateData);
+    });
+
+    if (status==='approved'&&t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); 
+    if (status==='pending'&&t) showToast('Tiket di-reset ke pending',t.name,'info'); 
+  } catch(e) { 
+    let msg = 'Gagal update status: ' + (e.code || e.message);
+    if (e.message === 'SUDAH_DIAPPROVE') msg = 'Tiket sudah diapprove oleh petugas lain!';
+    if (e.message === 'TIKET_HILANG') msg = 'Tiket tidak ditemukan di database.';
+    showAlert('Error', msg, 'error'); 
+  } 
+};
 
 window.switchPetugasSubTab = tab => {
   ['scan','approve'].forEach(t => {
@@ -1132,7 +1173,40 @@ window.clearSelection = () => { selectedIds.clear(); updateBulkBar(); loadAdminT
 
 window.updateStatus = async (id, status, evt) => {
   if (evt) evt.stopPropagation();
-  try { await window.updateDoc(docRef('tickets',id),{status}); if (status==='approved') { const t=allTicketsData.find(x=>x.id===id); if(t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); } } catch(e) { showAlert('Error','Gagal update status: '+(e.code||e.message),'error'); }
+  try { 
+    const t = allTicketsData.find(x=>x.id===id);
+
+    // Konfirmasi jika reset ke pending
+    if (status === 'pending' && t && t.status === 'approved') {
+      if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.')) return;
+    }
+
+    await window.runTransaction(window.db, async tx => {
+      const ref = docRef('tickets', id);
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error('TIKET_HILANG');
+
+      const current = snap.data();
+      if (status === 'approved' && current.status === 'approved') {
+        throw new Error('SUDAH_DIAPPROVE');
+      }
+
+      const updateData = { status };
+      if (status === 'approved') {
+        updateData.approved_by = currentUser.email;
+        updateData.approved_by_name = currentUser.displayName || currentUser.email;
+        updateData.approved_at = Date.now();
+      }
+
+      tx.update(ref, updateData);
+    });
+
+    if (status==='approved' && t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); 
+  } catch(e) { 
+    let msg = 'Gagal update status: ' + (e.code || e.message);
+    if (e.message === 'SUDAH_DIAPPROVE') msg = 'Tiket sudah diapprove!';
+    showAlert('Error', msg, 'error'); 
+  }
 };
 
 window.deleteTicket = async id => {
@@ -1207,7 +1281,15 @@ window.addPetugas = async () => {
 
 window.deletePetugas = async (id, encodedName, col) => { const name=decodeURIComponent(encodedName); if (!confirm('Hapus petugas scan "'+name+'"?\nPetugas tidak akan bisa scan QR lagi.')) return; try { await window.deleteDoc(docRef(col==='petugas'?'petugas':'petugas_pending',id)); showToast('Petugas scan dihapus',name,'info'); } catch(e) { showAlert('Error','Gagal hapus petugas: '+(e.code||e.message),'error'); } };
 
-async function writeScanLog(logData) { try { await window.addDoc(colRef('scan_logs'),{...logData,created_at:Date.now()}); } catch(e) { console.warn('Log write error:',e.code); } }
+async function writeScanLog(logData) { 
+  try { 
+    await window.addDoc(colRef('scan_logs'),{
+      ...logData,
+      gate: currentPetugasData?.role || currentPetugasApproveData?.role || 'Unknown',
+      created_at: Date.now()
+    }); 
+  } catch(e) { console.warn('Log write error:',e.code); } 
+}
 
 function listenToLog() {
   if (unsubLog) { unsubLog(); unsubLog=null; }
@@ -1265,7 +1347,13 @@ async function handleQrScan(text, feedbackEl, onSuccess) {
     await window.runTransaction(window.db, async tx=>{
       const fresh=await tx.get(ticketRef);
       if (!fresh.exists()) throw new Error('TIDAK_ADA'); if (fresh.data().check_in) throw new Error('SUDAH_CHECKIN'); if (fresh.data().status!=='approved') throw new Error('BELUM_APPROVED');
-      tx.update(ticketRef,{check_in:true});
+      tx.update(ticketRef,{
+        check_in:true,
+        scanned_by: currentUser?.email || '',
+        scanned_by_name: currentPetugasData?.name || currentUser?.displayName || currentUser?.email || 'Petugas',
+        scanned_at: Date.now(),
+        scanned_gate: currentPetugasData?.role || 'Unknown'
+      });
     });
     showScanFeedback(feedbackEl,'✅ VALID\n'+(data.name||'')+'\n'+(data.type||''),'valid'); await writeScanLog({...logBase,result:'valid',reason:'CHECK-IN BERHASIL',order_id:scannedOrderId,guest_name:data.name||'',ticket_type:data.type||''});
     if (onSuccess) onSuccess(data); return true;
