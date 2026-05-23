@@ -19,7 +19,7 @@ import {
 import {
   getFirestore, collection, addDoc, query, where, onSnapshot,
   doc, updateDoc, getDocs, deleteDoc, orderBy, setDoc,
-  writeBatch, getDoc, limit, runTransaction
+  writeBatch, getDoc, limit, runTransaction, enableIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import {
   getStorage, ref, uploadBytes, getDownloadURL
@@ -41,6 +41,9 @@ window.storage  = getStorage(app);
 window.provider = new GoogleAuthProvider();
 window.appId    = 'holistik-fest-2026';
 
+// Aktifkan cache lokal Firestore — mempercepat load pertama & tahan koneksi putus sesaat
+enableIndexedDbPersistence(window.db).catch(() => {/* multi-tab atau browser lama: skip */});
+
 window.signInWithPopup    = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut            = signOut;
@@ -53,6 +56,7 @@ window.orderBy      = orderBy;     window.ref            = ref;
 window.uploadBytes  = uploadBytes; window.getDownloadURL = getDownloadURL;
 window.writeBatch   = writeBatch;  window.getDoc         = getDoc;
 window.limit        = limit;       window.runTransaction = runTransaction;
+window.enableIndexedDbPersistence = enableIndexedDbPersistence;
 </script>
 
 <style>
@@ -100,7 +104,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
 </head>
 <body class="text-slate-900 min-h-screen">
 
-<a href="https://wa.me/6282135822044?text=Halo%20Admin,%20saya%20butuh%20bantuan%20terkait%20tiket%20Holistik%20Fest." target="_blank" class="fixed bottom-6 left-6 bg-green-500 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-green-600 transition-all z-[90] flex items-center gap-2">
+<a id="btn-bantuan-admin" href="https://wa.me/6285158880014?text=Halo%20Admin,%20saya%20butuh%20bantuan%20terkait%20tiket%20Holistik%20Fest." target="_blank" class="fixed bottom-6 left-6 bg-green-500 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-green-600 transition-all z-[90] flex items-center gap-2">
   <i data-lucide="phone" class="w-5 h-5"></i>
   <span class="text-xs font-black">Bantuan Admin</span>
 </a>
@@ -695,8 +699,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
 </div>
 
 <script>
-const WA_NUMBER    = "6282135822044"; // fallback jika belum ada data Firestore
+const WA_NUMBER    = "6285158880014"; // fallback jika belum ada data Firestore
 let waAdminList    = []; // diisi dari Firestore: [{name, number, active}]
+let lastAssignedWaNumber = null; // nomor WA terakhir yang dipilih untuk user ini
 const ADMIN_EMAILS = ["sobatambyar1990@gmail.com","staycoustikmanagement@gmail.com","agusprakosowibowo90@gmail.com"];
 const MAX_PER_USER = 5;
 const APP_ID       = 'holistik-fest-2026';
@@ -956,12 +961,14 @@ function updatePetugasStat() {
 
 function loadPetugasApproveTickets() {
   if (unsubPaTickets) { unsubPaTickets(); unsubPaTickets=null; }
+  let paRenderTimer = null;
   unsubPaTickets = window.onSnapshot(window.query(colRef('tickets'), window.orderBy('created_at','desc')), snap => {
     paAllTickets=[]; let pending=0, approved=0, checkin=0;
     snap.forEach(d => { const t={...d.data(), id:d.id}; paAllTickets.push(t); if (t.status==='pending') pending++; if (t.status==='approved' && !t.check_in) approved++; if (t.check_in) checkin++; });
     const el=id=>document.getElementById(id);
     if(el('pa-stat-pending')) el('pa-stat-pending').textContent=pending; if(el('pa-stat-approved')) el('pa-stat-approved').textContent=approved; if(el('pa-stat-checkin')) el('pa-stat-checkin').textContent=checkin; if(el('pa-stat-total')) el('pa-stat-total').textContent=paAllTickets.length;
-    renderPetugasApproveTickets();
+    if (paRenderTimer) clearTimeout(paRenderTimer);
+    paRenderTimer = setTimeout(() => renderPetugasApproveTickets(), 400);
   });
 }
 
@@ -1113,6 +1120,18 @@ function renderWaAdminList() {
     list.appendChild(div);
   });
   lucide.createIcons();
+  updateHelpButton(); // sync tombol bantuan
+}
+
+// Update tombol Bantuan Admin ke nomor yang relevan untuk user ini
+function updateHelpButton() {
+  const btn = document.getElementById("btn-bantuan-admin");
+  if (!btn) return;
+  // Prioritas: nomor yang sudah diterima user ini > nomor pertama aktif > fallback hardcode
+  const activeList = waAdminList.filter(w => w.active !== false);
+  const targetNumber = lastAssignedWaNumber || (activeList.length ? activeList[0].number : WA_NUMBER);
+  const msg = encodeURIComponent("Halo Admin, saya butuh bantuan terkait tiket Holistik Fest.");
+  btn.href = "https://wa.me/" + targetNumber + "?text=" + msg;
 }
 
 window.addWaAdmin = async () => {
@@ -1299,9 +1318,17 @@ window.submitOrder = async () => {
     if (!isValidName(val)) hasError = true;
     names.push(val);
   }
-  if (hasError) { showAlert('Perhatian', 'Silakan isi nama pemegang tiket terlebih dahulu (minimal 2 huruf, tanpa simbol).', 'error'); return; }
+  if (hasError) { showAlert('Perhatian','Silakan isi nama pemegang tiket terlebih dahulu (minimal 2 huruf, tanpa simbol).','error'); return; }
   if (!currentUser||currentUser.isAnonymous) { showAlert('Error','Silakan login terlebih dahulu','error'); return; }
-  const btn=document.getElementById('btn-submit-order'); btn.disabled=true; btn.textContent='MEMPROSES...';
+
+  const btn = document.getElementById('btn-submit-order');
+  const setLoading = (msg) => {
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>${msg}`;
+  };
+  const resetBtn = () => { btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA'; lucide.createIcons(); };
+
+  setLoading('Memeriksa data...');
   try {
     await currentUser.getIdToken(true);
     const cfg=eventConfig.tickets||{}, maxQuota=cfg[currentOrder.type]?.quota||0;
@@ -1309,34 +1336,59 @@ window.submitOrder = async () => {
     const totalBayar = (currentOrder.price * currentOrder.qty) + currentOrder.uniqueCode;
     const orderIds = names.map(() => generateOrderId());
     const counterRef=docRef('settings','quota_counter'), userCountRef=docRef('user_order_count',currentUser.uid);
-    await window.runTransaction(window.db, async tx => {
-      const counterSnap=await tx.get(counterRef), userCountSnap=await tx.get(userCountRef);
-      const counterData=counterSnap.exists()?counterSnap.data():{};
-      const currentSold=counterData[currentOrder.type]||0;
-      if (currentSold + currentOrder.qty > maxQuota) throw new Error('QUOTA_HABIS');
-      const userCount=userCountSnap.exists()?(userCountSnap.data().count||0):0;
-      if (userCount + currentOrder.qty > MAX_PER_USER) throw new Error('MAX_LIMIT');
-      for(let i=0; i<currentOrder.qty; i++) {
-        const newTicketRef=window.doc(colRef('tickets'));
-        tx.set(newTicketRef, { order_id: orderIds[i], user_id: currentUser.uid, name: names[i], email: currentUser.email, type: currentOrder.type, price: currentOrder.price, status: 'pending', check_in: false, created_at: Date.now() + i });
+
+    // ── Transaksi utama: cek kuota + simpan tiket (dengan retry otomatis)
+    setLoading('Menyimpan pesanan...');
+    let attempt = 0;
+    const MAX_RETRY = 3;
+    while (attempt < MAX_RETRY) {
+      try {
+        await window.runTransaction(window.db, async tx => {
+          const counterSnap=await tx.get(counterRef), userCountSnap=await tx.get(userCountRef);
+          const counterData=counterSnap.exists()?counterSnap.data():{};
+          const currentSold=counterData[currentOrder.type]||0;
+          if (currentSold + currentOrder.qty > maxQuota) throw new Error('QUOTA_HABIS');
+          const userCount=userCountSnap.exists()?(userCountSnap.data().count||0):0;
+          if (userCount + currentOrder.qty > MAX_PER_USER) throw new Error('MAX_LIMIT');
+          for(let i=0; i<currentOrder.qty; i++) {
+            const newTicketRef=window.doc(colRef('tickets'));
+            tx.set(newTicketRef, { order_id:orderIds[i], user_id:currentUser.uid, name:names[i], email:currentUser.email, type:currentOrder.type, price:currentOrder.price, status:'pending', check_in:false, created_at:Date.now()+i });
+          }
+          tx.set(counterRef,{...counterData,[currentOrder.type]:currentSold+currentOrder.qty},{merge:true});
+          tx.set(userCountRef,{count:userCount+currentOrder.qty,uid:currentUser.uid},{merge:true});
+        });
+        break; // sukses, keluar dari loop retry
+      } catch(txErr) {
+        // Hanya retry kalau bukan error logika bisnis
+        if (txErr.message==='QUOTA_HABIS'||txErr.message==='MAX_LIMIT'||txErr.message==='TIPE_TIDAK_VALID'||txErr.code==='permission-denied') throw txErr;
+        attempt++;
+        if (attempt >= MAX_RETRY) throw txErr;
+        // Tunggu sebentar sebelum retry (backoff: 500ms, 1000ms)
+        setLoading(`Sedang diproses... (${attempt}/${MAX_RETRY})`);
+        await new Promise(r => setTimeout(r, attempt * 500));
       }
-      tx.set(counterRef,{...counterData,[currentOrder.type]:currentSold+currentOrder.qty},{merge:true});
-      tx.set(userCountRef,{count:userCount+currentOrder.qty,uid:currentUser.uid},{merge:true});
-    });
-    const listNama = names.map((n, i) => `${i+1}. ${n} (${orderIds[i]})`).join('\n');
+    }
+
+    // ── Ambil nomor WA (dipisah dari transaksi utama agar tidak saling block)
+    setLoading('Mengarahkan ke WhatsApp...');
+    const listNama = names.map((n,i) => `${i+1}. ${n} (${orderIds[i]})`).join('\n');
     const waMsg=encodeURIComponent(`Halo Admin, saya sudah transfer untuk tiket ${eventConfig.title}.\n\n*Rincian Pesanan:*\nTipe Tiket: ${currentOrder.type}\nJumlah: ${currentOrder.qty} Tiket\nTotal Transfer: *${fmtRupiah(totalBayar)}*\n\n*Daftar Nama Pemegang Tiket:*\n${listNama}\n\nBerikut saya lampirkan bukti transfernya.`);
     const waNumber = await pickNextWaNumber();
+    lastAssignedWaNumber = waNumber;
+    updateHelpButton();
     window.open('https://wa.me/'+waNumber+'?text='+waMsg,'_blank');
+    showToast('Pesanan berhasil! 🎉','Segera kirim bukti transfer ke WhatsApp Admin.','success');
     showTab('my-tickets');
   } catch(e) {
-    let msg='Gagal pesan, coba lagi';
-    if (e.message==='QUOTA_HABIS')           msg='Maaf, sisa kuota tiket tidak mencukupi untuk jumlah tersebut!';
+    let msg='Gagal pesan, coba lagi.';
+    if (e.message==='QUOTA_HABIS')           msg='Maaf, sisa kuota tiket tidak mencukupi!';
     else if (e.message==='MAX_LIMIT')        msg=`Maksimal total ${MAX_PER_USER} tiket per akun.`;
     else if (e.message==='TIPE_TIDAK_VALID') msg='Tipe tiket tidak valid.';
-    else if (e.code==='permission-denied')   msg='Akses ditolak. Pastikan Rules Firestore sudah yang terbaru.';
+    else if (e.code==='permission-denied')   msg='Akses ditolak. Pastikan Firestore Rules sudah diperbarui.';
+    else if (e.code==='unavailable'||e.code==='deadline-exceeded') msg='Koneksi ke server lambat. Coba lagi dalam beberapa detik.';
     else if (e.message)                      msg=e.message;
-    showAlert('Error',msg,'error');
-  } finally { btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA'; lucide.createIcons(); }
+    showAlert('Gagal',msg,'error');
+  } finally { resetBtn(); }
 };
 
 function loadUserTickets() {
@@ -1370,6 +1422,7 @@ window.saveTicketImage = async (docId, orderId, encodedName, type) => {
 
 function listenToAllTickets() {
   if (unsubAdmin) unsubAdmin();
+  let renderTimer = null; // debounce timer
   unsubAdmin=window.onSnapshot(window.query(colRef('tickets'),window.orderBy('created_at','desc')), snap=>{
     allTicketsData=[]; let s={total:0,pending:0,approved:0,checkin:0,revVip:0,revReg:0,cntVip:0,cntReg:0};
     snap.forEach(d=>{
@@ -1378,6 +1431,7 @@ function listenToAllTickets() {
       if(t.status==='approved') { s.approved++; if(t.type==='VIP'){s.revVip+=(t.price||0);s.cntVip++;} else {s.revReg+=(t.price||0);s.cntReg++;} }
       if(t.check_in) s.checkin++;
     });
+    // Update statistik langsung (ringan)
     const el=id=>document.getElementById(id);
     if(el('stat-total')) el('stat-total').textContent=s.total; if(el('stat-pending')) el('stat-pending').textContent=s.pending;
     if(el('stat-approved')) el('stat-approved').textContent=s.approved; if(el('stat-checkin')) el('stat-checkin').textContent=s.checkin;
@@ -1390,7 +1444,10 @@ function listenToAllTickets() {
     if(el('stat-reg-count')) el('stat-reg-count').textContent=`(${s.cntReg} / ${maxReg} Terjual)`;
     if(el('bar-vip')) el('bar-vip').style.width=(maxVip > 0 ? (s.cntVip/maxVip*100) : 0)+'%';
     if(el('bar-reg')) el('bar-reg').style.width=(maxReg > 0 ? (s.cntReg/maxReg*100) : 0)+'%';
-    loadAdminTickets();
+    // Render daftar tiket pakai debounce 400ms — kalau 50 tiket masuk serentak,
+    // loadAdminTickets() hanya dipanggil 1x setelah semua data masuk, bukan 50x
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(() => loadAdminTickets(), 400);
   });
 }
 
