@@ -60,19 +60,14 @@ window.limit        = limit;       window.runTransaction = runTransaction;
 * { box-sizing: border-box; }
 body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
 
-/* Animasi Perpindahan Tab yang Lebih Halus */
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: smoothSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 @keyframes smoothSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
-/* Desain Kartu Modern (Bento-Style) */
 .modern-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 0.7); border-radius: 24px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 .modern-card:hover { transform: translateY(-4px); border-color: rgba(79, 70, 229, 0.3); box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05); }
 
-/* Efek Kaca Transparan untuk Kontainer Kecil */
 .glass-pill { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.25); }
-
-/* Tombol dengan Efek Tekan */
 .btn-clicky { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .btn-clicky:active { transform: scale(0.97); }
 
@@ -96,6 +91,10 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
 .log-row-valid   { border-left:3px solid #22c55e; }
 .log-row-invalid { border-left:3px solid #ef4444; }
 .log-row-warn    { border-left:3px solid #eab308; }
+
+/* QRIS styles */
+.qris-tab-btn { padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; cursor: pointer; border: 1px solid #e2e8f0; background: white; color: #64748b; transition: all 0.2s; }
+.qris-tab-btn.active { background: #16a34a; color: white; border-color: #16a34a; }
 </style>
 <base target="_blank">
 </head>
@@ -242,14 +241,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
   <section id="tab-hero" class="tab-content active">
     <div id="main-banner" class="event-banner w-full h-[360px] md:h-[480px] mb-12 flex flex-col items-center justify-center text-center p-6 text-white shadow-xl overflow-hidden relative group">
       <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-slate-950/80 group-hover:via-black/40 transition-all duration-500"></div>
-      
       <div class="relative z-10 w-full max-w-2xl px-4">
-        <span class="glass-pill text-amber-300 text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block shadow-sm">
-          ✨ The Biggest Fest 2026
-        </span>
-        <h1 id="banner-title" class="text-5xl md:text-7xl font-extrabold mb-4 tracking-tighter uppercase drop-shadow-sm text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-amber-200">
-          Holistik Fest
-        </h1>
+        <span class="glass-pill text-amber-300 text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block shadow-sm">✨ The Biggest Fest 2026</span>
+        <h1 id="banner-title" class="text-5xl md:text-7xl font-extrabold mb-4 tracking-tighter uppercase drop-shadow-sm text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-amber-200">Holistik Fest</h1>
         <div class="flex flex-wrap justify-center gap-y-2 gap-x-4 md:gap-x-6 text-xs font-semibold mb-8 text-slate-300/90">
           <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i><span id="banner-date">15 Mei 2026</span></span>
           <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i><span id="banner-loc">Stadion Utama</span></span>
@@ -263,34 +257,25 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
         </div>
       </div>
     </div>
-    
+
     <div class="mb-12 max-w-4xl mx-auto px-2">
       <p class="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">📖 Cara Pemesanan Tiket</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-sm">1</div>
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Pilih Tiket</p>
-          </div>
+          <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-sm">1</div><p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Pilih Tiket</p></div>
           <p class="text-[11px] text-slate-400 leading-relaxed">Klik tombol <b class="text-indigo-600">"Pilih VIP"</b> atau <b class="text-slate-700">"Pilih Reguler"</b> di bawah, isi nama, lalu transfer sesuai total yang muncul.</p>
         </div>
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-black text-sm">2</div>
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Transfer & WA</p>
-          </div>
+          <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-black text-sm">2</div><p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Transfer & WA</p></div>
           <p class="text-[11px] text-slate-400 leading-relaxed">Transfer ke rekening yang tertera, lalu klik tombol hijau <b class="text-green-600">"Sudah Transfer? Kirim WA"</b> untuk kirim bukti ke admin.</p>
         </div>
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-sm">3</div>
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Tiket Aktif</p>
-          </div>
+          <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-sm">3</div><p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Tiket Aktif</p></div>
           <p class="text-[11px] text-slate-400 leading-relaxed">Tunggu admin approve (max 24 jam). Tiket aktif akan muncul di menu <b class="text-indigo-600">"Tiket Saya"</b> dengan QR code untuk scan di gerbang.</p>
         </div>
       </div>
     </div>
-    
+
     <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto px-2">
       <div id="card-VIP" onclick="startOrder('VIP')" class="modern-card p-8 cursor-pointer group flex flex-col justify-between border-2 border-transparent hover:border-indigo-500/20">
         <div>
@@ -320,6 +305,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- TAB PAYMENT — dengan QRIS -->
+  <!-- ============================================================ -->
   <section id="tab-payment" class="tab-content max-w-md mx-auto text-slate-900">
     <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 relative">
       <div class="mb-6">
@@ -340,20 +328,61 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
         </select>
       </div>
       <div id="names-container" class="space-y-4 mb-8"></div>
+
+      <!-- Blok Pembayaran -->
       <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
         <p class="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Total Harus Ditransfer</p>
         <p id="transfer-amount-display" class="text-4xl font-black mb-4 tracking-tighter text-slate-800"></p>
-        <p class="text-2xl font-black mb-1 tracking-tighter text-slate-800">1850007442376</p>
-        <p class="font-bold text-slate-500 mb-6 text-sm uppercase tracking-wide">Bank Mandiri - A/N DHEVITA ERVRIANA</p>
-        <div class="bg-white rounded-2xl p-4 text-left border border-amber-200 shadow-sm">
-          <p class="text-xs font-black text-amber-700 uppercase mb-2">Cara Pembayaran:</p>
-          <ol class="text-xs text-amber-800 font-bold space-y-2 list-decimal ml-4">
-            <li>Transfer ke rekening Bank Mandiri di atas sesuai <b class="text-red-500">Total Harus Ditransfer (termasuk 3 kode unik)</b>.</li>
-            <li>Simpan / Screenshot bukti transfer m-banking Anda.</li>
-            <li>Klik tombol hijau di bawah untuk mengirim bukti ke WhatsApp Admin.</li>
-          </ol>
+
+        <!-- Tab: Transfer / QRIS -->
+        <div class="flex gap-2 justify-center mb-5">
+          <button id="pay-tab-transfer" onclick="switchPayTab('transfer')" class="qris-tab-btn active" style="background:#16a34a;color:white;border-color:#16a34a;">🏦 Transfer Bank</button>
+          <button id="pay-tab-qris" onclick="switchPayTab('qris')" class="qris-tab-btn">📱 QRIS</button>
         </div>
+
+        <!-- Panel Transfer Bank -->
+        <div id="pay-panel-transfer">
+          <p class="text-2xl font-black mb-1 tracking-tighter text-slate-800">1850007442376</p>
+          <p class="font-bold text-slate-500 mb-5 text-sm uppercase tracking-wide">Bank Mandiri - A/N DHEVITA ERVRIANA</p>
+          <div class="bg-white rounded-2xl p-4 text-left border border-amber-200 shadow-sm">
+            <p class="text-xs font-black text-amber-700 uppercase mb-2">Cara Pembayaran:</p>
+            <ol class="text-xs text-amber-800 font-bold space-y-2 list-decimal ml-4">
+              <li>Transfer ke rekening Bank Mandiri di atas sesuai <b class="text-red-500">Total Harus Ditransfer (termasuk 3 kode unik)</b>.</li>
+              <li>Simpan / Screenshot bukti transfer m-banking Anda.</li>
+              <li>Klik tombol hijau di bawah untuk mengirim bukti ke WhatsApp Admin.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Panel QRIS -->
+        <div id="pay-panel-qris" class="hidden">
+          <div id="qris-display-wrapper" class="hidden">
+            <div class="bg-white rounded-2xl p-5 border border-amber-200 shadow-sm flex flex-col items-center gap-3">
+              <div class="w-full flex items-center justify-center gap-2 mb-1">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/QRIS_logo.svg/320px-QRIS_logo.svg.png" alt="QRIS" class="h-6 object-contain">
+              </div>
+              <img id="qris-display-img" src="" alt="QRIS Payment Code" class="rounded-2xl shadow-md border border-slate-100 max-w-[240px] w-full">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scan dengan aplikasi apapun</p>
+              <div class="bg-amber-50 rounded-xl p-3 border border-amber-100 text-left w-full">
+                <p class="text-xs font-black text-amber-700 uppercase mb-1">Cara Bayar QRIS:</p>
+                <ol class="text-xs text-amber-800 font-bold space-y-1.5 list-decimal ml-4">
+                  <li>Buka aplikasi m-banking / e-wallet Anda.</li>
+                  <li>Pilih menu "Scan QR" / "QRIS".</li>
+                  <li>Scan kode di atas & masukkan nominal sesuai <b class="text-red-500">Total Harus Ditransfer</b>.</li>
+                  <li>Screenshot bukti pembayaran, lalu klik tombol WA di bawah.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          <div id="qris-not-available" class="hidden bg-white rounded-2xl p-6 border border-amber-200 text-center">
+            <i data-lucide="image-off" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
+            <p class="text-sm font-black text-slate-400">QRIS belum tersedia</p>
+            <p class="text-xs text-slate-300 font-bold mt-1">Gunakan transfer bank di tab sebelumnya.</p>
+          </div>
+        </div>
+
       </div>
+
       <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
         <i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA
       </button>
@@ -386,7 +415,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
       <div class="bg-green-50 p-5 rounded-3xl border border-green-100"><p class="text-green-500 text-[10px] font-bold uppercase mb-1">Approved</p><p id="stat-approved" class="text-3xl font-black text-green-700">0</p></div>
       <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100"><p class="text-indigo-400 text-[10px] font-bold uppercase mb-1">Check-in</p><p id="stat-checkin" class="text-3xl font-black text-indigo-700">0</p></div>
     </div>
-    
+
     <div class="bg-white p-6 rounded-3xl border shadow-sm mb-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-black text-slate-700 flex items-center gap-2 text-sm"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Kapasitas Tiket Terjual</h3>
@@ -394,17 +423,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
       </div>
       <div class="space-y-4">
         <div>
-          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>VIP <span id="stat-vip-count" class="text-amber-500 font-black ml-1"></span></span>
-            <span id="stat-revenue-vip" class="text-amber-600">Rp 0</span>
-          </div>
+          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5"><span>VIP <span id="stat-vip-count" class="text-amber-500 font-black ml-1"></span></span><span id="stat-revenue-vip" class="text-amber-600">Rp 0</span></div>
           <div class="bg-slate-100 rounded-full h-2"><div id="bar-vip" class="rev-bar bg-amber-400" style="width:0%"></div></div>
         </div>
         <div>
-          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-            <span>Reguler <span id="stat-reg-count" class="text-slate-500 font-black ml-1"></span></span>
-            <span id="stat-revenue-reg" class="text-slate-600">Rp 0</span>
-          </div>
+          <div class="flex justify-between text-xs font-bold text-slate-500 mb-1.5"><span>Reguler <span id="stat-reg-count" class="text-slate-500 font-black ml-1"></span></span><span id="stat-revenue-reg" class="text-slate-600">Rp 0</span></div>
           <div class="bg-slate-100 rounded-full h-2"><div id="bar-reg" class="rev-bar bg-slate-500" style="width:0%"></div></div>
         </div>
       </div>
@@ -519,13 +542,19 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
       <div id="log-list" class="space-y-2"><div class="py-12 text-center text-slate-300 font-bold text-xs uppercase tracking-widest">Memuat log...</div></div>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- SETTINGS — dengan input QRIS (upload + URL manual) -->
+    <!-- ============================================================ -->
     <div id="adm-settings-content" class="hidden">
       <div class="bg-white p-8 rounded-[2.5rem] border shadow-sm max-w-2xl mx-auto">
         <h3 class="text-2xl font-black mb-8 flex items-center gap-2 text-indigo-600"><i data-lucide="settings"></i> Konfigurasi Event</h3>
         <div class="space-y-5">
           <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Judul Acara</label><input type="text" id="set-title" maxlength="100" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
           <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal & Waktu Event (untuk Countdown)</label><input type="datetime-local" id="set-eventdate" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
-          <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner URL (https://...)</label>
+
+          <!-- Banner -->
+          <div>
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Banner URL (https://...)</label>
             <div class="flex flex-col gap-2">
               <input type="url" id="set-banner" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-medium text-xs text-slate-500" placeholder="https://...">
               <div class="flex items-center gap-3">
@@ -535,6 +564,46 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
               </div>
             </div>
           </div>
+
+          <!-- ✅ QRIS IMAGE SETTINGS (baru) -->
+          <div class="bg-green-50 rounded-2xl border border-green-100 p-5">
+            <label class="block text-xs font-bold text-green-700 uppercase tracking-widest mb-1 flex items-center gap-2">
+              <i data-lucide="qr-code" class="w-4 h-4"></i> Gambar QRIS Pembayaran
+            </label>
+            <p class="text-[10px] text-green-600 font-bold mb-4">Gambar QRIS akan ditampilkan di halaman pembayaran sebagai opsi bayar via scan QR.</p>
+            <div class="space-y-3">
+              <!-- Upload file -->
+              <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload Gambar QRIS</p>
+                <div class="flex items-center gap-3">
+                  <input type="file" id="qris-file" class="hidden" accept="image/jpeg,image/png,image/webp" onchange="uploadQrisFile(this)">
+                  <button onclick="document.getElementById('qris-file').click()" class="px-5 py-2.5 bg-white text-green-700 rounded-xl text-xs font-black hover:bg-green-50 border border-green-200 flex items-center gap-2 shadow-sm">
+                    <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload dari Komputer
+                  </button>
+                  <span id="qris-upload-status" class="text-[10px] font-black text-green-600 uppercase"></span>
+                </div>
+              </div>
+              <!-- URL manual -->
+              <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Atau Masukkan URL Gambar QRIS</p>
+                <input type="url" id="set-qris" maxlength="500" placeholder="https://... (terisi otomatis setelah upload)" class="w-full p-3 bg-white border-2 border-transparent focus:border-green-500 rounded-xl outline-none font-medium text-xs text-slate-600 transition-all">
+              </div>
+              <!-- Preview -->
+              <div id="qris-preview-wrap" class="hidden">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preview QRIS</p>
+                <div class="flex items-center gap-4 bg-white rounded-2xl p-3 border border-green-100">
+                  <img id="qris-preview-img" src="" alt="Preview QRIS" class="w-20 h-20 object-contain rounded-xl border shadow-sm">
+                  <div class="flex-1">
+                    <p class="text-xs font-black text-green-700">Gambar QRIS siap ditampilkan</p>
+                    <p class="text-[10px] text-slate-400 font-bold mt-1">Klik Simpan Perubahan untuk menerapkan.</p>
+                    <button onclick="clearQris()" class="mt-2 text-[10px] font-black text-red-400 hover:text-red-600 underline">Hapus QRIS</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- end QRIS settings -->
+
           <div class="grid grid-cols-2 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Waktu Tampil</label><input type="text" id="set-time" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
             <div><label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tanggal Tampil</label><input type="text" id="set-date" maxlength="50" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-slate-900"></div>
@@ -618,6 +687,7 @@ let eventConfig = {
   bannerUrl: "https://images.unsplash.com/photo-1459749411177-042180ce673b?q=80&w=2070&auto=format&fit=crop",
   date: "15 Mei 2026", location: "Stadion Utama", time: "16:00 - Selesai",
   eventDatetime: "2026-05-15T16:00",
+  qrisUrl: "",
   tickets: { 'VIP':{price:65000,quota:1000}, 'Reguler':{price:35000,quota:2000} }
 };
 
@@ -631,6 +701,84 @@ function emailToKey(email)     { return email.toLowerCase().replace(/\./g,'_').r
 function fmtRupiah(n)          { return 'Rp '+Number(n||0).toLocaleString('id-ID'); }
 function fmtDate(ts)           { return ts ? new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-'; }
 
+// ─── QRIS Payment Tab Switcher ───
+window.switchPayTab = (tab) => {
+  const transferBtn  = document.getElementById('pay-tab-transfer');
+  const qrisBtn      = document.getElementById('pay-tab-qris');
+  const transferPanel= document.getElementById('pay-panel-transfer');
+  const qrisPanel    = document.getElementById('pay-panel-qris');
+
+  const activeStyle   = 'background:#16a34a;color:white;border-color:#16a34a;';
+  const inactiveStyle = '';
+
+  if (tab === 'transfer') {
+    transferBtn.style.cssText  = activeStyle;
+    qrisBtn.style.cssText      = inactiveStyle;
+    transferBtn.className = 'qris-tab-btn active';
+    qrisBtn.className     = 'qris-tab-btn';
+    transferPanel.classList.remove('hidden');
+    qrisPanel.classList.add('hidden');
+  } else {
+    qrisBtn.style.cssText      = activeStyle;
+    transferBtn.style.cssText  = inactiveStyle;
+    qrisBtn.className     = 'qris-tab-btn active';
+    transferBtn.className = 'qris-tab-btn';
+    qrisPanel.classList.remove('hidden');
+    transferPanel.classList.add('hidden');
+    // Show/hide QRIS image
+    const url = eventConfig.qrisUrl;
+    const displayWrapper = document.getElementById('qris-display-wrapper');
+    const notAvailable   = document.getElementById('qris-not-available');
+    const img            = document.getElementById('qris-display-img');
+    if (url && url.startsWith('https://')) {
+      img.src = url;
+      displayWrapper.classList.remove('hidden');
+      notAvailable.classList.add('hidden');
+    } else {
+      displayWrapper.classList.add('hidden');
+      notAvailable.classList.remove('hidden');
+    }
+    lucide.createIcons();
+  }
+};
+
+// ─── QRIS Upload (Settings) ───
+window.uploadQrisFile = async input => {
+  const file = input.files[0]; if (!file) return;
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { showAlert('Error','Hanya JPG/PNG/WEBP','error'); return; }
+  if (file.size > 5*1024*1024) { showAlert('Error','Maks 5MB per file','error'); return; }
+  const st = document.getElementById('qris-upload-status'); st.textContent = 'MENGUNGGAH...';
+  try {
+    const sr = window.ref(window.storage, 'artifacts/'+APP_ID+'/qris_'+Date.now()+'.jpg');
+    const sn = await window.uploadBytes(sr, file);
+    const url = await window.getDownloadURL(sn.ref);
+    document.getElementById('set-qris').value = url;
+    showQrisPreview(url);
+    st.textContent = 'BERHASIL ✓'; setTimeout(()=>st.textContent='', 3000);
+    showToast('QRIS berhasil diupload!','Klik Simpan Perubahan untuk menerapkan.','success');
+  } catch(e) { st.textContent = 'GAGAL'; showAlert('Error','Upload gagal: '+(e.code||e.message)+'\n\nPastikan Firebase Storage sudah aktif.','error'); }
+};
+
+function showQrisPreview(url) {
+  const wrap = document.getElementById('qris-preview-wrap');
+  const img  = document.getElementById('qris-preview-img');
+  if (!url || !url.startsWith('https://')) { wrap.classList.add('hidden'); return; }
+  img.src = url;
+  wrap.classList.remove('hidden');
+}
+
+window.clearQris = () => {
+  document.getElementById('set-qris').value = '';
+  document.getElementById('qris-preview-wrap').classList.add('hidden');
+};
+
+// Listen to URL input change for live preview in settings
+function initQrisInputListener() {
+  const inp = document.getElementById('set-qris');
+  if (!inp) return;
+  inp.addEventListener('input', () => showQrisPreview(inp.value.trim()));
+}
+
 function updateQuotaUI(soldCounts) {
   const cfg = eventConfig.tickets || {};
   Object.entries(cfg).forEach(([type, info]) => {
@@ -641,12 +789,12 @@ function updateQuotaUI(soldCounts) {
     if (sisa<=0) {
       if (card) { card.classList.add('ticket-card-sold'); card.onclick=null; }
       if (btn)  { btn.textContent='TIKET HABIS'; btn.className='w-full py-3.5 rounded-2xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed'; }
-    } else { 
+    } else {
       if (card) { card.classList.remove('ticket-card-sold'); card.onclick = () => startOrder(type); }
       if (btn) {
         btn.textContent = `Pilih ${type}`;
-        btn.className = type === 'VIP' 
-          ? 'w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/10 btn-clicky transition-all text-sm uppercase tracking-wider' 
+        btn.className = type === 'VIP'
+          ? 'w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/10 btn-clicky transition-all text-sm uppercase tracking-wider'
           : 'w-full py-4 rounded-xl bg-slate-900 hover:bg-black text-white font-bold shadow-md shadow-slate-900/10 btn-clicky transition-all text-sm uppercase tracking-wider';
       }
     }
@@ -731,44 +879,25 @@ async function checkIsPetugasApprove(user) {
 }
 
 async function activatePetugasScanMode(data) {
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); 
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   const tab = document.getElementById('tab-petugas-scan');
   if (tab) tab.classList.add('active');
   else { console.error('tab-petugas-scan NOT FOUND'); return; }
-
   const nameEl=document.getElementById('petugas-scan-name'), roleEl=document.getElementById('petugas-scan-role');
-  if (nameEl) nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas'; 
+  if (nameEl) nameEl.textContent=data.name||currentUser?.displayName||currentUser?.email||'Petugas';
   if (roleEl) roleEl.textContent=data.role||'Petugas Scan';
-
-  petugasSessionCheckin = 0;
-  petugasSessionReject  = 0;
-  updatePetugasStat();
-
+  petugasSessionCheckin = 0; petugasSessionReject = 0; updatePetugasStat();
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const snap = await window.getDocs(
-      window.query(
-        colRef('scan_logs'),
-        window.where('petugas_email', '==', currentUser.email),
-        window.where('created_at', '>=', todayStart.getTime())
-      )
-    );
-    snap.forEach(d => {
-      const log = d.data();
-      if (log.result === 'valid') petugasSessionCheckin++;
-      else petugasSessionReject++;
-    });
-  } catch(e) {
-    console.warn('Gagal load statistik scan:', e.message);
-  }
-
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const snap = await window.getDocs(window.query(colRef('scan_logs'), window.where('petugas_email', '==', currentUser.email), window.where('created_at', '>=', todayStart.getTime())));
+    snap.forEach(d => { const log = d.data(); if (log.result === 'valid') petugasSessionCheckin++; else petugasSessionReject++; });
+  } catch(e) { console.warn('Gagal load statistik scan:', e.message); }
   updatePetugasStat();
   setTimeout(() => startPetugasScanner(), 500);
 }
 
 function activatePetugasApproveMode(data) {
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); 
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   const tab = document.getElementById('tab-petugas-approve');
   if (tab) tab.classList.add('active');
   else { console.error('tab-petugas-approve NOT FOUND'); return; }
@@ -814,15 +943,12 @@ window.paToggleSelectAll = checked => { paAllTickets.filter(t=>t.status==='pendi
 function updatePaBulkBar() { const bar=document.getElementById('pa-bulk-bar'), cnt=document.getElementById('pa-bulk-count'); if (!bar) return; if (paSelectedIds.size>0) { bar.classList.remove('hidden'); bar.classList.add('flex'); cnt.textContent=paSelectedIds.size+' dipilih'; } else { bar.classList.add('hidden'); bar.classList.remove('flex'); } }
 window.paBulkApprove = async () => { if (!paSelectedIds.size) return; if (!confirm('Approve '+paSelectedIds.size+' tiket sekaligus?')) return; const batch=window.writeBatch(window.db); paSelectedIds.forEach(id=>batch.update(docRef('tickets',id),{status:'approved'})); try { await batch.commit(); showToast(paSelectedIds.size+' tiket diapprove!','','success'); paSelectedIds.clear(); updatePaBulkBar(); } catch(e) { showAlert('Error','Bulk approve gagal: '+(e.code||e.message),'error'); } };
 window.paClearSelection = () => { paSelectedIds.clear(); updatePaBulkBar(); renderPetugasApproveTickets(); };
-window.paUpdateStatus = async (id, status) => { 
-  try { 
+window.paUpdateStatus = async (id, status) => {
+  try {
     const t = paAllTickets.find(x=>x.id===id);
-    if (status === 'pending' && t && t.status === 'approved') {
-      if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.\n\nHanya admin yang seharusnya melakukan reset.')) return;
-    }
+    if (status === 'pending' && t && t.status === 'approved') { if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.\n\nHanya admin yang seharusnya melakukan reset.')) return; }
     await window.runTransaction(window.db, async tx => {
-      const ref = docRef('tickets', id);
-      const snap = await tx.get(ref);
+      const ref = docRef('tickets', id); const snap = await tx.get(ref);
       if (!snap.exists()) throw new Error('TIKET_HILANG');
       const current = snap.data();
       if (status === 'approved' && current.status === 'approved') throw new Error('SUDAH_DIAPPROVE');
@@ -830,14 +956,14 @@ window.paUpdateStatus = async (id, status) => {
       if (status === 'approved') { updateData.approved_by = currentUser.email; updateData.approved_by_name = currentPetugasApproveData?.name || currentUser.displayName || currentUser.email; updateData.approved_at = Date.now(); }
       tx.update(ref, updateData);
     });
-    if (status==='approved'&&t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); 
-    if (status==='pending'&&t) showToast('Tiket di-reset ke pending',t.name,'info'); 
-  } catch(e) { 
+    if (status==='approved'&&t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success');
+    if (status==='pending'&&t) showToast('Tiket di-reset ke pending',t.name,'info');
+  } catch(e) {
     let msg = 'Gagal update status: ' + (e.code || e.message);
     if (e.message === 'SUDAH_DIAPPROVE') msg = 'Tiket sudah diapprove oleh petugas lain!';
     if (e.message === 'TIKET_HILANG') msg = 'Tiket tidak ditemukan di database.';
-    showAlert('Error', msg, 'error'); 
-  } 
+    showAlert('Error', msg, 'error');
+  }
 };
 
 window.switchPetugasSubTab = tab => {
@@ -867,8 +993,8 @@ function renderPetugasApproveList(data) {
 window.addPetugasApprove = async () => {
   const nameRaw=document.getElementById('pa-petugas-name').value.trim(), emailRaw=document.getElementById('pa-petugas-email').value.trim().toLowerCase(), roleRaw=document.getElementById('pa-petugas-role').value.trim();
   const errEl=document.getElementById('pa-petugas-add-error'), btn=document.getElementById('btn-add-petugas-approve'); errEl.classList.add('hidden');
-  if (!nameRaw||nameRaw.length<2)  { errEl.textContent='Nama minimal 2 karakter.'; errEl.classList.remove('hidden'); return; }
-  if (!isValidEmail(emailRaw))     { errEl.textContent='Format email tidak valid.'; errEl.classList.remove('hidden'); return; }
+  if (!nameRaw||nameRaw.length<2) { errEl.textContent='Nama minimal 2 karakter.'; errEl.classList.remove('hidden'); return; }
+  if (!isValidEmail(emailRaw))    { errEl.textContent='Format email tidak valid.'; errEl.classList.remove('hidden'); return; }
   if (ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(emailRaw)) { errEl.textContent='Email tersebut adalah email admin.'; errEl.classList.remove('hidden'); return; }
   if (petugasData.some(p=>(p.email||'').toLowerCase()===emailRaw)) { errEl.textContent='Email ini sudah terdaftar sebagai Petugas Scan.'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.textContent='Menyimpan...';
@@ -885,7 +1011,12 @@ window.deletePetugasApprove = async (id, encodedName, col) => {
 
 function listenSoldCounts() { window.onSnapshot(docRef('settings','quota_counter'), snap=>{ if(snap.exists()) updateQuotaUI(snap.data()); }); }
 
-function listenToSettings() { window.onSnapshot(docRef('settings','event_config'), snap=>{ if(snap.exists()) eventConfig={...eventConfig,...snap.data()}; applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); }, ()=>{ applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); }); }
+function listenToSettings() {
+  window.onSnapshot(docRef('settings','event_config'), snap=>{
+    if(snap.exists()) eventConfig={...eventConfig,...snap.data()};
+    applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00');
+  }, ()=>{ applyUIConfig(); startCountdown(eventConfig.eventDatetime||'2026-05-15T16:00'); });
+}
 
 function applyUIConfig() {
   const st=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v||'');};
@@ -895,14 +1026,28 @@ function applyUIConfig() {
   Object.entries(cfg).forEach(([type,info])=>{
     const priceEl=document.getElementById('price-'+type); if (priceEl&&info.price) { const n=info.price/1000; priceEl.textContent='Rp '+(Number.isInteger(n)?n+'K':info.price.toLocaleString('id-ID')); }
   });
+  // Update QRIS tab button visibility if on payment page
+  const qrisBtn = document.getElementById('pay-tab-qris');
+  if (qrisBtn) {
+    if (eventConfig.qrisUrl && eventConfig.qrisUrl.startsWith('https://')) {
+      qrisBtn.textContent = '📱 QRIS';
+      qrisBtn.style.opacity = '1';
+    } else {
+      qrisBtn.textContent = '📱 QRIS (Belum Aktif)';
+      qrisBtn.style.opacity = '0.5';
+    }
+  }
 }
 
 function initSettingsInputs() {
   const s=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
   s('set-title',eventConfig.title); s('set-banner',eventConfig.bannerUrl); s('set-date',eventConfig.date); s('set-loc',eventConfig.location); s('set-time',eventConfig.time); s('set-eventdate',eventConfig.eventDatetime||'');
+  s('set-qris', eventConfig.qrisUrl || '');
+  showQrisPreview(eventConfig.qrisUrl || '');
   const tk=eventConfig.tickets||{};
   s('set-vip-price',tk['VIP']?.price||65000); s('set-vip-quota',tk['VIP']?.quota||1000);
   s('set-reg-price',tk['Reguler']?.price||35000); s('set-reg-quota',tk['Reguler']?.quota||2000);
+  initQrisInputListener();
 }
 
 window.uploadBannerFile = async input => {
@@ -917,15 +1062,23 @@ window.uploadBannerFile = async input => {
 };
 
 window.saveEventSettings = async () => {
-  const btn=document.getElementById('btn-save-settings'); const bannerUrl=document.getElementById('set-banner').value.trim();
+  const btn=document.getElementById('btn-save-settings');
+  const bannerUrl=document.getElementById('set-banner').value.trim();
+  const qrisUrl=document.getElementById('set-qris').value.trim();
   if (bannerUrl&&!bannerUrl.startsWith('https://')) { showAlert('Error','URL banner harus https://','error'); return; }
+  if (qrisUrl&&!qrisUrl.startsWith('https://')) { showAlert('Error','URL QRIS harus https://','error'); return; }
   const vipp=parseInt(document.getElementById('set-vip-price').value), vipq=parseInt(document.getElementById('set-vip-quota').value);
   const regp=parseInt(document.getElementById('set-reg-price').value), regq=parseInt(document.getElementById('set-reg-quota').value);
   if ([vipp,vipq,regp,regq].some(v=>isNaN(v)||v<0)) { showAlert('Error','Nilai harga/kuota tidak valid','error'); return; }
   btn.disabled=true; btn.textContent='MENYIMPAN...';
   try {
     await window.setDoc(docRef('settings','event_config'), {
-      title:sanitizeText(document.getElementById('set-title').value).substring(0,100), bannerUrl, date:sanitizeText(document.getElementById('set-date').value).substring(0,50), location:sanitizeText(document.getElementById('set-loc').value).substring(0,100), time:sanitizeText(document.getElementById('set-time').value).substring(0,50), eventDatetime:document.getElementById('set-eventdate').value,
+      title:sanitizeText(document.getElementById('set-title').value).substring(0,100),
+      bannerUrl, qrisUrl,
+      date:sanitizeText(document.getElementById('set-date').value).substring(0,50),
+      location:sanitizeText(document.getElementById('set-loc').value).substring(0,100),
+      time:sanitizeText(document.getElementById('set-time').value).substring(0,50),
+      eventDatetime:document.getElementById('set-eventdate').value,
       tickets:{'VIP':{price:vipp,quota:vipq},'Reguler':{price:regp,quota:regq}}
     }); showAlert('Berhasil','Pengaturan event disimpan!','success');
   } catch(e) { showAlert('Error','Gagal simpan: '+(e.code||e.message),'error'); } finally { btn.disabled=false; btn.textContent='SIMPAN PERUBAHAN'; }
@@ -937,6 +1090,8 @@ function showTab(id) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   const target=document.getElementById('tab-'+id); if (target) target.classList.add('active');
   if (html5QrScanner && id!=='admin-dashboard') stopScanner(); window.scrollTo(0,0);
+  // Reset payment tab to transfer when opening payment page
+  if (id === 'payment') { switchPayTab('transfer'); }
 }
 
 function updateNav() {
@@ -1028,7 +1183,7 @@ window.submitOrder = async () => {
     });
     const listNama = names.map((n, i) => `${i+1}. ${n} (${orderIds[i]})`).join('\n');
     const waMsg=encodeURIComponent(`Halo Admin, saya sudah transfer untuk tiket ${eventConfig.title}.\n\n*Rincian Pesanan:*\nTipe Tiket: ${currentOrder.type}\nJumlah: ${currentOrder.qty} Tiket\nTotal Transfer: *${fmtRupiah(totalBayar)}*\n\n*Daftar Nama Pemegang Tiket:*\n${listNama}\n\nBerikut saya lampirkan bukti transfernya.`);
-    window.open('https://wa.me/'+WA_NUMBER+'?text='+waMsg,'_blank'); 
+    window.open('https://wa.me/'+WA_NUMBER+'?text='+waMsg,'_blank');
     showTab('my-tickets');
   } catch(e) {
     let msg='Gagal pesan, coba lagi';
@@ -1086,11 +1241,11 @@ function listenToAllTickets() {
     const maxVip = eventConfig.tickets['VIP']?.quota || 0;
     const maxReg = eventConfig.tickets['Reguler']?.quota || 0;
     if(el('stat-revenue-total')) el('stat-revenue-total').textContent=fmtRupiah(s.revVip+s.revReg);
-    if(el('stat-revenue-vip')) el('stat-revenue-vip').textContent=fmtRupiah(s.revVip); 
+    if(el('stat-revenue-vip')) el('stat-revenue-vip').textContent=fmtRupiah(s.revVip);
     if(el('stat-vip-count')) el('stat-vip-count').textContent=`(${s.cntVip} / ${maxVip} Terjual)`;
-    if(el('stat-revenue-reg')) el('stat-revenue-reg').textContent=fmtRupiah(s.revReg); 
+    if(el('stat-revenue-reg')) el('stat-revenue-reg').textContent=fmtRupiah(s.revReg);
     if(el('stat-reg-count')) el('stat-reg-count').textContent=`(${s.cntReg} / ${maxReg} Terjual)`;
-    if(el('bar-vip')) el('bar-vip').style.width=(maxVip > 0 ? (s.cntVip/maxVip*100) : 0)+'%'; 
+    if(el('bar-vip')) el('bar-vip').style.width=(maxVip > 0 ? (s.cntVip/maxVip*100) : 0)+'%';
     if(el('bar-reg')) el('bar-reg').style.width=(maxReg > 0 ? (s.cntReg/maxReg*100) : 0)+'%';
     loadAdminTickets();
   });
@@ -1130,14 +1285,11 @@ window.clearSelection = () => { selectedIds.clear(); updateBulkBar(); loadAdminT
 
 window.updateStatus = async (id, status, evt) => {
   if (evt) evt.stopPropagation();
-  try { 
+  try {
     const t = allTicketsData.find(x=>x.id===id);
-    if (status === 'pending' && t && t.status === 'approved') {
-      if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.')) return;
-    }
+    if (status === 'pending' && t && t.status === 'approved') { if (!confirm('Yakin reset tiket "' + (t.name || 'ini') + '" ke PENDING?\n\nPengunjung dengan tiket ini TIDAK AKAN BISA masuk ke event.')) return; }
     await window.runTransaction(window.db, async tx => {
-      const ref = docRef('tickets', id);
-      const snap = await tx.get(ref);
+      const ref = docRef('tickets', id); const snap = await tx.get(ref);
       if (!snap.exists()) throw new Error('TIKET_HILANG');
       const current = snap.data();
       if (status === 'approved' && current.status === 'approved') throw new Error('SUDAH_DIAPPROVE');
@@ -1145,11 +1297,11 @@ window.updateStatus = async (id, status, evt) => {
       if (status === 'approved') { updateData.approved_by = currentUser.email; updateData.approved_by_name = currentUser.displayName || currentUser.email; updateData.approved_at = Date.now(); }
       tx.update(ref, updateData);
     });
-    if (status==='approved' && t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success'); 
-  } catch(e) { 
+    if (status==='approved' && t) showToast('Tiket diapprove!',t.name+' — '+t.type,'success');
+  } catch(e) {
     let msg = 'Gagal update status: ' + (e.code || e.message);
     if (e.message === 'SUDAH_DIAPPROVE') msg = 'Tiket sudah diapprove!';
-    showAlert('Error', msg, 'error'); 
+    showAlert('Error', msg, 'error');
   }
 };
 
@@ -1199,8 +1351,8 @@ function renderPetugasList() {
 window.addPetugas = async () => {
   const nameRaw=document.getElementById('petugas-name').value.trim(), emailRaw=document.getElementById('petugas-email').value.trim().toLowerCase(), roleRaw=document.getElementById('petugas-role').value.trim();
   const errEl=document.getElementById('petugas-add-error'), btn=document.getElementById('btn-add-petugas'); errEl.classList.add('hidden');
-  if (!nameRaw||nameRaw.length<2)  { errEl.textContent='Nama petugas minimal 2 karakter.'; errEl.classList.remove('hidden'); return; }
-  if (!isValidEmail(emailRaw))     { errEl.textContent='Format email tidak valid.';         errEl.classList.remove('hidden'); return; }
+  if (!nameRaw||nameRaw.length<2) { errEl.textContent='Nama petugas minimal 2 karakter.'; errEl.classList.remove('hidden'); return; }
+  if (!isValidEmail(emailRaw))    { errEl.textContent='Format email tidak valid.';         errEl.classList.remove('hidden'); return; }
   if (ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(emailRaw)) { errEl.textContent='Email tersebut adalah email admin.'; errEl.classList.remove('hidden'); return; }
   if (petugasData.some(p=>(p.email||'').toLowerCase()===emailRaw)) { errEl.textContent='Email ini sudah terdaftar sebagai petugas scan.'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.textContent='Menyimpan...';
@@ -1212,14 +1364,14 @@ window.addPetugas = async () => {
 
 window.deletePetugas = async (id, encodedName, col) => { const name=decodeURIComponent(encodedName); if (!confirm('Hapus petugas scan "'+name+'"?\nPetugas tidak akan bisa scan QR lagi.')) return; try { await window.deleteDoc(docRef(col==='petugas'?'petugas':'petugas_pending',id)); showToast('Petugas scan dihapus',name,'info'); } catch(e) { showAlert('Error','Gagal hapus petugas: '+(e.code||e.message),'error'); } };
 
-async function writeScanLog(logData) { 
-  try { 
+async function writeScanLog(logData) {
+  try {
     await window.addDoc(colRef('scan_logs'),{
       ...logData,
       gate: currentPetugasData?.role || currentPetugasApproveData?.role || 'Unknown',
       created_at: Date.now()
-    }); 
-  } catch(e) { console.warn('Log write error:',e.code); } 
+    });
+  } catch(e) { console.warn('Log write error:',e.code); }
 }
 
 function listenToLog() {
