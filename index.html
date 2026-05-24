@@ -96,9 +96,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
 .log-row-invalid { border-left:3px solid #ef4444; }
 .log-row-warn    { border-left:3px solid #eab308; }
 
-/* QRIS styles */
-.qris-tab-btn { padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; cursor: pointer; border: 1px solid #e2e8f0; background: white; color: #64748b; transition: all 0.2s; }
-.qris-tab-btn.active { background: #16a34a; color: white; border-color: #16a34a; }
+
 </style>
 <base target="_blank">
 </head>
@@ -270,8 +268,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
           <p class="text-[11px] text-slate-400 leading-relaxed">Klik tombol <b class="text-indigo-600">"Pilih VIP"</b> atau <b class="text-slate-700">"Pilih Reguler"</b> di bawah, isi nama, lalu transfer sesuai total yang muncul.</p>
         </div>
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-          <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-black text-sm">2</div><p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Transfer & WA</p></div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">Transfer ke rekening yang tertera, lalu klik tombol hijau <b class="text-green-600">"Sudah Transfer? Kirim WA"</b> untuk kirim bukti ke admin.</p>
+          <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-black text-sm">2</div><p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Bayar & WA</p></div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">Scan QRIS yang tampil, bayar sesuai nominal. Lalu klik tombol hijau <b class="text-green-600">"Sudah Bayar? Kirim WA"</b> untuk kirim bukti ke admin.</p>
         </div>
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
           <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-sm">3</div><p class="text-xs font-bold text-slate-500 uppercase tracking-tight">Tiket Aktif</p></div>
@@ -333,62 +331,39 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfeff; scroll
       </div>
       <div id="names-container" class="space-y-4 mb-8"></div>
 
-      <!-- Blok Pembayaran -->
+      <!-- Blok Pembayaran — QRIS Only -->
       <div class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-8 text-center">
-        <p class="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Total Harus Ditransfer</p>
-        <p id="transfer-amount-display" class="text-4xl font-black mb-4 tracking-tighter text-slate-800"></p>
+        <p class="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Total Harus Dibayar</p>
+        <p id="transfer-amount-display" class="text-4xl font-black mb-5 tracking-tighter text-slate-800"></p>
 
-        <!-- Tab: Transfer / QRIS -->
-        <div class="flex gap-2 justify-center mb-5">
-          <button id="pay-tab-transfer" onclick="switchPayTab('transfer')" class="qris-tab-btn active" style="background:#16a34a;color:white;border-color:#16a34a;">🏦 Transfer Bank</button>
-          <button id="pay-tab-qris" onclick="switchPayTab('qris')" class="qris-tab-btn">📱 QRIS</button>
-        </div>
-
-        <!-- Panel Transfer Bank -->
-        <div id="pay-panel-transfer">
-          <p class="text-2xl font-black mb-1 tracking-tighter text-slate-800">1850007442376</p>
-          <p class="font-bold text-slate-500 mb-5 text-sm uppercase tracking-wide">Bank Mandiri - A/N DHEVITA ERVRIANA</p>
-          <div class="bg-white rounded-2xl p-4 text-left border border-amber-200 shadow-sm">
-            <p class="text-xs font-black text-amber-700 uppercase mb-2">Cara Pembayaran:</p>
-            <ol class="text-xs text-amber-800 font-bold space-y-2 list-decimal ml-4">
-              <li>Transfer ke rekening Bank Mandiri di atas sesuai <b class="text-red-500">Total Harus Ditransfer (termasuk 3 kode unik)</b>.</li>
-              <li>Simpan / Screenshot bukti transfer m-banking Anda.</li>
-              <li>Klik tombol hijau di bawah untuk mengirim bukti ke WhatsApp Admin.</li>
-            </ol>
-          </div>
-        </div>
-
-        <!-- Panel QRIS -->
-        <div id="pay-panel-qris" class="hidden">
-          <div id="qris-display-wrapper" class="hidden">
-            <div class="bg-white rounded-2xl p-5 border border-amber-200 shadow-sm flex flex-col items-center gap-3">
-              <div class="w-full flex items-center justify-center gap-2 mb-1">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/QRIS_logo.svg/320px-QRIS_logo.svg.png" alt="QRIS" class="h-6 object-contain">
-              </div>
-              <img id="qris-display-img" src="" alt="QRIS Payment Code" class="rounded-2xl shadow-md border border-slate-100 max-w-[240px] w-full">
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scan dengan aplikasi apapun</p>
-              <div class="bg-amber-50 rounded-xl p-3 border border-amber-100 text-left w-full">
-                <p class="text-xs font-black text-amber-700 uppercase mb-1">Cara Bayar QRIS:</p>
-                <ol class="text-xs text-amber-800 font-bold space-y-1.5 list-decimal ml-4">
-                  <li>Buka aplikasi m-banking / e-wallet Anda.</li>
-                  <li>Pilih menu "Scan QR" / "QRIS".</li>
-                  <li>Scan kode di atas & masukkan nominal sesuai <b class="text-red-500">Total Harus Ditransfer</b>.</li>
-                  <li>Screenshot bukti pembayaran, lalu klik tombol WA di bawah.</li>
-                </ol>
-              </div>
+        <!-- QRIS langsung tampil -->
+        <div id="qris-display-wrapper" class="hidden">
+          <div class="bg-white rounded-2xl p-5 border border-amber-200 shadow-sm flex flex-col items-center gap-3">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/QRIS_logo.svg/320px-QRIS_logo.svg.png" alt="QRIS" class="h-7 object-contain">
+            <img id="qris-display-img" src="" alt="QRIS Payment Code" class="rounded-2xl shadow-md border border-slate-100 max-w-[240px] w-full">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scan dengan aplikasi apapun</p>
+            <div class="bg-amber-50 rounded-xl p-3 border border-amber-100 text-left w-full">
+              <p class="text-xs font-black text-amber-700 uppercase mb-2">Cara Bayar QRIS:</p>
+              <ol class="text-xs text-amber-800 font-bold space-y-1.5 list-decimal ml-4">
+                <li>Buka aplikasi m-banking / e-wallet Anda.</li>
+                <li>Pilih menu <b>"Scan QR"</b> atau <b>"QRIS"</b>.</li>
+                <li>Scan kode di atas &amp; masukkan nominal sesuai <b class="text-red-500">Total Harus Dibayar</b>.</li>
+                <li>Screenshot bukti pembayaran, lalu klik tombol WhatsApp di bawah.</li>
+              </ol>
             </div>
           </div>
-          <div id="qris-not-available" class="hidden bg-white rounded-2xl p-6 border border-amber-200 text-center">
-            <i data-lucide="image-off" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
-            <p class="text-sm font-black text-slate-400">QRIS belum tersedia</p>
-            <p class="text-xs text-slate-300 font-bold mt-1">Gunakan transfer bank di tab sebelumnya.</p>
-          </div>
         </div>
 
+        <!-- Fallback kalau QRIS belum diupload admin -->
+        <div id="qris-not-available" class="hidden bg-white rounded-2xl p-6 border border-amber-200 text-center">
+          <i data-lucide="image-off" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
+          <p class="text-sm font-black text-slate-400">QRIS belum tersedia</p>
+          <p class="text-xs text-slate-300 font-bold mt-1">Hubungi admin untuk info pembayaran.</p>
+        </div>
       </div>
 
       <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-sm shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-        <i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA
+        <i data-lucide="message-circle"></i> SUDAH BAYAR? KIRIM WA
       </button>
     </div>
   </section>
@@ -748,46 +723,24 @@ function emailToKey(email)     { return email.toLowerCase().replace(/\./g,'_').r
 function fmtRupiah(n)          { return 'Rp '+Number(n||0).toLocaleString('id-ID'); }
 function fmtDate(ts)           { return ts ? new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-'; }
 
-// ─── QRIS Payment Tab Switcher ───
-window.switchPayTab = (tab) => {
-  const transferBtn  = document.getElementById('pay-tab-transfer');
-  const qrisBtn      = document.getElementById('pay-tab-qris');
-  const transferPanel= document.getElementById('pay-panel-transfer');
-  const qrisPanel    = document.getElementById('pay-panel-qris');
-
-  const activeStyle   = 'background:#16a34a;color:white;border-color:#16a34a;';
-  const inactiveStyle = '';
-
-  if (tab === 'transfer') {
-    transferBtn.style.cssText  = activeStyle;
-    qrisBtn.style.cssText      = inactiveStyle;
-    transferBtn.className = 'qris-tab-btn active';
-    qrisBtn.className     = 'qris-tab-btn';
-    transferPanel.classList.remove('hidden');
-    qrisPanel.classList.add('hidden');
-  } else {
-    qrisBtn.style.cssText      = activeStyle;
-    transferBtn.style.cssText  = inactiveStyle;
-    qrisBtn.className     = 'qris-tab-btn active';
-    transferBtn.className = 'qris-tab-btn';
-    qrisPanel.classList.remove('hidden');
-    transferPanel.classList.add('hidden');
-    // Show/hide QRIS image
-    const url = eventConfig.qrisUrl;
-    const displayWrapper = document.getElementById('qris-display-wrapper');
-    const notAvailable   = document.getElementById('qris-not-available');
-    const img            = document.getElementById('qris-display-img');
+// ─── QRIS Display ───
+function showQrisOnPayment() {
+  const url = eventConfig.qrisUrl;
+  const wrapper    = document.getElementById('qris-display-wrapper');
+  const notAvail   = document.getElementById('qris-not-available');
+  const img        = document.getElementById('qris-display-img');
+  if (wrapper && notAvail && img) {
     if (url && url.startsWith('https://')) {
       img.src = url;
-      displayWrapper.classList.remove('hidden');
-      notAvailable.classList.add('hidden');
+      wrapper.classList.remove('hidden');
+      notAvail.classList.add('hidden');
     } else {
-      displayWrapper.classList.add('hidden');
-      notAvailable.classList.remove('hidden');
+      wrapper.classList.add('hidden');
+      notAvail.classList.remove('hidden');
+      lucide.createIcons();
     }
-    lucide.createIcons();
   }
-};
+}
 
 // ─── QRIS Upload (Settings) ───
 window.uploadQrisFile = async input => {
@@ -1187,17 +1140,8 @@ function applyUIConfig() {
   Object.entries(cfg).forEach(([type,info])=>{
     const priceEl=document.getElementById('price-'+type); if (priceEl&&info.price) { const n=info.price/1000; priceEl.textContent='Rp '+(Number.isInteger(n)?n+'K':info.price.toLocaleString('id-ID')); }
   });
-  // Update QRIS tab button visibility if on payment page
-  const qrisBtn = document.getElementById('pay-tab-qris');
-  if (qrisBtn) {
-    if (eventConfig.qrisUrl && eventConfig.qrisUrl.startsWith('https://')) {
-      qrisBtn.textContent = '📱 QRIS';
-      qrisBtn.style.opacity = '1';
-    } else {
-      qrisBtn.textContent = '📱 QRIS (Belum Aktif)';
-      qrisBtn.style.opacity = '0.5';
-    }
-  }
+  // Tampilkan QRIS langsung di halaman pembayaran jika sudah dikonfigurasi
+  showQrisOnPayment();
 }
 
 function initSettingsInputs() {
@@ -1251,8 +1195,8 @@ function showTab(id) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   const target=document.getElementById('tab-'+id); if (target) target.classList.add('active');
   if (html5QrScanner && id!=='admin-dashboard') stopScanner(); window.scrollTo(0,0);
-  // Reset payment tab to transfer when opening payment page
-  if (id === 'payment') { switchPayTab('transfer'); }
+  // Tampilkan QRIS saat halaman pembayaran dibuka
+  if (id === 'payment') { showQrisOnPayment(); }
 }
 
 function updateNav() {
@@ -1326,7 +1270,7 @@ window.submitOrder = async () => {
     btn.disabled = true;
     btn.innerHTML = `<svg class="animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>${msg}`;
   };
-  const resetBtn = () => { btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> SUDAH TRANSFER? KIRIM WA'; lucide.createIcons(); };
+  const resetBtn = () => { btn.disabled=false; btn.innerHTML='<i data-lucide="message-circle"></i> SUDAH BAYAR? KIRIM WA'; lucide.createIcons(); };
 
   setLoading('Memeriksa data...');
   try {
@@ -1372,7 +1316,7 @@ window.submitOrder = async () => {
     // ── Ambil nomor WA (dipisah dari transaksi utama agar tidak saling block)
     setLoading('Mengarahkan ke WhatsApp...');
     const listNama = names.map((n,i) => `${i+1}. ${n} (${orderIds[i]})`).join('\n');
-    const waMsg=encodeURIComponent(`Halo Admin, saya sudah transfer untuk tiket ${eventConfig.title}.\n\n*Rincian Pesanan:*\nTipe Tiket: ${currentOrder.type}\nJumlah: ${currentOrder.qty} Tiket\nTotal Transfer: *${fmtRupiah(totalBayar)}*\n\n*Daftar Nama Pemegang Tiket:*\n${listNama}\n\nBerikut saya lampirkan bukti transfernya.`);
+    const waMsg=encodeURIComponent(`Halo Admin, saya sudah bayar via QRIS untuk tiket ${eventConfig.title}.\n\n*Rincian Pesanan:*\nTipe Tiket: ${currentOrder.type}\nJumlah: ${currentOrder.qty} Tiket\nTotal Bayar: *${fmtRupiah(totalBayar)}*\n\n*Daftar Nama Pemegang Tiket:*\n${listNama}\n\nBerikut saya lampirkan bukti pembayaran QRIS-nya.`);
     const waNumber = await pickNextWaNumber();
     lastAssignedWaNumber = waNumber;
     updateHelpButton();
